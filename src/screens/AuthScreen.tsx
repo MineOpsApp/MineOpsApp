@@ -55,7 +55,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
     } catch (error) {
       Alert.alert(
         mode === 'register' ? 'Registration failed' : 'Login failed',
-        'Try again.',
+        'Check backend connection.',
       );
     } finally {
       setIsSubmitting(false);
