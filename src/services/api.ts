@@ -2,6 +2,7 @@ import type { DashboardData } from '../types/dashboard';
 import type { Site } from '../types/site';
 import type { CreateSosAlertRequest, SosAlert } from '../types/sos';
 import type { DangerZone, HazardReport, SupervisorMessage, VisitorInduction } from '../types/actions';
+import type { AuthPayload, AuthSession } from '../types/auth';
 
 const API_BASE_URL = 'http://192.168.0.101:8080/api';
 
@@ -37,6 +38,14 @@ export function getDashboard() {
 
 export function getSites() {
   return request<Site[]>('/sites');
+}
+
+export function registerUser(payload: AuthPayload) {
+  return post<AuthSession>('/auth/register', payload);
+}
+
+export function loginUser(payload: AuthPayload) {
+  return post<AuthSession>('/auth/login', payload);
 }
 
 export function createSosAlert(alert: CreateSosAlertRequest) {

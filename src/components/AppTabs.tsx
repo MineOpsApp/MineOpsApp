@@ -5,15 +5,10 @@ export type TabName = 'dashboard' | 'sites' | 'roles';
 type AppTabsProps = {
   activeTab: TabName;
   onTabChange: (tab: TabName) => void;
+  tabs: { label: string; value: TabName }[];
 };
 
-const tabs: { label: string; value: TabName }[] = [
-  { label: 'Dashboard', value: 'dashboard' },
-  { label: 'Sites', value: 'sites' },
-  { label: 'Roles', value: 'roles' },
-];
-
-export function AppTabs({ activeTab, onTabChange }: AppTabsProps) {
+export function AppTabs({ activeTab, onTabChange, tabs }: AppTabsProps) {
   return (
     <View style={styles.tabs}>
       {tabs.map((tab) => {

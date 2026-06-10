@@ -14,13 +14,14 @@ import type { HazardReport } from '../types/actions';
 import type { UserRole } from '../types/role';
 
 type RolesScreenProps = {
+  allowRoleChange?: boolean;
   selectedRole: UserRole;
   onRoleChange: (role: UserRole) => void;
 };
 
 type RoleSubtab = 'overview' | 'actions' | 'auditLog';
 
-export function RolesScreen({ selectedRole, onRoleChange }: RolesScreenProps) {
+export function RolesScreen({ allowRoleChange = true, selectedRole, onRoleChange }: RolesScreenProps) {
   const [activeSubtab, setActiveSubtab] = useState<RoleSubtab>('overview');
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [statusMessage, setStatusMessage] = useState('');
@@ -130,12 +131,13 @@ export function RolesScreen({ selectedRole, onRoleChange }: RolesScreenProps) {
       </View>
 
       <View style={styles.roleGrid}>
-        {roleDefinitions.map((item) => {
+        {(allowRoleChange ? roleDefinitions : [role]).map((item) => {
           const isActive = item.id === selectedRole;
 
           return (
             <Pressable
               accessibilityRole="button"
+              disabled={!allowRoleChange}
               key={item.id}
               onPress={() => changeRole(item.id)}
               style={[styles.roleButton, isActive && styles.activeRoleButton]}
