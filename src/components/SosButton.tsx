@@ -1,12 +1,32 @@
 import { Alert, Pressable, StyleSheet, Text } from 'react-native';
 
-export function SosButton() {
+import { createSosAlert } from '../services/api';
+import type { UserRole } from '../types/role';
+
+type SosButtonProps = {
+  role: UserRole;
+};
+
+export function SosButton({ role }: SosButtonProps) {
+  async function sendAlert() {
+    try {
+      const alert = await createSosAlert({
+        message: 'Emergency assistance requested',
+        role,
+        site: 'Obuasi Mine',
+      });
+
+      Alert.alert('SOS sent', `Alert #${alert.id} is open and has been sent to the backend.`);
+    } catch (error) {
+      Alert.alert('SOS failed', 'Could not send the emergency alert. Check the backend connection.');
+    }
+  }
+
   function handlePress() {
-    Alert.alert(
-      'SOS alert',
-      'Emergency alert prepared. In the next phase this will notify supervisors and safety officers.',
-      [{ text: 'OK' }],
-    );
+    Alert.alert('Send SOS?', 'This will create an emergency alert for the current user role.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Send SOS', onPress: sendAlert, style: 'destructive' },
+    ]);
   }
 
   return (
