@@ -7,23 +7,29 @@ import {
   completeVisitorInduction,
   createDangerZone,
   createHazardReport,
+  createNotice,
   createSupervisorMessage,
   getHazardReports,
+  getNotices,
+  markNoticeSeen,
 } from '../services/api';
-import type { HazardReport } from '../types/actions';
+import type { HazardReport, Notice } from '../types/actions';
+import type { AuthUser } from '../types/auth';
 import type { UserRole } from '../types/role';
 
 type RolesScreenProps = {
   allowRoleChange?: boolean;
+  currentUser: AuthUser;
   selectedRole: UserRole;
   onRoleChange: (role: UserRole) => void;
 };
 
 type RoleSubtab = 'overview' | 'actions' | 'auditLog';
 
-export function RolesScreen({ allowRoleChange = true, selectedRole, onRoleChange }: RolesScreenProps) {
+export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole, onRoleChange }: RolesScreenProps) {
   const [activeSubtab, setActiveSubtab] = useState<RoleSubtab>('overview');
   const [hazards, setHazards] = useState<HazardReport[]>([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
   const [statusMessage, setStatusMessage] = useState('');
   const role = roleDefinitions.find((item) => item.id === selectedRole) ?? roleDefinitions[0];
   const canViewAuditLog = role.auditLogAccess;
@@ -42,6 +48,7 @@ export function RolesScreen({ allowRoleChange = true, selectedRole, onRoleChange
         site: 'Obuasi Mine',
       });
 
+      setHazards((current) => [report, ...current]);
       setStatusMessage(`Hazard report #${report.id} submitted.`);
       Alert.alert('Hazard reported', `Report #${report.id} was sent to safety.`);
     } catch (error) {
@@ -61,6 +68,50 @@ export function RolesScreen({ allowRoleChange = true, selectedRole, onRoleChange
       Alert.alert('Message sent', `Briefing #${message.id} was sent.`);
     } catch (error) {
       Alert.alert('Action failed', 'Could not send the supervisor message.');
+    }
+  }
+
+  async function postNotice() {
+    try {
+      const notice = await createNotice({
+        message: 'Zone B is restricted until clearance.',
+        postedByRole: selectedRole,
+        title: 'Zone B restriction',
+      });
+
+      setNotices((current) => [notice, ...current]);
+      setStatusMessage(`Notice #${notice.id} posted.`);
+    } catch (error) {
+      Alert.alert('Action failed', 'Could not post notice.');
+    }
+  }
+
+  async function loadNotices() {
+    try {
+      const noticeList = await getNotices();
+      setNotices(noticeList);
+      setStatusMessage(`${noticeList.length} notice(s) loaded.`);
+    } catch (error) {
+      Alert.alert('Action failed', 'Could not load notices.');
+    }
+  }
+
+  async function viewLatestNotice() {
+    const latestNotice = notices[0];
+
+    if (!latestNotice) {
+      Alert.alert('No notices', 'Load notices first.');
+      return;
+    }
+
+    try {
+      const updated = await markNoticeSeen(latestNotice.id, currentUser);
+      setNotices((current) =>
+        current.map((notice) => (notice.id === updated.id ? updated : notice)),
+      );
+      setStatusMessage(`Notice #${updated.id} seen.`);
+    } catch (error) {
+      Alert.alert('Action failed', 'Could not mark notice as seen.');
     }
   }
 
@@ -89,16 +140,9 @@ export function RolesScreen({ allowRoleChange = true, selectedRole, onRoleChange
     }
   }
 
-  async function closeFirstOpenHazard() {
-    const openHazard = hazards.find((hazard) => hazard.status === 'Open');
-
-    if (!openHazard) {
-      Alert.alert('No open hazards', 'Load hazard reports first, or submit a worker hazard.');
-      return;
-    }
-
+  async function closeHazard(id: number) {
     try {
-      const closed = await closeHazardReport(openHazard.id);
+      const closed = await closeHazardReport(id);
       setHazards((current) =>
         current.map((hazard) => (hazard.id === closed.id ? closed : hazard)),
       );
@@ -181,12 +225,17 @@ export function RolesScreen({ allowRoleChange = true, selectedRole, onRoleChange
       ) : activeSubtab === 'actions' ? (
         <RoleActions
           hazards={hazards}
-          onCloseFirstOpenHazard={closeFirstOpenHazard}
+          notices={notices}
+          canClearHazards={selectedRole === 'supervisor' || selectedRole === 'safetyOfficer'}
+          onCloseHazard={closeHazard}
           onCompleteGuestInduction={completeGuestInduction}
           onCreateDangerZone={createSafetyDangerZone}
           onLoadHazards={loadHazardsForReview}
+          onLoadNotices={loadNotices}
+          onPostNotice={postNotice}
           onSendSupervisorMessage={sendSupervisorMessage}
           onSubmitHazard={submitHazardReport}
+          onViewLatestNotice={viewLatestNotice}
           role={selectedRole}
         />
       ) : (
@@ -258,54 +307,75 @@ function RoleOverview({ role }: { role: (typeof roleDefinitions)[number] }) {
 }
 
 function RoleActions({
+  canClearHazards,
   hazards,
-  onCloseFirstOpenHazard,
+  notices,
+  onCloseHazard,
   onCompleteGuestInduction,
   onCreateDangerZone,
   onLoadHazards,
+  onLoadNotices,
+  onPostNotice,
   onSendSupervisorMessage,
   onSubmitHazard,
+  onViewLatestNotice,
   role,
 }: {
+  canClearHazards: boolean;
   hazards: HazardReport[];
-  onCloseFirstOpenHazard: () => void;
+  notices: Notice[];
+  onCloseHazard: (id: number) => void;
   onCompleteGuestInduction: () => void;
   onCreateDangerZone: () => void;
   onLoadHazards: () => void;
+  onLoadNotices: () => void;
+  onPostNotice: () => void;
   onSendSupervisorMessage: () => void;
   onSubmitHazard: () => void;
+  onViewLatestNotice: () => void;
   role: UserRole;
 }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Working Actions</Text>
+      <Text style={styles.sectionTitle}>Hazard Reports</Text>
+      <ActionButton label="Load Hazard Reports" onPress={onLoadHazards} />
+      <HazardList canClear={canClearHazards} hazards={hazards} onCloseHazard={onCloseHazard} />
+
+      <Text style={styles.sectionTitle}>Actions</Text>
 
       {role === 'worker' ? (
         <>
           <ActionButton label="Report Hazard" onPress={onSubmitHazard} tone="danger" />
+          <ActionButton label="Load Notices" onPress={onLoadNotices} />
+          <ActionButton label="Mark Latest Notice Seen" onPress={onViewLatestNotice} />
+          <NoticeList notices={notices} showSeenBy={false} />
         </>
       ) : null}
 
       {role === 'supervisor' ? (
         <>
           <ActionButton label="Send Worker Briefing" onPress={onSendSupervisorMessage} />
-          <ActionButton label="Load Hazard Reports" onPress={onLoadHazards} />
-          <HazardList hazards={hazards} />
+          <ActionButton label="Post Notice" onPress={onPostNotice} />
+          <ActionButton label="Load Notices" onPress={onLoadNotices} />
+          <NoticeList notices={notices} showSeenBy />
         </>
       ) : null}
 
       {role === 'safetyOfficer' ? (
         <>
           <ActionButton label="Create Danger Zone" onPress={onCreateDangerZone} tone="danger" />
-          <ActionButton label="Load Hazard Reports" onPress={onLoadHazards} />
-          <ActionButton label="Close First Open Hazard" onPress={onCloseFirstOpenHazard} />
-          <HazardList hazards={hazards} />
+          <ActionButton label="Post Notice" onPress={onPostNotice} />
+          <ActionButton label="Load Notices" onPress={onLoadNotices} />
+          <NoticeList notices={notices} showSeenBy />
         </>
       ) : null}
 
       {role === 'guest' ? (
         <>
+          <ActionButton label="Load Notices" onPress={onLoadNotices} />
+          <ActionButton label="Mark Latest Notice Seen" onPress={onViewLatestNotice} />
           <ActionButton label="Complete Visitor Induction" onPress={onCompleteGuestInduction} />
+          <NoticeList notices={notices} showSeenBy={false} />
         </>
       ) : null}
     </View>
@@ -340,7 +410,15 @@ function ActionNote({ text }: { text: string }) {
   );
 }
 
-function HazardList({ hazards }: { hazards: HazardReport[] }) {
+function HazardList({
+  canClear,
+  hazards,
+  onCloseHazard,
+}: {
+  canClear: boolean;
+  hazards: HazardReport[];
+  onCloseHazard: (id: number) => void;
+}) {
   if (hazards.length === 0) {
     return <ActionNote text="No hazard reports" />;
   }
@@ -353,6 +431,33 @@ function HazardList({ hazards }: { hazards: HazardReport[] }) {
             #{hazard.id} {hazard.status}
           </Text>
           <Text style={styles.auditItemMeta}>{hazard.description}</Text>
+          {canClear && hazard.status === 'Open' ? (
+            <Pressable onPress={() => onCloseHazard(hazard.id)} style={styles.smallButton}>
+              <Text style={styles.smallButtonText}>Clear</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ))}
+    </>
+  );
+}
+
+function NoticeList({ notices, showSeenBy }: { notices: Notice[]; showSeenBy: boolean }) {
+  if (notices.length === 0) {
+    return <ActionNote text="No notices" />;
+  }
+
+  return (
+    <>
+      {notices.slice(0, 3).map((notice) => (
+        <View key={notice.id} style={styles.auditItem}>
+          <Text style={styles.auditItemTitle}>{notice.title}</Text>
+          <Text style={styles.auditItemMeta}>{notice.message}</Text>
+          {showSeenBy ? (
+            <Text style={styles.auditItemMeta}>
+              Seen: {notice.seenBy.length ? notice.seenBy.map((seen) => seen.fullName).join(', ') : 'None'}
+            </Text>
+          ) : null}
         </View>
       ))}
     </>
@@ -626,5 +731,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     marginTop: 4,
+  },
+  smallButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#1f6f5b',
+    borderRadius: 8,
+    marginTop: 10,
+    minHeight: 34,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  smallButtonText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '900',
   },
 });
