@@ -11,9 +11,13 @@ import {
   createSupervisorMessage,
   getHazardReports,
   getNotices,
+  getWorkerProfile,
   markNoticeSeen,
+  reportEquipmentFault,
+  requestEquipmentMaintenance,
+  updateWorkerEquipmentStatus,
 } from '../services/api';
-import type { HazardReport, Notice } from '../types/actions';
+import type { HazardReport, Notice, WorkerProfile } from '../types/actions';
 import type { AuthUser } from '../types/auth';
 import type { UserRole } from '../types/role';
 
@@ -30,6 +34,7 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
   const [activeSubtab, setActiveSubtab] = useState<RoleSubtab>('overview');
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [workerProfile, setWorkerProfile] = useState<WorkerProfile | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const role = roleDefinitions.find((item) => item.id === selectedRole) ?? roleDefinitions[0];
   const canViewAuditLog = role.auditLogAccess;
@@ -53,6 +58,90 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
       Alert.alert('Hazard reported', `Report #${report.id} was sent to safety.`);
     } catch (error) {
       Alert.alert('Action failed', 'Could not submit the hazard report.');
+    }
+  }
+
+  async function loadWorkerProfile() {
+    try {
+      const profile = await getWorkerProfile(currentUser.email);
+      setWorkerProfile(profile);
+      setStatusMessage('Worker profile loaded.');
+    } catch (error) {
+      Alert.alert('Action failed', 'Could not load worker profile.');
+    }
+  }
+
+  async function updateAssignedEquipmentStatus() {
+    const equipment = workerProfile?.assignedEquipment[0];
+
+    if (!equipment) {
+      Alert.alert('No equipment', 'Load profile first.');
+      return;
+    }
+
+    try {
+      const updated = await updateWorkerEquipmentStatus(equipment.id, 'Needs Check');
+      setWorkerProfile((current) =>
+        current
+          ? {
+              ...current,
+              assignedEquipment: current.assignedEquipment.map((item) =>
+                item.id === updated.id ? updated : item,
+              ),
+            }
+          : current,
+      );
+      setStatusMessage(`${updated.code} updated.`);
+    } catch (error) {
+      Alert.alert('Action failed', 'Could not update equipment.');
+    }
+  }
+
+  async function submitEquipmentFault() {
+    const equipment = workerProfile?.assignedEquipment[0];
+
+    if (!equipment) {
+      Alert.alert('No equipment', 'Load profile first.');
+      return;
+    }
+
+    try {
+      const fault = await reportEquipmentFault({
+        description: 'Hydraulic leak reported from mobile app',
+        equipmentCode: equipment.code,
+        workerEmail: currentUser.email,
+      });
+      setWorkerProfile((current) =>
+        current ? { ...current, equipmentFaults: [fault, ...current.equipmentFaults] } : current,
+      );
+      setStatusMessage(`Fault #${fault.id} reported.`);
+    } catch (error) {
+      Alert.alert('Action failed', 'Could not report fault.');
+    }
+  }
+
+  async function submitMaintenanceRequest() {
+    const equipment = workerProfile?.assignedEquipment[0];
+
+    if (!equipment) {
+      Alert.alert('No equipment', 'Load profile first.');
+      return;
+    }
+
+    try {
+      const request = await requestEquipmentMaintenance({
+        equipmentCode: equipment.code,
+        requestDetails: 'Maintenance requested from mobile app',
+        workerEmail: currentUser.email,
+      });
+      setWorkerProfile((current) =>
+        current
+          ? { ...current, maintenanceRequests: [request, ...current.maintenanceRequests] }
+          : current,
+      );
+      setStatusMessage(`Maintenance #${request.id} requested.`);
+    } catch (error) {
+      Alert.alert('Action failed', 'Could not request maintenance.');
     }
   }
 
@@ -226,15 +315,20 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
         <RoleActions
           hazards={hazards}
           notices={notices}
+          workerProfile={workerProfile}
           canClearHazards={selectedRole === 'supervisor' || selectedRole === 'safetyOfficer'}
           onCloseHazard={closeHazard}
           onCompleteGuestInduction={completeGuestInduction}
           onCreateDangerZone={createSafetyDangerZone}
           onLoadHazards={loadHazardsForReview}
           onLoadNotices={loadNotices}
+          onLoadWorkerProfile={loadWorkerProfile}
+          onReportEquipmentFault={submitEquipmentFault}
+          onRequestMaintenance={submitMaintenanceRequest}
           onPostNotice={postNotice}
           onSendSupervisorMessage={sendSupervisorMessage}
           onSubmitHazard={submitHazardReport}
+          onUpdateEquipmentStatus={updateAssignedEquipmentStatus}
           onViewLatestNotice={viewLatestNotice}
           role={selectedRole}
         />
@@ -310,28 +404,38 @@ function RoleActions({
   canClearHazards,
   hazards,
   notices,
+  workerProfile,
   onCloseHazard,
   onCompleteGuestInduction,
   onCreateDangerZone,
   onLoadHazards,
   onLoadNotices,
+  onLoadWorkerProfile,
   onPostNotice,
+  onReportEquipmentFault,
+  onRequestMaintenance,
   onSendSupervisorMessage,
   onSubmitHazard,
+  onUpdateEquipmentStatus,
   onViewLatestNotice,
   role,
 }: {
   canClearHazards: boolean;
   hazards: HazardReport[];
   notices: Notice[];
+  workerProfile: WorkerProfile | null;
   onCloseHazard: (id: number) => void;
   onCompleteGuestInduction: () => void;
   onCreateDangerZone: () => void;
   onLoadHazards: () => void;
   onLoadNotices: () => void;
+  onLoadWorkerProfile: () => void;
   onPostNotice: () => void;
+  onReportEquipmentFault: () => void;
+  onRequestMaintenance: () => void;
   onSendSupervisorMessage: () => void;
   onSubmitHazard: () => void;
+  onUpdateEquipmentStatus: () => void;
   onViewLatestNotice: () => void;
   role: UserRole;
 }) {
@@ -345,6 +449,17 @@ function RoleActions({
 
       {role === 'worker' ? (
         <>
+          <Text style={styles.sectionTitle}>Equipment</Text>
+          <ActionButton label="Load My Information" onPress={onLoadWorkerProfile} />
+          <WorkerProfileCard profile={workerProfile} />
+          <ActionButton label="Update Equipment Status" onPress={onUpdateEquipmentStatus} />
+          <ActionButton label="Report Equipment Fault" onPress={onReportEquipmentFault} tone="danger" />
+          <ActionButton label="Request Maintenance" onPress={onRequestMaintenance} />
+
+          <Text style={styles.sectionTitle}>Records</Text>
+          <WorkerRecords profile={workerProfile} />
+
+          <Text style={styles.sectionTitle}>Worker Actions</Text>
           <ActionButton label="Report Hazard" onPress={onSubmitHazard} tone="danger" />
           <ActionButton label="Load Notices" onPress={onLoadNotices} />
           <ActionButton label="Mark Latest Notice Seen" onPress={onViewLatestNotice} />
@@ -378,6 +493,81 @@ function RoleActions({
           <NoticeList notices={notices} showSeenBy={false} />
         </>
       ) : null}
+    </View>
+  );
+}
+
+function WorkerProfileCard({ profile }: { profile: WorkerProfile | null }) {
+  if (!profile) {
+    return <ActionNote text="No worker information loaded" />;
+  }
+
+  const equipment = profile.assignedEquipment[0];
+
+  return (
+    <>
+      <View style={styles.auditItem}>
+        <Text style={styles.auditItemTitle}>{profile.fullName}</Text>
+        <Text style={styles.auditItemMeta}>{profile.email}</Text>
+        <Text style={styles.auditItemMeta}>{profile.assignedSite} - {profile.assignedZone}</Text>
+      </View>
+      {equipment ? (
+        <View style={styles.auditItem}>
+          <Text style={styles.auditItemTitle}>{equipment.name} {equipment.code}</Text>
+          <Text style={styles.auditItemMeta}>{equipment.status}</Text>
+          <Text style={styles.auditItemMeta}>{equipment.instructions}</Text>
+        </View>
+      ) : null}
+    </>
+  );
+}
+
+function WorkerRecords({ profile }: { profile: WorkerProfile | null }) {
+  if (!profile) {
+    return <ActionNote text="No records loaded" />;
+  }
+
+  return (
+    <>
+      <RecordGroup title="Submitted Hazards" records={profile.submittedHazards.map((item) => ({
+        title: item.description,
+        status: item.status,
+      }))} />
+      <RecordGroup title="Inspection History" records={profile.inspectionHistory} />
+      <RecordGroup title="Training Records" records={profile.trainingRecords} />
+      <RecordGroup title="Shift History" records={profile.shiftHistory} />
+      <RecordGroup title="Incident Involvement" records={profile.incidentInvolvementHistory} />
+      <RecordGroup title="Equipment Faults" records={profile.equipmentFaults.map((item) => ({
+        title: item.description,
+        status: item.status,
+      }))} />
+      <RecordGroup title="Maintenance Requests" records={profile.maintenanceRequests.map((item) => ({
+        title: item.requestDetails,
+        status: item.status,
+      }))} />
+    </>
+  );
+}
+
+function RecordGroup({
+  records,
+  title,
+}: {
+  records: { title: string; status?: string; date?: string }[];
+  title: string;
+}) {
+  return (
+    <View style={styles.auditItem}>
+      <Text style={styles.auditItemTitle}>{title}</Text>
+      {records.length ? (
+        records.slice(0, 3).map((record) => (
+          <Text key={`${title}-${record.title}`} style={styles.auditItemMeta}>
+            {record.title}{record.status ? ` - ${record.status}` : ''}{record.date ? ` - ${record.date}` : ''}
+          </Text>
+        ))
+      ) : (
+        <Text style={styles.auditItemMeta}>None</Text>
+      )}
     </View>
   );
 }
