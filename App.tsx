@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react';
 import { RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppTabs, type TabName } from './src/components/AppTabs';
+import { SosButton } from './src/components/SosButton';
 import { DashboardScreen } from './src/screens/DashboardScreen';
+import { RolesScreen } from './src/screens/RolesScreen';
 import { SitesScreen } from './src/screens/SitesScreen';
 import { getDashboard, getSites } from './src/services/api';
 import type { DashboardData } from './src/types/dashboard';
+import type { UserRole } from './src/types/role';
 import type { Site } from './src/types/site';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabName>('dashboard');
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
+  const [selectedRole, setSelectedRole] = useState<UserRole>('worker');
   const [dashboardMessage, setDashboardMessage] = useState('Loading dashboard...');
   const [sitesMessage, setSitesMessage] = useState('Loading sites...');
   const [refreshing, setRefreshing] = useState(false);
@@ -46,7 +50,7 @@ export default function App() {
 
     if (activeTab === 'dashboard') {
       await loadDashboard();
-    } else {
+    } else if (activeTab === 'sites') {
       await loadSites();
     }
 
@@ -68,10 +72,18 @@ export default function App() {
       >
         {activeTab === 'dashboard' ? (
           <DashboardScreen dashboard={dashboard} message={dashboardMessage} />
-        ) : (
+        ) : null}
+
+        {activeTab === 'sites' ? (
           <SitesScreen sites={sites} message={sitesMessage} />
-        )}
+        ) : null}
+
+        {activeTab === 'roles' ? (
+          <RolesScreen selectedRole={selectedRole} onRoleChange={setSelectedRole} />
+        ) : null}
       </ScrollView>
+
+      <SosButton />
     </SafeAreaView>
   );
 }

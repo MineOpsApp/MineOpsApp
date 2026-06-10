@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-export type TabName = 'dashboard' | 'sites';
+export type TabName = 'dashboard' | 'sites' | 'roles';
 
 type AppTabsProps = {
   activeTab: TabName;
@@ -10,6 +10,7 @@ type AppTabsProps = {
 const tabs: { label: string; value: TabName }[] = [
   { label: 'Dashboard', value: 'dashboard' },
   { label: 'Sites', value: 'sites' },
+  { label: 'Roles', value: 'roles' },
 ];
 
 export function AppTabs({ activeTab, onTabChange }: AppTabsProps) {
