@@ -31,7 +31,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
 
   async function submit() {
     if (!email.trim() || !password.trim() || (mode === 'register' && !fullName.trim())) {
-      Alert.alert('Missing information', 'Fill in all required fields.');
+      Alert.alert('Missing information', 'Complete required fields.');
       return;
     }
 
@@ -55,7 +55,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
     } catch (error) {
       Alert.alert(
         mode === 'register' ? 'Registration failed' : 'Login failed',
-        'Check your details and backend connection.',
+        'Try again.',
       );
     } finally {
       setIsSubmitting(false);
@@ -76,7 +76,6 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
           <View style={styles.header}>
             <Text style={styles.brand}>MineOps</Text>
             <Text style={styles.title}>{mode === 'register' ? 'Create Account' : 'Sign In'}</Text>
-            <Text style={styles.subtitle}>Choose your user type to open the correct MineOps interface</Text>
           </View>
 
           <View style={styles.modeSwitch}>

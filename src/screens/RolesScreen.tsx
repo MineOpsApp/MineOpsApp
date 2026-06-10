@@ -127,7 +127,6 @@ export function RolesScreen({ allowRoleChange = true, selectedRole, onRoleChange
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Access planning</Text>
         <Text style={styles.title}>User Roles</Text>
-        <Text style={styles.subtitle}>Select a role, then use Actions to test real app functions</Text>
       </View>
 
       <View style={styles.roleGrid}>
@@ -284,7 +283,6 @@ function RoleActions({
       {role === 'worker' ? (
         <>
           <ActionButton label="Report Hazard" onPress={onSubmitHazard} tone="danger" />
-          <ActionNote text="Inspections, equipment updates, plan acknowledgements, and SOS are part of the worker flow. SOS already posts to the backend." />
         </>
       ) : null}
 
@@ -308,7 +306,6 @@ function RoleActions({
       {role === 'guest' ? (
         <>
           <ActionButton label="Complete Visitor Induction" onPress={onCompleteGuestInduction} />
-          <ActionNote text="Guest access stays read-only after induction. Guests can receive emergency information but cannot submit reports or edit records." />
         </>
       ) : null}
     </View>
@@ -345,7 +342,7 @@ function ActionNote({ text }: { text: string }) {
 
 function HazardList({ hazards }: { hazards: HazardReport[] }) {
   if (hazards.length === 0) {
-    return <ActionNote text="No hazard reports loaded yet." />;
+    return <ActionNote text="No hazard reports" />;
   }
 
   return (
@@ -365,22 +362,15 @@ function HazardList({ hazards }: { hazards: HazardReport[] }) {
 function AuditLog({ roleLabel }: { roleLabel: string }) {
   return (
     <View style={styles.auditCard}>
-      <Text style={styles.auditTitle}>Audit Log Access</Text>
-      <Text style={styles.auditText}>
-        {roleLabel} can review operational changes, report approvals, safety actions, SOS responses,
-        and plan updates. Editing audit history stays blocked; this area is for traceability.
-      </Text>
+      <Text style={styles.auditTitle}>{roleLabel} Audit Log</Text>
       <View style={styles.auditItem}>
         <Text style={styles.auditItemTitle}>Plan change recorded</Text>
-        <Text style={styles.auditItemMeta}>Today - Site operations</Text>
       </View>
       <View style={styles.auditItem}>
         <Text style={styles.auditItemTitle}>Inspection approval reviewed</Text>
-        <Text style={styles.auditItemMeta}>Today - Compliance trail</Text>
       </View>
       <View style={styles.auditItem}>
         <Text style={styles.auditItemTitle}>SOS response acknowledged</Text>
-        <Text style={styles.auditItemMeta}>Today - Emergency action</Text>
       </View>
     </View>
   );
