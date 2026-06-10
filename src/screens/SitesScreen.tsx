@@ -13,7 +13,6 @@ export function SitesScreen({ sites, message }: SitesScreenProps) {
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Network</Text>
         <Text style={styles.title}>Sites</Text>
-        <Text style={styles.subtitle}>Mining locations currently tracked in MineOps</Text>
       </View>
 
       {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -22,7 +21,6 @@ export function SitesScreen({ sites, message }: SitesScreenProps) {
         <View key={site.name} style={styles.siteCard}>
           <View style={styles.siteInfo}>
             <Text style={styles.siteName}>{site.name}</Text>
-            <Text style={styles.siteMeta}>Operational site</Text>
           </View>
           <View style={styles.statusBadge}>
             <Text style={styles.statusBadgeText}>{site.status}</Text>

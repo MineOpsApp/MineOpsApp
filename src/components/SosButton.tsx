@@ -16,14 +16,14 @@ export function SosButton({ role }: SosButtonProps) {
         site: 'Obuasi Mine',
       });
 
-      Alert.alert('SOS sent', `Alert #${alert.id} is open and has been sent to the backend.`);
+      Alert.alert('SOS sent', `Alert #${alert.id}`);
     } catch (error) {
-      Alert.alert('SOS failed', 'Could not send the emergency alert. Check the backend connection.');
+      Alert.alert('SOS failed', 'Try again.');
     }
   }
 
   function handlePress() {
-    Alert.alert('Send SOS?', 'This will create an emergency alert for the current user role.', [
+    Alert.alert('Send SOS?', '', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Send SOS', onPress: sendAlert, style: 'destructive' },
     ]);

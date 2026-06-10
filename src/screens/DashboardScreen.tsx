@@ -23,7 +23,6 @@ export function DashboardScreen({ dashboard, message }: DashboardScreenProps) {
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Operations</Text>
         <Text style={styles.title}>Dashboard</Text>
-        <Text style={styles.subtitle}>Live site, equipment, and inspection overview</Text>
       </View>
 
       {message ? <Text style={styles.message}>{message}</Text> : null}
