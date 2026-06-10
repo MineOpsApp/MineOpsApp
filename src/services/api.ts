@@ -1,6 +1,7 @@
 import type { DashboardData } from '../types/dashboard';
 import type { Site } from '../types/site';
 import type { CreateSosAlertRequest, SosAlert } from '../types/sos';
+import type { DangerZone, HazardReport, SupervisorMessage, VisitorInduction } from '../types/actions';
 
 const API_BASE_URL = 'http://192.168.0.101:8080/api';
 
@@ -44,4 +45,51 @@ export function createSosAlert(alert: CreateSosAlertRequest) {
 
 export function getSosAlerts() {
   return request<SosAlert[]>('/sos');
+}
+
+export function createHazardReport(report: {
+  reportedByRole: string;
+  site: string;
+  description: string;
+}) {
+  return post<HazardReport>('/hazards', report);
+}
+
+export function getHazardReports() {
+  return request<HazardReport[]>('/hazards');
+}
+
+export function closeHazardReport(id: number) {
+  return fetch(`${API_BASE_URL}/hazards/${id}/close`, {
+    method: 'PATCH',
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error('Backend request failed');
+    }
+
+    return response.json() as Promise<HazardReport>;
+  });
+}
+
+export function createSupervisorMessage(message: {
+  senderRole: string;
+  audience: string;
+  message: string;
+}) {
+  return post<SupervisorMessage>('/messages', message);
+}
+
+export function createDangerZone(zone: {
+  site: string;
+  zoneName: string;
+  riskLevel: string;
+}) {
+  return post<DangerZone>('/danger-zones', zone);
+}
+
+export function completeVisitorInduction(induction: {
+  visitorType: string;
+  site: string;
+}) {
+  return post<VisitorInduction>('/inductions', induction);
 }
