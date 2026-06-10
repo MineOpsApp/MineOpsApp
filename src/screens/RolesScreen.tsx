@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { roleDefinitions } from '../data/roles';
@@ -9,7 +10,14 @@ type RolesScreenProps = {
 };
 
 export function RolesScreen({ selectedRole, onRoleChange }: RolesScreenProps) {
+  const [activeSubtab, setActiveSubtab] = useState<'overview' | 'auditLog'>('overview');
   const role = roleDefinitions.find((item) => item.id === selectedRole) ?? roleDefinitions[0];
+  const canViewAuditLog = role.auditLogAccess;
+
+  function changeRole(roleId: UserRole) {
+    onRoleChange(roleId);
+    setActiveSubtab('overview');
+  }
 
   return (
     <>
@@ -27,7 +35,7 @@ export function RolesScreen({ selectedRole, onRoleChange }: RolesScreenProps) {
             <Pressable
               accessibilityRole="button"
               key={item.id}
-              onPress={() => onRoleChange(item.id)}
+              onPress={() => changeRole(item.id)}
               style={[styles.roleButton, isActive && styles.activeRoleButton]}
             >
               <Text style={[styles.roleButtonText, isActive && styles.activeRoleButtonText]}>
@@ -43,29 +51,89 @@ export function RolesScreen({ selectedRole, onRoleChange }: RolesScreenProps) {
         <Text style={styles.roleSummary}>{role.summary}</Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Permissions</Text>
-        {role.permissions.map((permission) => (
-          <View key={permission.label} style={styles.permissionRow}>
-            <Text style={styles.permissionLabel}>{permission.label}</Text>
-            <View
-              style={[
-                styles.permissionBadge,
-                permission.allowed ? styles.allowedBadge : styles.blockedBadge,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.permissionBadgeText,
-                  permission.allowed ? styles.allowedBadgeText : styles.blockedBadgeText,
-                ]}
-              >
-                {permission.allowed ? 'Allowed' : 'Blocked'}
-              </Text>
-            </View>
-          </View>
-        ))}
+      <View style={styles.subtabs}>
+        <Pressable
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeSubtab === 'overview' }}
+          onPress={() => setActiveSubtab('overview')}
+          style={[styles.subtab, activeSubtab === 'overview' && styles.activeSubtab]}
+        >
+          <Text style={[styles.subtabText, activeSubtab === 'overview' && styles.activeSubtabText]}>
+            Overview
+          </Text>
+        </Pressable>
+
+        {canViewAuditLog ? (
+          <Pressable
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeSubtab === 'auditLog' }}
+            onPress={() => setActiveSubtab('auditLog')}
+            style={[styles.subtab, activeSubtab === 'auditLog' && styles.activeSubtab]}
+          >
+            <Text style={[styles.subtabText, activeSubtab === 'auditLog' && styles.activeSubtabText]}>
+              Audit Log
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
+
+      {activeSubtab === 'overview' ? (
+        <>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Responsibilities</Text>
+            {role.responsibilities.map((responsibility) => (
+              <View key={responsibility} style={styles.responsibilityRow}>
+                <Text style={styles.responsibilityBullet}>•</Text>
+                <Text style={styles.responsibilityText}>{responsibility}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Permissions</Text>
+            {role.permissions.map((permission) => (
+              <View key={permission.label} style={styles.permissionRow}>
+                <Text style={styles.permissionLabel}>{permission.label}</Text>
+                <View
+                  style={[
+                    styles.permissionBadge,
+                    permission.allowed ? styles.allowedBadge : styles.blockedBadge,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.permissionBadgeText,
+                      permission.allowed ? styles.allowedBadgeText : styles.blockedBadgeText,
+                    ]}
+                  >
+                    {permission.allowed ? 'Allowed' : 'Blocked'}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : (
+        <View style={styles.auditCard}>
+          <Text style={styles.auditTitle}>Audit Log Access</Text>
+          <Text style={styles.auditText}>
+            {role.label} can review operational changes, report approvals, safety actions, SOS responses,
+            and plan updates. Editing audit history will stay blocked; this area is for traceability.
+          </Text>
+          <View style={styles.auditItem}>
+            <Text style={styles.auditItemTitle}>Plan change recorded</Text>
+            <Text style={styles.auditItemMeta}>Today • Site operations</Text>
+          </View>
+          <View style={styles.auditItem}>
+            <Text style={styles.auditItemTitle}>Inspection approval reviewed</Text>
+            <Text style={styles.auditItemMeta}>Today • Compliance trail</Text>
+          </View>
+          <View style={styles.auditItem}>
+            <Text style={styles.auditItemTitle}>SOS response acknowledged</Text>
+            <Text style={styles.auditItemMeta}>Today • Emergency action</Text>
+          </View>
+        </View>
+      )}
     </>
   );
 }
@@ -131,6 +199,31 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     padding: 16,
   },
+  subtabs: {
+    backgroundColor: '#edf1f5',
+    borderRadius: 8,
+    flexDirection: 'row',
+    marginBottom: 18,
+    padding: 4,
+  },
+  subtab: {
+    alignItems: 'center',
+    borderRadius: 6,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 38,
+  },
+  activeSubtab: {
+    backgroundColor: '#ffffff',
+  },
+  subtabText: {
+    color: '#5d6875',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  activeSubtabText: {
+    color: '#1f6f5b',
+  },
   roleTitle: {
     color: '#17212b',
     fontSize: 22,
@@ -151,6 +244,29 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     marginBottom: 10,
+  },
+  responsibilityRow: {
+    backgroundColor: '#ffffff',
+    borderColor: '#dde3ea',
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginBottom: 10,
+    padding: 12,
+  },
+  responsibilityBullet: {
+    color: '#1f6f5b',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 22,
+    paddingRight: 8,
+  },
+  responsibilityText: {
+    color: '#17212b',
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 21,
   },
   permissionRow: {
     alignItems: 'center',
@@ -194,5 +310,43 @@ const styles = StyleSheet.create({
   },
   blockedBadgeText: {
     color: '#b42318',
+  },
+  auditCard: {
+    backgroundColor: '#ffffff',
+    borderColor: '#dde3ea',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 22,
+    padding: 16,
+  },
+  auditTitle: {
+    color: '#17212b',
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 8,
+  },
+  auditText: {
+    color: '#5d6875',
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 21,
+    marginBottom: 14,
+  },
+  auditItem: {
+    borderTopColor: '#dde3ea',
+    borderTopWidth: 1,
+    paddingTop: 12,
+    marginTop: 12,
+  },
+  auditItemTitle: {
+    color: '#17212b',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  auditItemMeta: {
+    color: '#5d6875',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4,
   },
 });

@@ -9,5 +9,7 @@ export type RoleDefinition = {
   id: UserRole;
   label: string;
   summary: string;
+  responsibilities: string[];
+  auditLogAccess: boolean;
   permissions: RolePermission[];
 };
