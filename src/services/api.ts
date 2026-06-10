@@ -1,7 +1,17 @@
 import type { DashboardData } from '../types/dashboard';
 import type { Site } from '../types/site';
 import type { CreateSosAlertRequest, SosAlert } from '../types/sos';
-import type { DangerZone, HazardReport, Notice, SupervisorMessage, VisitorInduction } from '../types/actions';
+import type {
+  DangerZone,
+  EquipmentFault,
+  HazardReport,
+  MaintenanceRequest,
+  Notice,
+  SupervisorMessage,
+  VisitorInduction,
+  WorkerEquipment,
+  WorkerProfile,
+} from '../types/actions';
 import type { AuthPayload, AuthSession } from '../types/auth';
 import type { AuthUser } from '../types/auth';
 
@@ -122,4 +132,40 @@ export function markNoticeSeen(id: number, user: AuthUser) {
     fullName: user.fullName,
     role: user.role,
   });
+}
+
+export function getWorkerProfile(email: string) {
+  return request<WorkerProfile>(`/workers/me?email=${encodeURIComponent(email)}`);
+}
+
+export function updateWorkerEquipmentStatus(equipmentId: number, status: string) {
+  return fetch(`${API_BASE_URL}/workers/equipment/status`, {
+    body: JSON.stringify({ equipmentId: String(equipmentId), status }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'PATCH',
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error('Backend request failed');
+    }
+
+    return response.json() as Promise<WorkerEquipment>;
+  });
+}
+
+export function reportEquipmentFault(payload: {
+  workerEmail: string;
+  equipmentCode: string;
+  description: string;
+}) {
+  return post<EquipmentFault>('/workers/equipment/faults', payload);
+}
+
+export function requestEquipmentMaintenance(payload: {
+  workerEmail: string;
+  equipmentCode: string;
+  requestDetails: string;
+}) {
+  return post<MaintenanceRequest>('/workers/equipment/maintenance', payload);
 }

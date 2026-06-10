@@ -51,3 +51,52 @@ export type Notice = {
   createdAt: string;
   seenBy: NoticeSeen[];
 };
+
+export type WorkerEquipment = {
+  id: number;
+  workerEmail: string;
+  name: string;
+  code: string;
+  status: string;
+  instructions: string;
+};
+
+export type EquipmentFault = {
+  id: number;
+  workerEmail: string;
+  equipmentCode: string;
+  description: string;
+  status: string;
+  createdAt: string;
+};
+
+export type MaintenanceRequest = {
+  id: number;
+  workerEmail: string;
+  equipmentCode: string;
+  requestDetails: string;
+  status: string;
+  createdAt: string;
+};
+
+export type WorkerRecord = {
+  title: string;
+  status?: string;
+  date?: string;
+};
+
+export type WorkerProfile = {
+  fullName: string;
+  email: string;
+  role: UserRole | string;
+  assignedSite: string;
+  assignedZone: string;
+  assignedEquipment: WorkerEquipment[];
+  submittedHazards: HazardReport[];
+  equipmentFaults: EquipmentFault[];
+  maintenanceRequests: MaintenanceRequest[];
+  inspectionHistory: WorkerRecord[];
+  trainingRecords: WorkerRecord[];
+  shiftHistory: WorkerRecord[];
+  incidentInvolvementHistory: WorkerRecord[];
+};
