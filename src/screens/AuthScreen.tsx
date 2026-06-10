@@ -1,5 +1,16 @@
 import { useState } from 'react';
-import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { roleDefinitions } from '../data/roles';
 import { loginUser, registerUser } from '../services/api';
@@ -53,74 +64,87 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.brand}>MineOps</Text>
-          <Text style={styles.title}>{mode === 'register' ? 'Create Account' : 'Sign In'}</Text>
-          <Text style={styles.subtitle}>Choose your user type to open the correct MineOps interface</Text>
-        </View>
-
-        <View style={styles.modeSwitch}>
-          <ModeButton active={mode === 'register'} label="Register" onPress={() => setMode('register')} />
-          <ModeButton active={mode === 'login'} label="Login" onPress={() => setMode('login')} />
-        </View>
-
-        {mode === 'register' ? (
-          <View style={styles.roleGrid}>
-            {roleDefinitions.map((role) => {
-              const isActive = selectedRole === role.id;
-
-              return (
-                <Pressable
-                  key={role.id}
-                  onPress={() => setSelectedRole(role.id)}
-                  style={[styles.roleCard, isActive && styles.activeRoleCard]}
-                >
-                  <Text style={[styles.roleTitle, isActive && styles.activeRoleTitle]}>{role.label}</Text>
-                  <Text style={styles.roleSummary}>{role.summary}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-
-        {mode === 'register' ? (
-          <TextInput
-            autoCapitalize="words"
-            onChangeText={setFullName}
-            placeholder="Full name"
-            style={styles.input}
-            value={fullName}
-          />
-        ) : null}
-
-        <TextInput
-          autoCapitalize="none"
-          keyboardType="email-address"
-          onChangeText={setEmail}
-          placeholder="Email"
-          style={styles.input}
-          value={email}
-        />
-
-        <TextInput
-          onChangeText={setPassword}
-          placeholder="Password"
-          secureTextEntry
-          style={styles.input}
-          value={password}
-        />
-
-        <Pressable
-          disabled={isSubmitting}
-          onPress={submit}
-          style={[styles.submitButton, isSubmitting && styles.disabledButton]}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={20}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.submitButtonText}>
-            {isSubmitting ? 'Please wait...' : mode === 'register' ? 'Create Account' : 'Sign In'}
-          </Text>
-        </Pressable>
-      </ScrollView>
+          <View style={styles.header}>
+            <Text style={styles.brand}>MineOps</Text>
+            <Text style={styles.title}>{mode === 'register' ? 'Create Account' : 'Sign In'}</Text>
+            <Text style={styles.subtitle}>Choose your user type to open the correct MineOps interface</Text>
+          </View>
+
+          <View style={styles.modeSwitch}>
+            <ModeButton active={mode === 'register'} label="Register" onPress={() => setMode('register')} />
+            <ModeButton active={mode === 'login'} label="Login" onPress={() => setMode('login')} />
+          </View>
+
+          {mode === 'register' ? (
+            <View style={styles.roleGrid}>
+              {roleDefinitions.map((role) => {
+                const isActive = selectedRole === role.id;
+
+                return (
+                  <Pressable
+                    key={role.id}
+                    onPress={() => setSelectedRole(role.id)}
+                    style={[styles.roleCard, isActive && styles.activeRoleCard]}
+                  >
+                    <Text style={[styles.roleTitle, isActive && styles.activeRoleTitle]}>{role.label}</Text>
+                    <Text style={styles.roleSummary}>{role.summary}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+
+          {mode === 'register' ? (
+            <TextInput
+              autoCapitalize="words"
+              onChangeText={setFullName}
+              placeholder="Full name"
+              returnKeyType="next"
+              style={styles.input}
+              value={fullName}
+            />
+          ) : null}
+
+          <TextInput
+            autoCapitalize="none"
+            keyboardType="email-address"
+            onChangeText={setEmail}
+            placeholder="Email"
+            returnKeyType="next"
+            style={styles.input}
+            value={email}
+          />
+
+          <TextInput
+            onChangeText={setPassword}
+            onSubmitEditing={submit}
+            placeholder="Password"
+            returnKeyType="done"
+            secureTextEntry
+            style={styles.input}
+            value={password}
+          />
+
+          <Pressable
+            disabled={isSubmitting}
+            onPress={submit}
+            style={[styles.submitButton, isSubmitting && styles.disabledButton]}
+          >
+            <Text style={styles.submitButtonText}>
+              {isSubmitting ? 'Please wait...' : mode === 'register' ? 'Create Account' : 'Sign In'}
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -144,6 +168,9 @@ function ModeButton({
 const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: '#f4f6f8',
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   container: {
