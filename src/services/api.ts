@@ -16,9 +16,24 @@ import type { AuthPayload, AuthSession } from '../types/auth';
 import type { AuthUser } from '../types/auth';
 
 const API_BASE_URL = 'http://192.168.0.101:8080/api';
+const REQUEST_TIMEOUT_MS = 10000;
+
+async function fetchWithTimeout(url: string, options?: RequestInit) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
+  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`);
 
   if (!response.ok) {
     throw new Error('Backend request failed');
@@ -28,7 +43,7 @@ async function request<T>(path: string): Promise<T> {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
     body: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',
@@ -80,7 +95,7 @@ export function getHazardReports() {
 }
 
 export function closeHazardReport(id: number) {
-  return fetch(`${API_BASE_URL}/hazards/${id}/close`, {
+  return fetchWithTimeout(`${API_BASE_URL}/hazards/${id}/close`, {
     method: 'PATCH',
   }).then((response) => {
     if (!response.ok) {
@@ -139,7 +154,7 @@ export function getWorkerProfile(email: string) {
 }
 
 export function updateWorkerEquipmentStatus(equipmentId: number, status: string) {
-  return fetch(`${API_BASE_URL}/workers/equipment/status`, {
+  return fetchWithTimeout(`${API_BASE_URL}/workers/equipment/status`, {
     body: JSON.stringify({ equipmentId: String(equipmentId), status }),
     headers: {
       'Content-Type': 'application/json',
