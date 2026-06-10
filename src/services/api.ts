@@ -1,8 +1,9 @@
 import type { DashboardData } from '../types/dashboard';
 import type { Site } from '../types/site';
 import type { CreateSosAlertRequest, SosAlert } from '../types/sos';
-import type { DangerZone, HazardReport, SupervisorMessage, VisitorInduction } from '../types/actions';
+import type { DangerZone, HazardReport, Notice, SupervisorMessage, VisitorInduction } from '../types/actions';
 import type { AuthPayload, AuthSession } from '../types/auth';
+import type { AuthUser } from '../types/auth';
 
 const API_BASE_URL = 'http://192.168.0.101:8080/api';
 
@@ -101,4 +102,24 @@ export function completeVisitorInduction(induction: {
   site: string;
 }) {
   return post<VisitorInduction>('/inductions', induction);
+}
+
+export function getNotices() {
+  return request<Notice[]>('/notices');
+}
+
+export function createNotice(notice: {
+  title: string;
+  message: string;
+  postedByRole: string;
+}) {
+  return post<Notice>('/notices', notice);
+}
+
+export function markNoticeSeen(id: number, user: AuthUser) {
+  return post<Notice>(`/notices/${id}/seen`, {
+    email: user.email,
+    fullName: user.fullName,
+    role: user.role,
+  });
 }

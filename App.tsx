@@ -123,6 +123,7 @@ export default function App() {
         {activeTab === 'roles' ? (
           <RolesScreen
             allowRoleChange={false}
+            currentUser={session.user}
             selectedRole={selectedRole}
             onRoleChange={() => undefined}
           />

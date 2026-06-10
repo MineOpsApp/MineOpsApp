@@ -33,3 +33,21 @@ export type VisitorInduction = {
   status: string;
   completedAt: string;
 };
+
+export type NoticeSeen = {
+  id: number;
+  noticeId: number;
+  fullName: string;
+  email: string;
+  role: UserRole | string;
+  seenAt: string;
+};
+
+export type Notice = {
+  id: number;
+  title: string;
+  message: string;
+  postedByRole: UserRole | string;
+  createdAt: string;
+  seenBy: NoticeSeen[];
+};
