@@ -15,7 +15,7 @@ import type {
 import type { AuthPayload, AuthSession } from '../types/auth';
 import type { AuthUser } from '../types/auth';
 
-const API_BASE_URL = 'http://192.168.0.101:8080/api';
+const API_BASE_URL = 'http://192.168.0.100:8080/api';
 const REQUEST_TIMEOUT_MS = 10000;
 
 async function fetchWithTimeout(url: string, options?: RequestInit) {
