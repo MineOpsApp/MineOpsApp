@@ -130,7 +130,7 @@ export default function App() {
         ) : null}
       </ScrollView>
 
-      <SosButton role={selectedRole} />
+      <SosButton role={selectedRole} user={session.user} />
     </SafeAreaView>
   );
 }

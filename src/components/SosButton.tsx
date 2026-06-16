@@ -1,16 +1,20 @@
 import { Alert, Pressable, StyleSheet, Text } from 'react-native';
 
 import { createSosAlert } from '../services/api';
+import type { AuthUser } from '../types/auth';
 import type { UserRole } from '../types/role';
 
 type SosButtonProps = {
   role: UserRole;
+  user: AuthUser;
 };
 
-export function SosButton({ role }: SosButtonProps) {
+export function SosButton({ role, user }: SosButtonProps) {
   async function sendAlert() {
     try {
       const alert = await createSosAlert({
+        actorEmail: user.email,
+        actorName: user.fullName,
         message: 'Emergency assistance requested',
         role,
         site: 'Obuasi Mine',
