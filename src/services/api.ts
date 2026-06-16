@@ -4,6 +4,7 @@ import type { CreateSosAlertRequest, SosAlert } from '../types/sos';
 import type {
   DangerZone,
   EquipmentFault,
+  AuditLog,
   HazardReport,
   MaintenanceRequest,
   Notice,
@@ -15,7 +16,7 @@ import type {
 import type { AuthPayload, AuthSession } from '../types/auth';
 import type { AuthUser } from '../types/auth';
 
-const API_BASE_URL = 'http://192.168.0.100:8080/api';
+const API_BASE_URL = 'http://192.168.0.101:8080/api';
 const REQUEST_TIMEOUT_MS = 10000;
 
 async function fetchWithTimeout(url: string, options?: RequestInit) {
@@ -84,18 +85,53 @@ export function getSosAlerts() {
 
 export function createHazardReport(report: {
   reportedByRole: string;
+  reportedByName: string;
+  reportedByEmail: string;
+  hazardType: string;
   site: string;
+  location: string;
   description: string;
 }) {
   return post<HazardReport>('/hazards', report);
 }
 
-export function getHazardReports() {
-  return request<HazardReport[]>('/hazards');
+export function getHazardReports(reportedByEmail?: string) {
+  const query = reportedByEmail ? `?reportedByEmail=${encodeURIComponent(reportedByEmail)}` : '';
+  return request<HazardReport[]>(`/hazards${query}`);
 }
 
-export function closeHazardReport(id: number) {
+export function reviewHazardReport(id: number, payload: {
+  actorRole: string;
+  actorName: string;
+  actorEmail: string;
+  actionTaken: string;
+}) {
+  return fetchWithTimeout(`${API_BASE_URL}/hazards/${id}/review`, {
+    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'PATCH',
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error('Backend request failed');
+    }
+
+    return response.json() as Promise<HazardReport>;
+  });
+}
+
+export function closeHazardReport(id: number, payload: {
+  actorRole: string;
+  actorName: string;
+  actorEmail: string;
+  actionTaken: string;
+}) {
   return fetchWithTimeout(`${API_BASE_URL}/hazards/${id}/close`, {
+    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json',
+    },
     method: 'PATCH',
   }).then((response) => {
     if (!response.ok) {
@@ -108,6 +144,8 @@ export function closeHazardReport(id: number) {
 
 export function createSupervisorMessage(message: {
   senderRole: string;
+  actorName: string;
+  actorEmail: string;
   audience: string;
   message: string;
 }) {
@@ -115,6 +153,9 @@ export function createSupervisorMessage(message: {
 }
 
 export function createDangerZone(zone: {
+  actorRole: string;
+  actorName: string;
+  actorEmail: string;
   site: string;
   zoneName: string;
   riskLevel: string;
@@ -123,6 +164,9 @@ export function createDangerZone(zone: {
 }
 
 export function completeVisitorInduction(induction: {
+  actorRole: string;
+  actorName: string;
+  actorEmail: string;
   visitorType: string;
   site: string;
 }) {
@@ -137,6 +181,8 @@ export function createNotice(notice: {
   title: string;
   message: string;
   postedByRole: string;
+  actorName: string;
+  actorEmail: string;
 }) {
   return post<Notice>('/notices', notice);
 }
@@ -153,9 +199,9 @@ export function getWorkerProfile(email: string) {
   return request<WorkerProfile>(`/workers/me?email=${encodeURIComponent(email)}`);
 }
 
-export function updateWorkerEquipmentStatus(equipmentId: number, status: string) {
+export function updateWorkerEquipmentStatus(equipmentId: number, status: string, actorName: string) {
   return fetchWithTimeout(`${API_BASE_URL}/workers/equipment/status`, {
-    body: JSON.stringify({ equipmentId: String(equipmentId), status }),
+    body: JSON.stringify({ actorName, equipmentId: String(equipmentId), status }),
     headers: {
       'Content-Type': 'application/json',
     },
@@ -171,6 +217,7 @@ export function updateWorkerEquipmentStatus(equipmentId: number, status: string)
 
 export function reportEquipmentFault(payload: {
   workerEmail: string;
+  workerName: string;
   equipmentCode: string;
   description: string;
 }) {
@@ -179,8 +226,13 @@ export function reportEquipmentFault(payload: {
 
 export function requestEquipmentMaintenance(payload: {
   workerEmail: string;
+  workerName: string;
   equipmentCode: string;
   requestDetails: string;
 }) {
   return post<MaintenanceRequest>('/workers/equipment/maintenance', payload);
+}
+
+export function getAuditLogs() {
+  return request<AuditLog[]>('/audit-logs');
 }

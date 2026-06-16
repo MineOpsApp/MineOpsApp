@@ -3,9 +3,34 @@ import type { UserRole } from './role';
 export type HazardReport = {
   id: number;
   reportedByRole: UserRole | string;
+  reportedByName: string;
+  reportedByEmail: string;
+  hazardType: string;
   site: string;
+  location: string;
   description: string;
   status: string;
+  reviewedByRole?: UserRole | string;
+  reviewedByName?: string;
+  reviewedByEmail?: string;
+  closedByRole?: UserRole | string;
+  closedByName?: string;
+  closedByEmail?: string;
+  actionTaken?: string;
+  createdAt: string;
+  reviewedAt?: string;
+  closedAt?: string;
+};
+
+export type AuditLog = {
+  id: number;
+  action: string;
+  actorRole: UserRole | string;
+  actorName: string;
+  actorEmail: string;
+  targetType: string;
+  targetId: number | null;
+  details: string;
   createdAt: string;
 };
 

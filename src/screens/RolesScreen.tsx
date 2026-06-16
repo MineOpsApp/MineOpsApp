@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AuditLogFeed } from '../components/AuditLogFeed';
+import { HazardCard } from '../components/HazardCard';
+import { InputField } from '../components/InputField';
 import { roleDefinitions } from '../data/roles';
 import {
   closeHazardReport,
@@ -9,15 +12,17 @@ import {
   createHazardReport,
   createNotice,
   createSupervisorMessage,
+  getAuditLogs,
   getHazardReports,
   getNotices,
   getWorkerProfile,
   markNoticeSeen,
   reportEquipmentFault,
   requestEquipmentMaintenance,
+  reviewHazardReport,
   updateWorkerEquipmentStatus,
 } from '../services/api';
-import type { HazardReport, Notice, WorkerProfile } from '../types/actions';
+import type { AuditLog as AuditLogItem, HazardReport, Notice, WorkerProfile } from '../types/actions';
 import type { AuthUser } from '../types/auth';
 import type { UserRole } from '../types/role';
 
@@ -31,13 +36,38 @@ type RolesScreenProps = {
 type RoleSubtab = 'overview' | 'actions' | 'auditLog';
 
 export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole, onRoleChange }: RolesScreenProps) {
-  const [activeSubtab, setActiveSubtab] = useState<RoleSubtab>('overview');
+  const [activeSubtab, setActiveSubtab] = useState<RoleSubtab>('actions');
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [workerProfile, setWorkerProfile] = useState<WorkerProfile | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
+
+  // Form state
+  const [hazardType, setHazardType] = useState('Ground instability');
+  const [hazardLocation, setHazardLocation] = useState('Zone A');
+  const [hazardDescription, setHazardDescription] = useState('');
+  const [hazardAction, setHazardAction] = useState('Area isolated and assigned for follow-up');
+  const [briefingMessage, setBriefingMessage] = useState('Avoid Zone B until clearance is completed.');
+  const [noticeTitle, setNoticeTitle] = useState('Zone B restriction');
+  const [noticeMessage, setNoticeMessage] = useState('Zone B is restricted until clearance.');
+  const [equipmentStatus, setEquipmentStatus] = useState('Needs Check');
+  const [equipmentFaultDescription, setEquipmentFaultDescription] = useState('');
+  const [maintenanceDetails, setMaintenanceDetails] = useState('');
+
   const role = roleDefinitions.find((item) => item.id === selectedRole) ?? roleDefinitions[0];
   const canViewAuditLog = role.auditLogAccess;
+  const canClearHazards = selectedRole === 'supervisor' || selectedRole === 'safetyOfficer';
+
+  useEffect(() => {
+    loadHazardsForReview();
+  }, [selectedRole, currentUser.email]);
+
+  useEffect(() => {
+    if (activeSubtab === 'auditLog') {
+      loadAuditLog();
+    }
+  }, [activeSubtab]);
 
   function changeRole(roleId: UserRole) {
     onRoleChange(roleId);
@@ -46,17 +76,26 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
   }
 
   async function submitHazardReport() {
+    const description = hazardDescription.trim();
+    if (!description) {
+      Alert.alert('Missing details', 'Enter the hazard details.');
+      return;
+    }
     try {
       const report = await createHazardReport({
-        description: 'Loose rock and unstable walkway reported from mobile app',
+        description,
+        hazardType: hazardType.trim() || 'General',
+        location: hazardLocation.trim() || 'Unspecified location',
+        reportedByEmail: currentUser.email,
+        reportedByName: currentUser.fullName,
         reportedByRole: selectedRole,
         site: 'Obuasi Mine',
       });
-
       setHazards((current) => [report, ...current]);
+      setHazardDescription('');
       setStatusMessage(`Hazard report #${report.id} submitted.`);
       Alert.alert('Hazard reported', `Report #${report.id} was sent to safety.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not submit the hazard report.');
     }
   }
@@ -66,81 +105,57 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
       const profile = await getWorkerProfile(currentUser.email);
       setWorkerProfile(profile);
       setStatusMessage('Worker profile loaded.');
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not load worker profile.');
     }
   }
 
   async function updateAssignedEquipmentStatus() {
     const equipment = workerProfile?.assignedEquipment[0];
-
-    if (!equipment) {
-      Alert.alert('No equipment', 'Load profile first.');
-      return;
-    }
-
+    if (!equipment) { Alert.alert('No equipment', 'Load profile first.'); return; }
     try {
-      const updated = await updateWorkerEquipmentStatus(equipment.id, 'Needs Check');
+      const updated = await updateWorkerEquipmentStatus(equipment.id, equipmentStatus.trim() || 'Needs Check', currentUser.fullName);
       setWorkerProfile((current) =>
-        current
-          ? {
-              ...current,
-              assignedEquipment: current.assignedEquipment.map((item) =>
-                item.id === updated.id ? updated : item,
-              ),
-            }
-          : current,
+        current ? { ...current, assignedEquipment: current.assignedEquipment.map((item) => item.id === updated.id ? updated : item) } : current,
       );
       setStatusMessage(`${updated.code} updated.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not update equipment.');
     }
   }
 
   async function submitEquipmentFault() {
     const equipment = workerProfile?.assignedEquipment[0];
-
-    if (!equipment) {
-      Alert.alert('No equipment', 'Load profile first.');
-      return;
-    }
-
+    if (!equipment) { Alert.alert('No equipment', 'Load profile first.'); return; }
     try {
       const fault = await reportEquipmentFault({
-        description: 'Hydraulic leak reported from mobile app',
+        description: equipmentFaultDescription.trim() || 'Equipment fault reported',
         equipmentCode: equipment.code,
         workerEmail: currentUser.email,
+        workerName: currentUser.fullName,
       });
-      setWorkerProfile((current) =>
-        current ? { ...current, equipmentFaults: [fault, ...current.equipmentFaults] } : current,
-      );
+      setWorkerProfile((current) => current ? { ...current, equipmentFaults: [fault, ...current.equipmentFaults] } : current);
+      setEquipmentFaultDescription('');
       setStatusMessage(`Fault #${fault.id} reported.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not report fault.');
     }
   }
 
   async function submitMaintenanceRequest() {
     const equipment = workerProfile?.assignedEquipment[0];
-
-    if (!equipment) {
-      Alert.alert('No equipment', 'Load profile first.');
-      return;
-    }
-
+    if (!equipment) { Alert.alert('No equipment', 'Load profile first.'); return; }
     try {
       const request = await requestEquipmentMaintenance({
         equipmentCode: equipment.code,
-        requestDetails: 'Maintenance requested from mobile app',
+        requestDetails: maintenanceDetails.trim() || 'Maintenance requested',
         workerEmail: currentUser.email,
+        workerName: currentUser.fullName,
       });
-      setWorkerProfile((current) =>
-        current
-          ? { ...current, maintenanceRequests: [request, ...current.maintenanceRequests] }
-          : current,
-      );
+      setWorkerProfile((current) => current ? { ...current, maintenanceRequests: [request, ...current.maintenanceRequests] } : current);
+      setMaintenanceDetails('');
       setStatusMessage(`Maintenance #${request.id} requested.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not request maintenance.');
     }
   }
@@ -148,14 +163,15 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
   async function sendSupervisorMessage() {
     try {
       const message = await createSupervisorMessage({
+        actorEmail: currentUser.email,
+        actorName: currentUser.fullName,
         audience: 'Workers - Obuasi Mine',
-        message: 'Daily briefing: avoid Zone B until safety clearance is completed.',
+        message: briefingMessage.trim() || 'Daily briefing sent',
         senderRole: selectedRole,
       });
-
       setStatusMessage(`Message #${message.id} sent to workers.`);
       Alert.alert('Message sent', `Briefing #${message.id} was sent.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not send the supervisor message.');
     }
   }
@@ -163,14 +179,15 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
   async function postNotice() {
     try {
       const notice = await createNotice({
-        message: 'Zone B is restricted until clearance.',
+        actorEmail: currentUser.email,
+        actorName: currentUser.fullName,
+        message: noticeMessage.trim() || 'New site notice posted',
         postedByRole: selectedRole,
-        title: 'Zone B restriction',
+        title: noticeTitle.trim() || 'Site Notice',
       });
-
       setNotices((current) => [notice, ...current]);
       setStatusMessage(`Notice #${notice.id} posted.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not post notice.');
     }
   }
@@ -180,26 +197,19 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
       const noticeList = await getNotices();
       setNotices(noticeList);
       setStatusMessage(`${noticeList.length} notice(s) loaded.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not load notices.');
     }
   }
 
   async function viewLatestNotice() {
     const latestNotice = notices[0];
-
-    if (!latestNotice) {
-      Alert.alert('No notices', 'Load notices first.');
-      return;
-    }
-
+    if (!latestNotice) { Alert.alert('No notices', 'Load notices first.'); return; }
     try {
       const updated = await markNoticeSeen(latestNotice.id, currentUser);
-      setNotices((current) =>
-        current.map((notice) => (notice.id === updated.id ? updated : notice)),
-      );
+      setNotices((current) => current.map((notice) => notice.id === updated.id ? updated : notice));
       setStatusMessage(`Notice #${updated.id} seen.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not mark notice as seen.');
     }
   }
@@ -207,50 +217,84 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
   async function createSafetyDangerZone() {
     try {
       const zone = await createDangerZone({
+        actorEmail: currentUser.email,
+        actorName: currentUser.fullName,
+        actorRole: selectedRole,
         riskLevel: 'High',
         site: 'Obuasi Mine',
         zoneName: 'Zone B - Blasting Area',
       });
-
       setStatusMessage(`Danger zone #${zone.id} created.`);
       Alert.alert('Danger zone created', `${zone.zoneName} is now active.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not create the danger zone.');
     }
   }
 
   async function loadHazardsForReview() {
     try {
-      const reports = await getHazardReports();
+      const reports = await getHazardReports(selectedRole === 'worker' ? currentUser.email : undefined);
       setHazards(reports);
       setStatusMessage(`${reports.length} hazard report(s) loaded.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not load hazard reports.');
+    }
+  }
+
+  async function reviewHazard(id: number) {
+    try {
+      const reviewed = await reviewHazardReport(id, {
+        actionTaken: hazardAction.trim() || 'Hazard reviewed',
+        actorEmail: currentUser.email,
+        actorName: currentUser.fullName,
+        actorRole: selectedRole,
+      });
+      setHazards((current) => current.map((hazard) => hazard.id === reviewed.id ? reviewed : hazard));
+      setStatusMessage(`Hazard report #${reviewed.id} reviewed.`);
+      loadAuditLog();
+    } catch {
+      Alert.alert('Action failed', 'Could not review the hazard report.');
     }
   }
 
   async function closeHazard(id: number) {
     try {
-      const closed = await closeHazardReport(id);
-      setHazards((current) =>
-        current.map((hazard) => (hazard.id === closed.id ? closed : hazard)),
-      );
+      const closed = await closeHazardReport(id, {
+        actionTaken: hazardAction.trim() || 'Hazard cleared',
+        actorEmail: currentUser.email,
+        actorName: currentUser.fullName,
+        actorRole: selectedRole,
+      });
+      setHazards((current) => current.map((hazard) => hazard.id === closed.id ? closed : hazard));
       setStatusMessage(`Hazard report #${closed.id} closed.`);
-    } catch (error) {
+      loadAuditLog();
+    } catch {
       Alert.alert('Action failed', 'Could not close the hazard report.');
+    }
+  }
+
+  async function loadAuditLog() {
+    try {
+      const logs = await getAuditLogs();
+      setAuditLogs(logs);
+      setStatusMessage(`${logs.length} audit log item(s) loaded.`);
+    } catch {
+      Alert.alert('Action failed', 'Could not load audit log.');
     }
   }
 
   async function completeGuestInduction() {
     try {
       const induction = await completeVisitorInduction({
+        actorEmail: currentUser.email,
+        actorName: currentUser.fullName,
+        actorRole: selectedRole,
         site: 'Obuasi Mine',
         visitorType: 'Guest',
       });
-
       setStatusMessage(`Visitor induction #${induction.id} completed.`);
       Alert.alert('Induction complete', `Guest induction #${induction.id} was saved.`);
-    } catch (error) {
+    } catch {
       Alert.alert('Action failed', 'Could not complete visitor induction.');
     }
   }
@@ -265,7 +309,6 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
       <View style={styles.roleGrid}>
         {(allowRoleChange ? roleDefinitions : [role]).map((item) => {
           const isActive = item.id === selectedRole;
-
           return (
             <Pressable
               accessibilityRole="button"
@@ -288,22 +331,10 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
       </View>
 
       <View style={styles.subtabs}>
-        <SubtabButton
-          active={activeSubtab === 'overview'}
-          label="Overview"
-          onPress={() => setActiveSubtab('overview')}
-        />
-        <SubtabButton
-          active={activeSubtab === 'actions'}
-          label="Actions"
-          onPress={() => setActiveSubtab('actions')}
-        />
+        <SubtabButton active={activeSubtab === 'overview'} label="Overview" onPress={() => setActiveSubtab('overview')} />
+        <SubtabButton active={activeSubtab === 'actions'} label="Actions" onPress={() => setActiveSubtab('actions')} />
         {canViewAuditLog ? (
-          <SubtabButton
-            active={activeSubtab === 'auditLog'}
-            label="Audit Log"
-            onPress={() => setActiveSubtab('auditLog')}
-          />
+          <SubtabButton active={activeSubtab === 'auditLog'} label="Audit Log" onPress={() => setActiveSubtab('auditLog')} />
         ) : null}
       </View>
 
@@ -312,42 +343,107 @@ export function RolesScreen({ allowRoleChange = true, currentUser, selectedRole,
       {activeSubtab === 'overview' ? (
         <RoleOverview role={role} />
       ) : activeSubtab === 'actions' ? (
-        <RoleActions
-          hazards={hazards}
-          notices={notices}
-          workerProfile={workerProfile}
-          canClearHazards={selectedRole === 'supervisor' || selectedRole === 'safetyOfficer'}
-          onCloseHazard={closeHazard}
-          onCompleteGuestInduction={completeGuestInduction}
-          onCreateDangerZone={createSafetyDangerZone}
-          onLoadHazards={loadHazardsForReview}
-          onLoadNotices={loadNotices}
-          onLoadWorkerProfile={loadWorkerProfile}
-          onReportEquipmentFault={submitEquipmentFault}
-          onRequestMaintenance={submitMaintenanceRequest}
-          onPostNotice={postNotice}
-          onSendSupervisorMessage={sendSupervisorMessage}
-          onSubmitHazard={submitHazardReport}
-          onUpdateEquipmentStatus={updateAssignedEquipmentStatus}
-          onViewLatestNotice={viewLatestNotice}
-          role={selectedRole}
-        />
+        <>
+          {/* ── Hazard section — always shown ── */}
+          <Text style={styles.sectionTitle}>Hazard Reports</Text>
+
+          {selectedRole === 'worker' ? (
+            <View style={styles.section}>
+              <InputField label="Hazard Type" onChangeText={setHazardType} value={hazardType} />
+              <InputField label="Location" onChangeText={setHazardLocation} value={hazardLocation} />
+              <InputField label="Description" multiline onChangeText={setHazardDescription} value={hazardDescription} placeholder="Describe the hazard…" />
+              <ActionButton label="Submit Hazard Report" onPress={submitHazardReport} tone="danger" />
+            </View>
+          ) : null}
+
+          {canClearHazards ? (
+            <View style={styles.section}>
+              <InputField label="Action Taken" multiline onChangeText={setHazardAction} value={hazardAction} placeholder="Describe the action taken…" />
+            </View>
+          ) : null}
+
+          {hazards.length === 0 ? (
+            <ActionNote text="No hazard reports" />
+          ) : (
+            hazards.slice(0, 6).map((hazard) => (
+              <HazardCard
+                key={hazard.id}
+                canClear={canClearHazards}
+                canReview={canClearHazards}
+                hazard={hazard}
+                onClear={closeHazard}
+                onReview={reviewHazard}
+              />
+            ))
+          )}
+
+          {/* ── Role-specific actions ── */}
+          <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>Actions</Text>
+
+          {selectedRole === 'worker' ? (
+            <>
+              <Text style={styles.sectionSubtitle}>Equipment</Text>
+              <ActionButton label="Load My Information" onPress={loadWorkerProfile} />
+              <WorkerProfileCard profile={workerProfile} />
+              <InputField label="Equipment Status" onChangeText={setEquipmentStatus} value={equipmentStatus} />
+              <ActionButton label="Update Equipment Status" onPress={updateAssignedEquipmentStatus} />
+              <InputField label="Fault Details" multiline onChangeText={setEquipmentFaultDescription} value={equipmentFaultDescription} placeholder="Describe the fault…" />
+              <ActionButton label="Report Equipment Fault" onPress={submitEquipmentFault} tone="danger" />
+              <InputField label="Maintenance Details" multiline onChangeText={setMaintenanceDetails} value={maintenanceDetails} placeholder="What maintenance is needed?" />
+              <ActionButton label="Request Maintenance" onPress={submitMaintenanceRequest} />
+
+              <Text style={styles.sectionSubtitle}>Records</Text>
+              <WorkerRecords profile={workerProfile} />
+
+              <Text style={styles.sectionSubtitle}>Notices</Text>
+              <ActionButton label="Load Notices" onPress={loadNotices} />
+              <ActionButton label="Mark Latest Notice Seen" onPress={viewLatestNotice} />
+              <NoticeList notices={notices} showSeenBy={false} />
+            </>
+          ) : null}
+
+          {selectedRole === 'supervisor' ? (
+            <>
+              <InputField label="Briefing Message" multiline onChangeText={setBriefingMessage} value={briefingMessage} />
+              <ActionButton label="Send Worker Briefing" onPress={sendSupervisorMessage} />
+              <InputField label="Notice Title" onChangeText={setNoticeTitle} value={noticeTitle} />
+              <InputField label="Notice Body" multiline onChangeText={setNoticeMessage} value={noticeMessage} />
+              <ActionButton label="Post Notice" onPress={postNotice} />
+              <ActionButton label="Load Notices" onPress={loadNotices} />
+              <NoticeList notices={notices} showSeenBy />
+            </>
+          ) : null}
+
+          {selectedRole === 'safetyOfficer' ? (
+            <>
+              <ActionButton label="Create Danger Zone" onPress={createSafetyDangerZone} tone="danger" />
+              <InputField label="Notice Title" onChangeText={setNoticeTitle} value={noticeTitle} />
+              <InputField label="Notice Body" multiline onChangeText={setNoticeMessage} value={noticeMessage} />
+              <ActionButton label="Post Notice" onPress={postNotice} />
+              <ActionButton label="Load Notices" onPress={loadNotices} />
+              <NoticeList notices={notices} showSeenBy />
+            </>
+          ) : null}
+
+          {selectedRole === 'guest' ? (
+            <>
+              <ActionButton label="Load Notices" onPress={loadNotices} />
+              <ActionButton label="Mark Latest Notice Seen" onPress={viewLatestNotice} />
+              <ActionButton label="Complete Visitor Induction" onPress={completeGuestInduction} />
+              <NoticeList notices={notices} showSeenBy={false} />
+            </>
+          ) : null}
+        </>
       ) : (
-        <AuditLog roleLabel={role.label} />
+        <AuditLogFeed logs={auditLogs} onRefresh={loadAuditLog} roleLabel={role.label} />
       )}
     </>
   );
 }
 
-function SubtabButton({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+function SubtabButton({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="tab"
@@ -378,18 +474,8 @@ function RoleOverview({ role }: { role: (typeof roleDefinitions)[number] }) {
         {role.permissions.map((permission) => (
           <View key={permission.label} style={styles.permissionRow}>
             <Text style={styles.permissionLabel}>{permission.label}</Text>
-            <View
-              style={[
-                styles.permissionBadge,
-                permission.allowed ? styles.allowedBadge : styles.blockedBadge,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.permissionBadgeText,
-                  permission.allowed ? styles.allowedBadgeText : styles.blockedBadgeText,
-                ]}
-              >
+            <View style={[styles.permissionBadge, permission.allowed ? styles.allowedBadge : styles.blockedBadge]}>
+              <Text style={[styles.permissionBadgeText, permission.allowed ? styles.allowedBadgeText : styles.blockedBadgeText]}>
                 {permission.allowed ? 'Allowed' : 'Blocked'}
               </Text>
             </View>
@@ -400,110 +486,9 @@ function RoleOverview({ role }: { role: (typeof roleDefinitions)[number] }) {
   );
 }
 
-function RoleActions({
-  canClearHazards,
-  hazards,
-  notices,
-  workerProfile,
-  onCloseHazard,
-  onCompleteGuestInduction,
-  onCreateDangerZone,
-  onLoadHazards,
-  onLoadNotices,
-  onLoadWorkerProfile,
-  onPostNotice,
-  onReportEquipmentFault,
-  onRequestMaintenance,
-  onSendSupervisorMessage,
-  onSubmitHazard,
-  onUpdateEquipmentStatus,
-  onViewLatestNotice,
-  role,
-}: {
-  canClearHazards: boolean;
-  hazards: HazardReport[];
-  notices: Notice[];
-  workerProfile: WorkerProfile | null;
-  onCloseHazard: (id: number) => void;
-  onCompleteGuestInduction: () => void;
-  onCreateDangerZone: () => void;
-  onLoadHazards: () => void;
-  onLoadNotices: () => void;
-  onLoadWorkerProfile: () => void;
-  onPostNotice: () => void;
-  onReportEquipmentFault: () => void;
-  onRequestMaintenance: () => void;
-  onSendSupervisorMessage: () => void;
-  onSubmitHazard: () => void;
-  onUpdateEquipmentStatus: () => void;
-  onViewLatestNotice: () => void;
-  role: UserRole;
-}) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Hazard Reports</Text>
-      <ActionButton label="Load Hazard Reports" onPress={onLoadHazards} />
-      <HazardList canClear={canClearHazards} hazards={hazards} onCloseHazard={onCloseHazard} />
-
-      <Text style={styles.sectionTitle}>Actions</Text>
-
-      {role === 'worker' ? (
-        <>
-          <Text style={styles.sectionTitle}>Equipment</Text>
-          <ActionButton label="Load My Information" onPress={onLoadWorkerProfile} />
-          <WorkerProfileCard profile={workerProfile} />
-          <ActionButton label="Update Equipment Status" onPress={onUpdateEquipmentStatus} />
-          <ActionButton label="Report Equipment Fault" onPress={onReportEquipmentFault} tone="danger" />
-          <ActionButton label="Request Maintenance" onPress={onRequestMaintenance} />
-
-          <Text style={styles.sectionTitle}>Records</Text>
-          <WorkerRecords profile={workerProfile} />
-
-          <Text style={styles.sectionTitle}>Worker Actions</Text>
-          <ActionButton label="Report Hazard" onPress={onSubmitHazard} tone="danger" />
-          <ActionButton label="Load Notices" onPress={onLoadNotices} />
-          <ActionButton label="Mark Latest Notice Seen" onPress={onViewLatestNotice} />
-          <NoticeList notices={notices} showSeenBy={false} />
-        </>
-      ) : null}
-
-      {role === 'supervisor' ? (
-        <>
-          <ActionButton label="Send Worker Briefing" onPress={onSendSupervisorMessage} />
-          <ActionButton label="Post Notice" onPress={onPostNotice} />
-          <ActionButton label="Load Notices" onPress={onLoadNotices} />
-          <NoticeList notices={notices} showSeenBy />
-        </>
-      ) : null}
-
-      {role === 'safetyOfficer' ? (
-        <>
-          <ActionButton label="Create Danger Zone" onPress={onCreateDangerZone} tone="danger" />
-          <ActionButton label="Post Notice" onPress={onPostNotice} />
-          <ActionButton label="Load Notices" onPress={onLoadNotices} />
-          <NoticeList notices={notices} showSeenBy />
-        </>
-      ) : null}
-
-      {role === 'guest' ? (
-        <>
-          <ActionButton label="Load Notices" onPress={onLoadNotices} />
-          <ActionButton label="Mark Latest Notice Seen" onPress={onViewLatestNotice} />
-          <ActionButton label="Complete Visitor Induction" onPress={onCompleteGuestInduction} />
-          <NoticeList notices={notices} showSeenBy={false} />
-        </>
-      ) : null}
-    </View>
-  );
-}
-
 function WorkerProfileCard({ profile }: { profile: WorkerProfile | null }) {
-  if (!profile) {
-    return <ActionNote text="No worker information loaded" />;
-  }
-
+  if (!profile) return <ActionNote text="No worker information loaded" />;
   const equipment = profile.assignedEquipment[0];
-
   return (
     <>
       <View style={styles.auditItem}>
@@ -523,39 +508,21 @@ function WorkerProfileCard({ profile }: { profile: WorkerProfile | null }) {
 }
 
 function WorkerRecords({ profile }: { profile: WorkerProfile | null }) {
-  if (!profile) {
-    return <ActionNote text="No records loaded" />;
-  }
-
+  if (!profile) return <ActionNote text="No records loaded" />;
   return (
     <>
-      <RecordGroup title="Submitted Hazards" records={profile.submittedHazards.map((item) => ({
-        title: item.description,
-        status: item.status,
-      }))} />
+      <RecordGroup title="Submitted Hazards" records={profile.submittedHazards.map((item) => ({ title: item.description, status: item.status }))} />
       <RecordGroup title="Inspection History" records={profile.inspectionHistory} />
       <RecordGroup title="Training Records" records={profile.trainingRecords} />
       <RecordGroup title="Shift History" records={profile.shiftHistory} />
       <RecordGroup title="Incident Involvement" records={profile.incidentInvolvementHistory} />
-      <RecordGroup title="Equipment Faults" records={profile.equipmentFaults.map((item) => ({
-        title: item.description,
-        status: item.status,
-      }))} />
-      <RecordGroup title="Maintenance Requests" records={profile.maintenanceRequests.map((item) => ({
-        title: item.requestDetails,
-        status: item.status,
-      }))} />
+      <RecordGroup title="Equipment Faults" records={profile.equipmentFaults.map((item) => ({ title: item.description, status: item.status }))} />
+      <RecordGroup title="Maintenance Requests" records={profile.maintenanceRequests.map((item) => ({ title: item.requestDetails, status: item.status }))} />
     </>
   );
 }
 
-function RecordGroup({
-  records,
-  title,
-}: {
-  records: { title: string; status?: string; date?: string }[];
-  title: string;
-}) {
+function RecordGroup({ records, title }: { records: { title: string; status?: string; date?: string }[]; title: string }) {
   return (
     <View style={styles.auditItem}>
       <Text style={styles.auditItemTitle}>{title}</Text>
@@ -572,15 +539,7 @@ function RecordGroup({
   );
 }
 
-function ActionButton({
-  label,
-  onPress,
-  tone = 'default',
-}: {
-  label: string;
-  onPress: () => void;
-  tone?: 'default' | 'danger';
-}) {
+function ActionButton({ label, onPress, tone = 'default' }: { label: string; onPress: () => void; tone?: 'default' | 'danger' }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -600,43 +559,8 @@ function ActionNote({ text }: { text: string }) {
   );
 }
 
-function HazardList({
-  canClear,
-  hazards,
-  onCloseHazard,
-}: {
-  canClear: boolean;
-  hazards: HazardReport[];
-  onCloseHazard: (id: number) => void;
-}) {
-  if (hazards.length === 0) {
-    return <ActionNote text="No hazard reports" />;
-  }
-
-  return (
-    <>
-      {hazards.slice(0, 4).map((hazard) => (
-        <View key={hazard.id} style={styles.auditItem}>
-          <Text style={styles.auditItemTitle}>
-            #{hazard.id} {hazard.status}
-          </Text>
-          <Text style={styles.auditItemMeta}>{hazard.description}</Text>
-          {canClear && hazard.status === 'Open' ? (
-            <Pressable onPress={() => onCloseHazard(hazard.id)} style={styles.smallButton}>
-              <Text style={styles.smallButtonText}>Clear</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      ))}
-    </>
-  );
-}
-
 function NoticeList({ notices, showSeenBy }: { notices: Notice[]; showSeenBy: boolean }) {
-  if (notices.length === 0) {
-    return <ActionNote text="No notices" />;
-  }
-
+  if (notices.length === 0) return <ActionNote text="No notices" />;
   return (
     <>
       {notices.slice(0, 3).map((notice) => (
@@ -654,22 +578,7 @@ function NoticeList({ notices, showSeenBy }: { notices: Notice[]; showSeenBy: bo
   );
 }
 
-function AuditLog({ roleLabel }: { roleLabel: string }) {
-  return (
-    <View style={styles.auditCard}>
-      <Text style={styles.auditTitle}>{roleLabel} Audit Log</Text>
-      <View style={styles.auditItem}>
-        <Text style={styles.auditItemTitle}>Plan change recorded</Text>
-      </View>
-      <View style={styles.auditItem}>
-        <Text style={styles.auditItemTitle}>Inspection approval reviewed</Text>
-      </View>
-      <View style={styles.auditItem}>
-        <Text style={styles.auditItemTitle}>SOS response acknowledged</Text>
-      </View>
-    </View>
-  );
-}
+// ─── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   header: {
@@ -687,12 +596,6 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '800',
     marginTop: 6,
-  },
-  subtitle: {
-    color: '#5d6875',
-    fontSize: 16,
-    lineHeight: 22,
-    marginTop: 8,
   },
   roleGrid: {
     flexDirection: 'row',
@@ -776,13 +679,25 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   section: {
-    marginBottom: 22,
+    marginBottom: 6,
   },
   sectionTitle: {
     color: '#17212b',
     fontSize: 20,
     fontWeight: '800',
     marginBottom: 10,
+  },
+  sectionTitleSpaced: {
+    marginTop: 12,
+  },
+  sectionSubtitle: {
+    color: '#5d6875',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    marginBottom: 8,
+    marginTop: 14,
+    textTransform: 'uppercase',
   },
   responsibilityRow: {
     backgroundColor: '#ffffff',
@@ -882,27 +797,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 20,
   },
-  auditCard: {
-    backgroundColor: '#ffffff',
-    borderColor: '#dde3ea',
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 22,
-    padding: 16,
-  },
-  auditTitle: {
-    color: '#17212b',
-    fontSize: 20,
-    fontWeight: '900',
-    marginBottom: 8,
-  },
-  auditText: {
-    color: '#5d6875',
-    fontSize: 15,
-    fontWeight: '600',
-    lineHeight: 21,
-    marginBottom: 14,
-  },
   auditItem: {
     backgroundColor: '#ffffff',
     borderColor: '#dde3ea',
@@ -921,20 +815,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     marginTop: 4,
-  },
-  smallButton: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#1f6f5b',
-    borderRadius: 8,
-    marginTop: 10,
-    minHeight: 34,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-  },
-  smallButtonText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '900',
   },
 });

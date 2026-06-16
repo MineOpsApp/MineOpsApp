@@ -13,4 +13,6 @@ export type CreateSosAlertRequest = {
   role: UserRole;
   site: string;
   message: string;
+  actorName: string;
+  actorEmail: string;
 };
