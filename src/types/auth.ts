@@ -17,4 +17,5 @@ export type AuthPayload = {
   email: string;
   password: string;
   role?: UserRole;
+  assignedSite?: string;
 };
