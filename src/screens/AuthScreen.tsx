@@ -17,13 +17,8 @@ import type { AuthSession } from '../types/auth';
 import type { UserRole } from '../types/role';
 
 const WORKER_ROLES = [
-  { id: 'worker' as UserRole, label: 'Worker', description: 'Field worker on site' },
-  { id: 'guest' as UserRole, label: 'Guest', description: 'Visitor or contractor' },
-];
-
-const ADMIN_ROLES = [
-  { id: 'supervisor' as UserRole, label: 'Supervisor' },
-  { id: 'safetyOfficer' as UserRole, label: 'Safety Officer' },
+  { id: 'worker' as UserRole, label: 'Worker', icon: '⛏', description: 'Field worker on site' },
+  { id: 'guest' as UserRole, label: 'Guest', icon: '👤', description: 'Visitor or contractor' },
 ];
 
 const SITES = ['Obuasi Mine', 'Tarkwa Mine', 'Bogoso Mine', 'Prestea Mine'];
@@ -41,8 +36,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isAdminRole = ADMIN_ROLES.some((r) => r.id === selectedRole);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function submit() {
     if (mode === 'register') {
@@ -50,7 +44,6 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
       if (!email.trim()) { Alert.alert('Missing information', 'Enter your email.'); return; }
       if (password.length < 6) { Alert.alert('Weak password', 'Password must be at least 6 characters.'); return; }
       if (password !== confirmPassword) { Alert.alert('Password mismatch', 'Passwords do not match.'); return; }
-      if (isAdminRole) { Alert.alert('Not allowed', 'Supervisor and Safety Officer accounts must be created by your site administrator.'); return; }
     } else {
       if (!email.trim() || !password.trim()) { Alert.alert('Missing information', 'Enter your email and password.'); return; }
     }
@@ -64,17 +57,15 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
     } catch (error: any) {
       const msg = error?.message ?? '';
       if (msg.includes('409') || msg.includes('Conflict')) {
-        Alert.alert('Email already registered', 'An account with this email already exists. Try logging in instead.');
-      } else if (msg.includes('401') || msg.includes('Unauthorized')) {
-        Alert.alert('Login failed', 'Incorrect email or password.');
-        
-        } else if (msg.includes('403') || msg.includes('Forbidden')) {
-          Alert.alert('Session expired', 'Your guest access has expired. Contact your site administrator to renew access.');
-
+        Alert.alert('Already registered', 'An account with this email exists. Try signing in.');
+      } else if (msg.includes('401')) {
+        Alert.alert('Incorrect credentials', 'Check your email and password.');
+      } else if (msg.includes('403')) {
+        Alert.alert('Access expired', 'Your guest session has expired. Contact your site administrator.');
       } else if (msg.includes('400')) {
         Alert.alert('Invalid details', 'Check your information and try again.');
       } else {
-        Alert.alert(mode === 'register' ? 'Registration failed' : 'Login failed', 'Could not connect to the server. Check your connection.');
+        Alert.alert('Connection failed', 'Could not reach the server. Check your connection.');
       }
     } finally {
       setIsSubmitting(false);
@@ -83,66 +74,97 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={20} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
+          {/* Header */}
           <View style={styles.header}>
+            <View style={styles.logoMark}>
+              <Text style={styles.logoMarkText}>⛏</Text>
+            </View>
             <Text style={styles.brand}>MineOps</Text>
-            <Text style={styles.title}>{mode === 'login' ? 'Sign in' : 'Create account'}</Text>
-            <Text style={styles.subtitle}>{mode === 'login' ? 'Welcome back' : 'Join your mine site'}</Text>
+            <Text style={styles.tagline}>Mining operations & safety platform</Text>
           </View>
 
+          {/* Mode toggle */}
           <View style={styles.modeSwitch}>
-            <ModeButton active={mode === 'login'} label="Sign In" onPress={() => setMode('login')} />
-            <ModeButton active={mode === 'register'} label="Register" onPress={() => setMode('register')} />
+            <Pressable onPress={() => setMode('login')} style={[styles.modeBtn, mode === 'login' && styles.modeBtnActive]}>
+              <Text style={[styles.modeBtnText, mode === 'login' && styles.modeBtnTextActive]}>Sign In</Text>
+            </Pressable>
+            <Pressable onPress={() => setMode('register')} style={[styles.modeBtn, mode === 'register' && styles.modeBtnActive]}>
+              <Text style={[styles.modeBtnText, mode === 'register' && styles.modeBtnTextActive]}>Register</Text>
+            </Pressable>
           </View>
 
+          {/* Register extras */}
           {mode === 'register' ? (
             <>
-              <Text style={styles.label}>I am a</Text>
-              <View style={styles.roleGrid}>
-                {WORKER_ROLES.map((role) => {
-                  const isActive = selectedRole === role.id;
-                  return (
-                    <Pressable key={role.id} onPress={() => setSelectedRole(role.id)} style={[styles.roleCard, isActive && styles.activeRoleCard]}>
-                      <Text style={[styles.roleTitle, isActive && styles.activeRoleTitle]}>{role.label}</Text>
-                      <Text style={[styles.roleDesc, isActive && styles.activeRoleDesc]}>{role.description}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <View style={styles.adminNote}>
-                <Text style={styles.adminNoteText}>
-                  🔒 Supervisor & Safety Officer accounts are created by site administrators
-                </Text>
-              </View>
-
-              <Text style={styles.label}>Assigned Site</Text>
-              <View style={styles.siteGrid}>
-                {SITES.map((site) => (
-                  <Pressable key={site} onPress={() => setSelectedSite(site)} style={[styles.sitePill, selectedSite === site && styles.sitePillActive]}>
-                    <Text style={[styles.sitePillText, selectedSite === site && styles.sitePillActiveText]}>{site}</Text>
+              <Text style={styles.fieldLabel}>I am a</Text>
+              <View style={styles.roleRow}>
+                {WORKER_ROLES.map((role) => (
+                  <Pressable key={role.id} onPress={() => setSelectedRole(role.id)} style={[styles.roleCard, selectedRole === role.id && styles.roleCardActive]}>
+                    <Text style={styles.roleIcon}>{role.icon}</Text>
+                    <Text style={[styles.roleLabel, selectedRole === role.id && styles.roleLabelActive]}>{role.label}</Text>
+                    <Text style={styles.roleDesc}>{role.description}</Text>
                   </Pressable>
                 ))}
               </View>
 
-              <TextInput autoCapitalize="words" onChangeText={setFullName} placeholder="Full name" returnKeyType="next" style={styles.input} value={fullName} />
+              <View style={styles.adminNote}>
+                <Text style={styles.adminNoteText}>🔒 Supervisor & Safety Officer accounts are set up by site administrators</Text>
+              </View>
+
+              <Text style={styles.fieldLabel}>Assigned Site</Text>
+              <View style={styles.siteGrid}>
+                {SITES.map((site) => (
+                  <Pressable key={site} onPress={() => setSelectedSite(site)} style={[styles.sitePill, selectedSite === site && styles.sitePillActive]}>
+                    <Text style={[styles.sitePillText, selectedSite === site && styles.sitePillTextActive]}>{site}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.fieldLabel}>Full Name</Text>
+                <TextInput autoCapitalize="words" onChangeText={setFullName} placeholder="Your full name" placeholderTextColor="#8fa3b8" returnKeyType="next" style={styles.input} value={fullName} />
+              </View>
             </>
           ) : null}
 
-          <TextInput autoCapitalize="none" keyboardType="email-address" onChangeText={setEmail} placeholder="Email address" returnKeyType="next" style={styles.input} value={email} />
-          <TextInput onChangeText={setPassword} placeholder="Password" returnKeyType={mode === 'register' ? 'next' : 'done'} secureTextEntry style={styles.input} value={password} onSubmitEditing={mode === 'login' ? submit : undefined} />
+          {/* Email */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.fieldLabel}>Email</Text>
+            <TextInput autoCapitalize="none" keyboardType="email-address" onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#8fa3b8" returnKeyType="next" style={styles.input} value={email} />
+          </View>
 
+          {/* Password */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.fieldLabel}>Password</Text>
+            <View style={styles.passwordRow}>
+              <TextInput onChangeText={setPassword} placeholder={mode === 'register' ? 'Min. 6 characters' : 'Your password'} placeholderTextColor="#8fa3b8" returnKeyType={mode === 'register' ? 'next' : 'done'} secureTextEntry={!showPassword} style={[styles.input, { flex: 1, marginBottom: 0 }]} value={password} onSubmitEditing={mode === 'login' ? submit : undefined} />
+              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.showPasswordBtn}>
+                 <Text style={styles.showPasswordText}>{showPassword ? 'Hide' : 'Show'}</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Confirm password */}
           {mode === 'register' ? (
-            <TextInput onChangeText={setConfirmPassword} onSubmitEditing={submit} placeholder="Confirm password" returnKeyType="done" secureTextEntry style={styles.input} value={confirmPassword} />
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Confirm Password</Text>
+              <TextInput onChangeText={setConfirmPassword} onSubmitEditing={submit} placeholder="Repeat your password" placeholderTextColor="#8fa3b8" returnKeyType="done" secureTextEntry={!showPassword} style={styles.input} value={confirmPassword} />
+            </View>
           ) : null}
 
-          <Pressable disabled={isSubmitting} onPress={submit} style={[styles.submitButton, isSubmitting && styles.disabledButton]}>
-            <Text style={styles.submitButtonText}>
-              {isSubmitting ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+          {/* Submit */}
+          <Pressable disabled={isSubmitting} onPress={submit} style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}>
+            <Text style={styles.submitBtnText}>
+              {isSubmitting ? 'Please wait...' : mode === 'login' ? 'Sign In →' : 'Create Account →'}
             </Text>
           </Pressable>
+
+          {mode === 'login' ? (
+            <Text style={styles.hint}>Don't have an account? Tap Register above.</Text>
+          ) : null}
 
         </ScrollView>
       </KeyboardAvoidingView>
@@ -150,44 +172,52 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   );
 }
 
-function ModeButton({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.modeButton, active && styles.activeModeButton]}>
-      <Text style={[styles.modeButtonText, active && styles.activeModeButtonText]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  safeArea: { backgroundColor: '#f4f6f8', flex: 1 },
+  safeArea: { backgroundColor: '#0d1117', flex: 1 },
   flex: { flex: 1 },
-  container: { flexGrow: 1, justifyContent: 'center', padding: 22, paddingBottom: 40 },
-  header: { marginBottom: 20 },
-  brand: { color: '#1f6f5b', fontSize: 15, fontWeight: '900', textTransform: 'uppercase' },
-  title: { color: '#17212b', fontSize: 28, fontWeight: '900', marginTop: 6 },
-  subtitle: { color: '#5d6875', fontSize: 15, fontWeight: '600', marginTop: 4 },
-  modeSwitch: { backgroundColor: '#edf1f5', borderRadius: 8, flexDirection: 'row', marginBottom: 20, padding: 4 },
-  modeButton: { alignItems: 'center', borderRadius: 6, flex: 1, justifyContent: 'center', minHeight: 40 },
-  activeModeButton: { backgroundColor: '#ffffff' },
-  modeButtonText: { color: '#5d6875', fontSize: 14, fontWeight: '900' },
-  activeModeButtonText: { color: '#1f6f5b' },
-  label: { color: '#5d6875', fontSize: 13, fontWeight: '800', marginBottom: 8 },
-  roleGrid: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  roleCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, flex: 1, justifyContent: 'center', padding: 12 },
-  activeRoleCard: { backgroundColor: '#e7f6ef', borderColor: '#1f6f5b' },
-  roleTitle: { color: '#17212b', fontSize: 14, fontWeight: '900', textAlign: 'center' },
-  activeRoleTitle: { color: '#1f6f5b' },
-  roleDesc: { color: '#9aa5b1', fontSize: 11, fontWeight: '600', marginTop: 3, textAlign: 'center' },
-  activeRoleDesc: { color: '#1f6f5b' },
-  adminNote: { backgroundColor: '#fff7e0', borderColor: '#fde68a', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 10 },
-  adminNoteText: { color: '#a15c00', fontSize: 12, fontWeight: '700' },
-  siteGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
-  sitePill: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-  sitePillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  sitePillText: { color: '#5d6875', fontSize: 12, fontWeight: '800' },
-  sitePillActiveText: { color: '#ffffff' },
-  input: { backgroundColor: '#ffffff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 16, marginBottom: 10, minHeight: 50, paddingHorizontal: 14 },
-  submitButton: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 8, justifyContent: 'center', marginTop: 6, minHeight: 52 },
-  disabledButton: { opacity: 0.65 },
-  submitButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
+  container: { flexGrow: 1, padding: 24, paddingBottom: 40 },
+
+  header: { alignItems: 'center', marginBottom: 32, marginTop: 16 },
+  logoMark: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 20, height: 56, justifyContent: 'center', marginBottom: 12, width: 56 },
+  logoMarkText: { fontSize: 24 },
+  brand: { color: '#ffffff', fontSize: 26, fontWeight: '900', letterSpacing: -0.5, marginBottom: 4 },
+  tagline: { color: '#4d6475', fontSize: 13, fontWeight: '600' },
+
+  modeSwitch: { backgroundColor: '#161b22', borderRadius: 10, flexDirection: 'row', marginBottom: 24, padding: 4 },
+  modeBtn: { alignItems: 'center', borderRadius: 8, flex: 1, paddingVertical: 10 },
+  modeBtnActive: { backgroundColor: '#1f6f5b' },
+  modeBtnText: { color: '#4d6475', fontSize: 14, fontWeight: '800' },
+  modeBtnTextActive: { color: '#ffffff' },
+
+  fieldLabel: { color: '#8fa3b8', fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+
+  roleRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  roleCard: { alignItems: 'center', backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderWidth: 1, flex: 1, padding: 14 },
+  roleCardActive: { backgroundColor: '#122620', borderColor: '#1f6f5b' },
+  roleIcon: { fontSize: 22, marginBottom: 6 },
+  roleLabel: { color: '#8fa3b8', fontSize: 13, fontWeight: '900', marginBottom: 3 },
+  roleLabelActive: { color: '#3fb950' },
+  roleDesc: { color: '#4d6475', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+
+  adminNote: { backgroundColor: '#1c1a12', borderColor: '#d29922', borderLeftColor: '#d29922', borderLeftWidth: 3, borderRadius: 8, borderWidth: 1, marginBottom: 20, padding: 12 },
+  adminNoteText: { color: '#d29922', fontSize: 12, fontWeight: '600' },
+
+  siteGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  sitePill: { borderColor: '#30363d', borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+  sitePillActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
+  sitePillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
+  sitePillTextActive: { color: '#ffffff' },
+
+  inputGroup: { marginBottom: 16 },
+  input: { backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderWidth: 1, color: '#e6edf3', fontSize: 15, marginBottom: 0, minHeight: 48, paddingHorizontal: 14 },
+
+  passwordRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  showPasswordBtn: { backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderWidth: 1, height: 48, alignItems: 'center', justifyContent: 'center', width: 48 },
+  showPasswordText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
+
+  submitBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 10, marginTop: 8, minHeight: 52, justifyContent: 'center' },
+  submitBtnDisabled: { opacity: 0.6 },
+  submitBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
+
+  hint: { color: '#4d6475', fontSize: 13, fontWeight: '600', marginTop: 16, textAlign: 'center' },
 });

@@ -1,4 +1,4 @@
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { createSosAlert } from '../services/api';
 import type { AuthUser } from '../types/auth';
@@ -19,52 +19,67 @@ export function SosButton({ role, user }: SosButtonProps) {
         role,
         site: 'Obuasi Mine',
       });
-
-      Alert.alert('SOS sent', `Alert #${alert.id}`);
-    } catch (error) {
-      Alert.alert('SOS failed', 'Try again.');
+      Alert.alert('SOS sent', `Alert #${alert.id} — help is on the way.`);
+    } catch {
+      Alert.alert('SOS failed', 'Could not send alert. Try again.');
     }
   }
 
   function handlePress() {
-    Alert.alert('Send SOS?', '', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Send SOS', onPress: sendAlert, style: 'destructive' },
-    ]);
+    Alert.alert(
+      '🚨 Send SOS?',
+      'This will immediately alert the site supervisor and safety team.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Send Emergency Alert', onPress: sendAlert, style: 'destructive' },
+      ]
+    );
   }
 
   return (
-    <Pressable
-      accessibilityLabel="Send SOS emergency alert"
-      accessibilityRole="button"
-      onPress={handlePress}
-      style={styles.button}
-    >
-      <Text style={styles.text}>SOS</Text>
-    </Pressable>
+    <View style={styles.wrapper}>
+      <Pressable
+        accessibilityLabel="Send SOS emergency alert"
+        accessibilityRole="button"
+        onPress={handlePress}
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+      >
+        <Text style={styles.icon}>🚨</Text>
+        <Text style={styles.text}>SOS</Text>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    alignItems: 'center',
+    bottom: 80,
+    position: 'absolute',
+    right: 20,
+  },
   button: {
     alignItems: 'center',
     backgroundColor: '#b42318',
-    borderRadius: 8,
-    bottom: 22,
-    elevation: 6,
-    height: 58,
+    borderRadius: 36,
+    elevation: 8,
+    height: 72,
     justifyContent: 'center',
-    position: 'absolute',
-    right: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 5,
+    shadowColor: '#b42318',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
     width: 72,
   },
+  buttonPressed: {
+    backgroundColor: '#7f1d1d',
+    transform: [{ scale: 0.96 }],
+  },
+  icon: { fontSize: 20, marginBottom: 1 },
   text: {
     color: '#ffffff',
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: '900',
+    letterSpacing: 1,
   },
 });

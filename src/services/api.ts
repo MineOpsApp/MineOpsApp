@@ -179,6 +179,27 @@ export function getEquipmentShiftLogs() {
   return request<any[]>('/workers/equipment/shift-logs');
 }
 
+export function submitShiftLog(payload: {
+  zone: string;
+  shiftType: string;
+  mineralType: string;
+  volumeExtracted: number;
+  unit: string;
+  equipmentCode: string;
+  equipmentName: string;
+  notes?: string;
+}) {
+  return post<any>('/shift-logs', payload);
+}
+
+export function getMyShiftLogs() {
+  return request<any[]>('/shift-logs/mine');
+}
+
+export function getSiteShiftLogs() {
+  return request<{ content: any[] }>('/shift-logs').then((page) => page.content);
+}
+
 export function closeHazardReport(id: number, payload: {
   actorRole: string;
   actorName: string;
