@@ -158,6 +158,19 @@ export function reviewHazardReport(id: number, payload: {
     return response.json() as Promise<HazardReport>;
   });
 }
+  export function logEquipmentShift(payload: {
+  equipmentCode: string;
+  equipmentName: string;
+  status: string;
+  checkType: string;
+  notes?: string;
+}) {
+  return post<any>('/workers/equipment/shift-log', payload);
+}
+
+export function getEquipmentShiftLogs() {
+  return request<any[]>('/workers/equipment/shift-logs');
+}
 
 export function closeHazardReport(id: number, payload: {
   actorRole: string;
