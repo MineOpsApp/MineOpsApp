@@ -12,10 +12,17 @@ import {
   View,
 } from 'react-native';
 
-import { roleDefinitions } from '../data/roles';
+
 import { loginUser, registerUser } from '../services/api';
 import type { AuthSession } from '../types/auth';
 import type { UserRole } from '../types/role';
+
+const roleDefinitions = [
+  { id: 'worker', label: 'Worker' },
+  { id: 'supervisor', label: 'Supervisor' },
+  { id: 'safetyOfficer', label: 'Safety Officer' },
+  { id: 'guest', label: 'Guest' },
+] as const;
 
 type AuthScreenProps = {
   onAuthenticated: (session: AuthSession) => void;
@@ -75,7 +82,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
         >
           <View style={styles.header}>
             <Text style={styles.brand}>MineOps</Text>
-            <Text style={styles.title}>{mode === 'register' ? 'Create Account' : 'Sign In'}</Text>
+            <Text style={styles.title}>{mode === 'register' ? 'Create account' : 'Sign in'}</Text>
           </View>
 
           <View style={styles.modeSwitch}>
@@ -95,7 +102,6 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                     style={[styles.roleCard, isActive && styles.activeRoleCard]}
                   >
                     <Text style={[styles.roleTitle, isActive && styles.activeRoleTitle]}>{role.label}</Text>
-                    <Text style={styles.roleSummary}>{role.summary}</Text>
                   </Pressable>
                 );
               })}
@@ -139,7 +145,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
             style={[styles.submitButton, isSubmitting && styles.disabledButton]}
           >
             <Text style={styles.submitButtonText}>
-              {isSubmitting ? 'Please wait...' : mode === 'register' ? 'Create Account' : 'Sign In'}
+              {isSubmitting ? 'Please wait...' : mode === 'register' ? 'Create account' : 'Sign in'}
             </Text>
           </Pressable>
         </ScrollView>
@@ -173,30 +179,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    padding: 20,
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 22,
     paddingBottom: 36,
   },
   header: {
-    marginBottom: 18,
+    marginBottom: 16,
   },
   brand: {
     color: '#1f6f5b',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   title: {
     color: '#17212b',
-    fontSize: 31,
+    fontSize: 28,
     fontWeight: '900',
-    marginTop: 8,
-  },
-  subtitle: {
-    color: '#5d6875',
-    fontSize: 16,
-    fontWeight: '600',
-    lineHeight: 22,
-    marginTop: 8,
+    marginTop: 6,
   },
   modeSwitch: {
     backgroundColor: '#edf1f5',
@@ -224,15 +225,21 @@ const styles = StyleSheet.create({
     color: '#1f6f5b',
   },
   roleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginBottom: 16,
   },
   roleCard: {
+    alignItems: 'center',
     backgroundColor: '#ffffff',
     borderColor: '#dde3ea',
     borderRadius: 8,
     borderWidth: 1,
-    padding: 14,
+    justifyContent: 'center',
+    minHeight: 46,
+    paddingHorizontal: 10,
+    width: '48%',
   },
   activeRoleCard: {
     backgroundColor: '#e7f6ef',
@@ -240,18 +247,12 @@ const styles = StyleSheet.create({
   },
   roleTitle: {
     color: '#17212b',
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: '900',
-    marginBottom: 4,
+    textAlign: 'center',
   },
   activeRoleTitle: {
     color: '#1f6f5b',
-  },
-  roleSummary: {
-    color: '#5d6875',
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 20,
   },
   input: {
     backgroundColor: '#ffffff',

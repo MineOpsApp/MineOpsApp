@@ -16,8 +16,36 @@ import type {
 import type { AuthPayload, AuthSession } from '../types/auth';
 import type { AuthUser } from '../types/auth';
 
-const API_BASE_URL = 'http://192.168.0.101:8080/api';
+const API_BASE_URL = 'http://172.20.10.4:8080/api';
+const AUDIT_API_BASE_URL = API_BASE_URL.replace(':8080/api', ':8081/api');
 const REQUEST_TIMEOUT_MS = 10000;
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
+function withAuthHeaders(headers?: HeadersInit): HeadersInit {
+  const nextHeaders: Record<string, string> = {};
+
+  if (headers instanceof Headers) {
+    headers.forEach((value, key) => {
+      nextHeaders[key] = value;
+    });
+  } else if (Array.isArray(headers)) {
+    headers.forEach(([key, value]) => {
+      nextHeaders[key] = value;
+    });
+  } else if (headers) {
+    Object.assign(nextHeaders, headers);
+  }
+
+  if (authToken) {
+    nextHeaders.Authorization = `Bearer ${authToken}`;
+  }
+
+  return nextHeaders;
+}
 
 async function fetchWithTimeout(url: string, options?: RequestInit) {
   const controller = new AbortController();
@@ -26,6 +54,7 @@ async function fetchWithTimeout(url: string, options?: RequestInit) {
   try {
     return await fetch(url, {
       ...options,
+      headers: withAuthHeaders(options?.headers),
       signal: controller.signal,
     });
   } finally {
@@ -80,7 +109,11 @@ export function createSosAlert(alert: CreateSosAlertRequest) {
 }
 
 export function getSosAlerts() {
-  return request<SosAlert[]>('/sos');
+  return request<{ content: SosAlert[] }>('/sos').then((page) => page.content);
+}
+
+export function getDangerZones() {
+  return request<{ content: DangerZone[] }>('/danger-zones').then((page) => page.content);
 }
 
 export function createHazardReport(report: {
@@ -97,7 +130,11 @@ export function createHazardReport(report: {
 
 export function getHazardReports(reportedByEmail?: string) {
   const query = reportedByEmail ? `?reportedByEmail=${encodeURIComponent(reportedByEmail)}` : '';
-  return request<HazardReport[]>(`/hazards${query}`);
+  return request<{ content: HazardReport[] }>(`/hazards${query}`).then((page) => page.content);
+}
+
+export function getSiteHazardAlerts() {
+  return request<HazardReport[]>('/hazards/site-alerts');
 }
 
 export function reviewHazardReport(id: number, payload: {
@@ -174,7 +211,7 @@ export function completeVisitorInduction(induction: {
 }
 
 export function getNotices() {
-  return request<Notice[]>('/notices');
+  return request<{ content: Notice[] }>('/notices').then((page) => page.content);
 }
 
 export function createNotice(notice: {
@@ -234,5 +271,11 @@ export function requestEquipmentMaintenance(payload: {
 }
 
 export function getAuditLogs() {
-  return request<AuditLog[]>('/audit-logs');
+  return fetchWithTimeout(`${AUDIT_API_BASE_URL}/audit-logs`).then((response) => {
+    if (!response.ok) {
+      throw new Error('Backend request failed');
+    }
+
+    return response.json() as Promise<AuditLog[]>;
+  });
 }
