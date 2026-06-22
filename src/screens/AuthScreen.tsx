@@ -67,6 +67,10 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
         Alert.alert('Email already registered', 'An account with this email already exists. Try logging in instead.');
       } else if (msg.includes('401') || msg.includes('Unauthorized')) {
         Alert.alert('Login failed', 'Incorrect email or password.');
+        
+        } else if (msg.includes('403') || msg.includes('Forbidden')) {
+          Alert.alert('Session expired', 'Your guest access has expired. Contact your site administrator to renew access.');
+
       } else if (msg.includes('400')) {
         Alert.alert('Invalid details', 'Check your information and try again.');
       } else {
