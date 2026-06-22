@@ -9,6 +9,7 @@ export type HazardReport = {
   site: string;
   location: string;
   description: string;
+  severity?: string;  
   status: string;
   reviewedByRole?: UserRole | string;
   reviewedByName?: string;
