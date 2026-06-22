@@ -16,12 +16,24 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   CLEARED:  { bg: '#e7f6ef', text: '#1f7a4d', label: 'Cleared' },
 };
 
+const SEVERITY_STYLES: Record<string, { bg: string; text: string }> = {
+  Low:      { bg: '#e7f6ef', text: '#1f7a4d' },
+  Medium:   { bg: '#fff7e0', text: '#a15c00' },
+  High:     { bg: '#fdeceb', text: '#b42318' },
+  Critical: { bg: '#3b0000', text: '#ffffff' },
+};
+
 function statusStyle(status: string) {
   return STATUS_STYLES[status.toUpperCase()] ?? STATUS_STYLES['OPEN'];
 }
 
+function severityStyle(severity?: string) {
+  return SEVERITY_STYLES[severity ?? 'Medium'] ?? SEVERITY_STYLES['Medium'];
+}
+
 export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: HazardCardProps) {
   const badge = statusStyle(hazard.status);
+  const sevStyle = severityStyle(hazard.severity);
   const isOpen = hazard.status.toUpperCase() === 'OPEN';
   const isReviewed = hazard.status.toUpperCase() === 'REVIEWED';
 
@@ -32,8 +44,15 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
           <Text style={styles.id}>#{hazard.id}</Text>
           <Text style={styles.type}>{hazard.hazardType}</Text>
         </View>
-        <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-          <Text style={[styles.badgeText, { color: badge.text }]}>{badge.label}</Text>
+        <View style={styles.badges}>
+          {hazard.severity ? (
+            <View style={[styles.badge, { backgroundColor: sevStyle.bg, marginRight: 6 }]}>
+              <Text style={[styles.badgeText, { color: sevStyle.text }]}>{hazard.severity}</Text>
+            </View>
+          ) : null}
+          <View style={[styles.badge, { backgroundColor: badge.bg }]}>
+            <Text style={[styles.badgeText, { color: badge.text }]}>{badge.label}</Text>
+          </View>
         </View>
       </View>
 
@@ -107,6 +126,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     marginTop: 2,
+  },
+  badges: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
   badge: {
     borderRadius: 6,

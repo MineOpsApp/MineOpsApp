@@ -124,6 +124,7 @@ export function createHazardReport(report: {
   site: string;
   location: string;
   description: string;
+  severity?: string;
 }) {
   return post<HazardReport>('/hazards', report);
 }
