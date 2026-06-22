@@ -37,21 +37,46 @@ export function SupervisorNoticesScreen({ session }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Notices</Text>
+
       <Text style={styles.sectionTitle}>Send Briefing</Text>
       <InputField label="Briefing" multiline onChangeText={setBriefing} value={briefing} />
       <ActionButton label="Send Briefing" onPress={sendBriefing} />
+
       <Text style={styles.sectionTitle}>Post Notice</Text>
       <InputField label="Title" onChangeText={setTitle} value={title} />
       <InputField label="Message" multiline onChangeText={setMessage} value={message} />
       <ActionButton label="Post Notice" onPress={post} />
+
       <Text style={styles.sectionTitle}>Posted Notices</Text>
-      {notices.map((n) => (
-        <View key={n.id} style={styles.card}>
-          <Text style={styles.cardTitle}>{n.title}</Text>
-          <Text style={styles.meta}>{n.message}</Text>
-          <Text style={styles.seenMeta}>Seen by: {n.seenBy.length ? n.seenBy.map((s) => s.fullName).join(', ') : 'None'}</Text>
-        </View>
-      ))}
+      {notices.length === 0 ? (
+        <View style={styles.card}><Text style={styles.meta}>No notices posted yet</Text></View>
+      ) : null}
+      {notices.map((n) => {
+        const ackCount = n.seenBy.length;
+        const hasAck = ackCount > 0;
+        return (
+          <View key={n.id} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>{n.title}</Text>
+              <View style={[styles.ackBadge, hasAck ? styles.ackBadgeGreen : styles.ackBadgeGrey]}>
+                <Text style={styles.ackBadgeText}>{ackCount} ✓</Text>
+              </View>
+            </View>
+            <Text style={styles.meta}>{n.message}</Text>
+            <Text style={styles.roleMeta}>Posted by {n.postedByRole}</Text>
+            {hasAck ? (
+              <View style={styles.ackList}>
+                <Text style={styles.ackLabel}>Acknowledged by:</Text>
+                {n.seenBy.map((s) => (
+                  <Text key={s.id} style={styles.ackName}>✓ {s.fullName} ({s.role})</Text>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noAckText}>No acknowledgments yet</Text>
+            )}
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -61,7 +86,16 @@ const styles = StyleSheet.create({
   title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 16 },
   sectionTitle: { color: '#17212b', fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 8 },
   card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 4 },
+  cardHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  cardTitle: { color: '#17212b', flex: 1, fontSize: 15, fontWeight: '800', marginRight: 8 },
+  ackBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 },
+  ackBadgeGreen: { backgroundColor: '#e7f6ef' },
+  ackBadgeGrey: { backgroundColor: '#edf1f5' },
+  ackBadgeText: { fontSize: 12, fontWeight: '900', color: '#1f7a4d' },
   meta: { color: '#5d6875', fontSize: 13, fontWeight: '600', marginBottom: 4 },
-  seenMeta: { color: '#9aa5b1', fontSize: 12, fontWeight: '700' },
+  roleMeta: { color: '#9aa5b1', fontSize: 12, fontWeight: '700', marginBottom: 8 },
+  ackList: { borderTopColor: '#edf1f5', borderTopWidth: 1, marginTop: 8, paddingTop: 8 },
+  ackLabel: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginBottom: 4 },
+  ackName: { color: '#1f7a4d', fontSize: 13, fontWeight: '700', marginBottom: 2 },
+  noAckText: { color: '#b42318', fontSize: 12, fontWeight: '700', marginTop: 4 },
 });
