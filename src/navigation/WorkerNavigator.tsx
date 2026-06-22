@@ -9,6 +9,7 @@ import { WorkerNoticesScreen } from '../screens/worker/WorkerNoticesScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
+import { WorkerHandoverScreen } from '../screens/worker/WorkerHandoverScreen';
 import type { AuthSession } from '../types/auth';
 
 export type WorkerTabParamList = {
@@ -17,6 +18,7 @@ export type WorkerTabParamList = {
   Equipment: undefined;
   Shift: undefined;
   Notices: undefined;
+  Handover: undefined;
 };
 
 const Tab = createBottomTabNavigator<WorkerTabParamList>();
@@ -27,6 +29,7 @@ const TAB_ICONS: Record<string, string> = {
   Equipment: '⚙',
   Shift: '📋',
   Notices: '📢',
+  Handover: '🔄',
 };
 
 type WorkerNavigatorProps = {
@@ -66,6 +69,7 @@ export function WorkerNavigator({ session, onLogout }: WorkerNavigatorProps) {
         <Tab.Screen name="Hazards" children={() => <WorkerHazardsScreen session={session} />} />
         <Tab.Screen name="Equipment" children={() => <WorkerEquipmentScreen session={session} />} />
         <Tab.Screen name="Shift" children={() => <WorkerShiftScreen session={session} />} />
+        <Tab.Screen name="Handover" children={() => <WorkerHandoverScreen session={session} />} />
         <Tab.Screen name="Notices" children={() => <WorkerNoticesScreen session={session} />} />
       </Tab.Navigator>
     </View>
