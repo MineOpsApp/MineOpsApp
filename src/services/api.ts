@@ -104,6 +104,13 @@ export function loginUser(payload: AuthPayload) {
   return post<AuthSession>('/auth/login', payload);
 }
 
+export function renewGuestSession(email: string, hours: number) {
+  return post<{ email: string; fullName: string; sessionExpiresAt: string; hoursGranted: number }>(
+    '/admin/guests/renew',
+    { email, hours }
+  );
+}
+
 export function createSosAlert(alert: CreateSosAlertRequest) {
   return post<SosAlert>('/sos', alert);
 }
