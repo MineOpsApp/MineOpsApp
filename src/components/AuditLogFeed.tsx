@@ -52,7 +52,7 @@ export function AuditLogFeed({ logs, onRefresh, roleLabel }: AuditLogFeedProps) 
   return (
     <>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>{roleLabel} · Audit Log</Text>
+        <Text style={styles.title}>{roleLabel} - Audit Log</Text>
         <Pressable accessibilityRole="button" onPress={onRefresh} style={styles.refreshButton}>
           <Text style={styles.refreshText}>Refresh</Text>
         </Pressable>
@@ -81,7 +81,7 @@ export function AuditLogFeed({ logs, onRefresh, roleLabel }: AuditLogFeedProps) 
             </View>
 
             <Text style={styles.actor}>
-              {log.actorName} · <Text style={styles.actorRole}>{log.actorRole}</Text>
+              {log.actorName} - <Text style={styles.actorRole}>{log.actorRole}</Text>
             </Text>
 
             <Text style={styles.details}>{log.details}</Text>

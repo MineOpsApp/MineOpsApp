@@ -40,7 +40,7 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
       <Text style={styles.description}>{hazard.description}</Text>
 
       <Text style={styles.detail}>
-        {hazard.site} · {hazard.location}
+        {hazard.site} - {hazard.location}
       </Text>
 
       <Text style={styles.detail}>
