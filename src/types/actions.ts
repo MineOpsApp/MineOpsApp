@@ -21,6 +21,8 @@ export type HazardReport = {
   createdAt: string;
   reviewedAt?: string;
   closedAt?: string;
+  latitude?: number;
+longitude?: number;
 };
 
 export type AuditLog = {

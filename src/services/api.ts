@@ -136,6 +136,7 @@ export function createHazardReport(report: {
   location: string;
   description: string;
   severity?: string;
+  latitude?: number; longitude?: number;
 }) {
   return post<HazardReport>('/hazards', report);
 }

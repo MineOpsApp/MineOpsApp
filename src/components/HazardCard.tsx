@@ -66,6 +66,11 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
         Reported by {hazard.reportedByName} ({hazard.reportedByRole})
       </Text>
 
+      {hazard.latitude && hazard.longitude ? (
+              <Text style={styles.detail}>
+            📍 {hazard.latitude.toFixed(5)}, {hazard.longitude.toFixed(5)}
+          </Text>
+        ) : null}
       {hazard.actionTaken ? (
         <Text style={styles.action}>Action: {hazard.actionTaken}</Text>
       ) : null}
