@@ -111,6 +111,10 @@ export function renewGuestSession(email: string, hours: number) {
   );
 }
 
+export function getMarketPrices() {
+  return request<any[]>('/market/prices');
+}
+
 export function createSosAlert(alert: CreateSosAlertRequest) {
   return post<SosAlert>('/sos', alert);
 }
