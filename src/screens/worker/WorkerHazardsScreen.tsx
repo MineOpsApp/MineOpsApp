@@ -7,6 +7,8 @@ import { ActionButton } from '../../components/ActionButton';
 import { createHazardReport, getHazardReports } from '../../services/api';
 import type { HazardReport } from '../../types/actions';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
@@ -25,11 +27,28 @@ export function WorkerHazardsScreen({ session }: Props) {
   const [hazardLocation, setHazardLocation] = useState('Zone A');
   const [hazardDescription, setHazardDescription] = useState('');
   const [severity, setSeverity] = useState<Severity>('Medium');
+  const [photo, setPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     getHazardReports(session.user.email).then(setHazards).catch(() => {});
   }, []);
 
+  async function takePhoto() {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert('Permission needed', 'Camera access is required to take photos.');
+    return;
+  }
+  const result = await ImagePicker.launchCameraAsync({
+    base64: true,
+    quality: 0.5,
+    allowsEditing: true,
+    exif: false,
+  });
+  if (!result.canceled && result.assets[0].base64) {
+    setPhoto(result.assets[0].base64);
+  }
+}
   async function submit() {
     const description = hazardDescription.trim();
     if (!description) { Alert.alert('Missing details', 'Enter the hazard details.'); return; }
@@ -56,13 +75,14 @@ export function WorkerHazardsScreen({ session }: Props) {
         severity,
         latitude,
         longitude,
+        photoData: photo ?? undefined,
       });
       setHazards((c) => [report, ...c]);
       setHazardDescription('');
       Alert.alert('Hazard reported', `Report #${report.id} sent to safety team.`);
     } catch {
-      Alert.alert('Failed', 'Could not submit the hazard report.');
-    }
+  Alert.alert('Failed', 'Could not submit the hazard report.');
+}
   }
 
   return (
@@ -97,7 +117,19 @@ export function WorkerHazardsScreen({ session }: Props) {
             </Pressable>
           ))}
         </View>
-
+          <Text style={styles.fieldLabel}>Photo Evidence</Text>
+  {photo ? (
+  <View style={styles.photoPreview}>
+    <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photoImage} />
+    <Pressable onPress={() => setPhoto(null)} style={styles.removePhoto}>
+      <Text style={styles.removePhotoText}>Remove</Text>
+    </Pressable>
+  </View>
+) : (
+  <Pressable onPress={takePhoto} style={styles.photoBtn}>
+    <Text style={styles.photoBtnText}>📷 Take Photo</Text>
+  </Pressable>
+)}
         <ActionButton label="Submit Hazard Report" onPress={submit} tone="danger" />
       </View>
 
@@ -139,4 +171,11 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 32, marginBottom: 10 },
   emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
   emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+
+  photoBtn: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, marginBottom: 16, paddingVertical: 16 },
+photoBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '700' },
+photoPreview: { marginBottom: 16 },
+photoImage: { borderRadius: 8, height: 180, width: '100%' },
+removePhoto: { alignItems: 'center', marginTop: 8 },
+removePhotoText: { color: '#b42318', fontSize: 13, fontWeight: '700' },
 });

@@ -1,5 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { HazardReport } from '../types/actions';
 
 type HazardCardProps = {
@@ -70,6 +69,14 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
               <Text style={styles.detail}>
             📍 {hazard.latitude.toFixed(5)}, {hazard.longitude.toFixed(5)}
           </Text>
+        ) : null}
+
+        {hazard.photoData ? (
+          <Image
+            source={{ uri: `data:image/jpeg;base64,${hazard.photoData}` }}
+            style={{ borderRadius: 8, height: 160, marginTop: 8, width: '100%' }}
+            resizeMode="cover"
+          />
         ) : null}
       {hazard.actionTaken ? (
         <Text style={styles.action}>Action: {hazard.actionTaken}</Text>
