@@ -337,3 +337,6 @@ export function signOffDrillStep(id: number, payload: { step: string; notes?: st
 export function getMyDrillOperations() {
   return request<any[]>('/drill-operations/mine');
 }
+export function getSiteDrillOperations() {
+  return request<any[]>('/drill-operations');
+}
