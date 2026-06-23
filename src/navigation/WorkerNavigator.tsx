@@ -1,43 +1,76 @@
+import { useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, View } from 'react-native';
 
 import { WorkerHomeScreen } from '../screens/worker/WorkerHomeScreen';
 import { WorkerHazardsScreen } from '../screens/worker/WorkerHazardsScreen';
 import { WorkerEquipmentScreen } from '../screens/worker/WorkerEquipmentScreen';
-import { WorkerShiftScreen } from '../screens/worker/WorkerShiftScreen';
 import { WorkerNoticesScreen } from '../screens/worker/WorkerNoticesScreen';
+import { WorkerShiftScreen } from '../screens/worker/WorkerShiftScreen';
+import { WorkerHandoverScreen } from '../screens/worker/WorkerHandoverScreen';
+import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
-import { WorkerHandoverScreen } from '../screens/worker/WorkerHandoverScreen';
 import type { AuthSession } from '../types/auth';
 
 export type WorkerTabParamList = {
   Home: undefined;
   Hazards: undefined;
   Equipment: undefined;
-  Shift: undefined;
   Notices: undefined;
-  Handover: undefined;
+  More: undefined;
 };
 
 const Tab = createBottomTabNavigator<WorkerTabParamList>();
+const Stack = createNativeStackNavigator();
 
 const TAB_ICONS: Record<string, string> = {
   Home: '⌂',
   Hazards: '⚠',
   Equipment: '⚙',
-  Shift: '📋',
   Notices: '📢',
-  Handover: '🔄',
+  More: '☰',
 };
 
-type WorkerNavigatorProps = {
-  session: AuthSession;
-  onLogout: () => void;
-};
+type Props = { session: AuthSession; onLogout: () => void };
 
-export function WorkerNavigator({ session, onLogout }: WorkerNavigatorProps) {
+function WorkerMoreStack({ session }: { session: AuthSession }) {
+  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover'>('menu');
+
+  if (screen === 'shift') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerShiftScreen session={session} />
+    </View>
+  );
+
+  if (screen === 'handover') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerHandoverScreen session={session} />
+    </View>
+  );
+
+  return (
+    <MoreScreen
+      items={[
+        { icon: '📋', label: 'Shift Production', description: 'Log minerals extracted this shift', onPress: () => setScreen('shift') },
+        { icon: '🔄', label: 'Shift Handover', description: 'View last 24h summary for handover', onPress: () => setScreen('handover') },
+      ]}
+    />
+  );
+}
+
+// Need Pressable import
+import { Pressable } from 'react-native';
+
+export function WorkerNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
 
@@ -49,14 +82,7 @@ export function WorkerNavigator({ session, onLogout }: WorkerNavigatorProps) {
           headerShown: false,
           tabBarActiveTintColor: theme.accent,
           tabBarInactiveTintColor: theme.textMuted,
-          tabBarStyle: {
-            backgroundColor: theme.tabBar,
-            borderTopColor: theme.tabBarBorder,
-            borderTopWidth: 1,
-            height: 64,
-            paddingBottom: 10,
-            paddingTop: 6,
-          },
+          tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder, borderTopWidth: 1, height: 64, paddingBottom: 10, paddingTop: 6 },
           tabBarLabel: ({ color }) => (
             <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
           ),
@@ -68,9 +94,8 @@ export function WorkerNavigator({ session, onLogout }: WorkerNavigatorProps) {
         <Tab.Screen name="Home" children={() => <WorkerHomeScreen session={session} />} />
         <Tab.Screen name="Hazards" children={() => <WorkerHazardsScreen session={session} />} />
         <Tab.Screen name="Equipment" children={() => <WorkerEquipmentScreen session={session} />} />
-        <Tab.Screen name="Shift" children={() => <WorkerShiftScreen session={session} />} />
-        <Tab.Screen name="Handover" children={() => <WorkerHandoverScreen session={session} />} />
         <Tab.Screen name="Notices" children={() => <WorkerNoticesScreen session={session} />} />
+        <Tab.Screen name="More" children={() => <WorkerMoreStack session={session} />} />
       </Tab.Navigator>
     </View>
   );
