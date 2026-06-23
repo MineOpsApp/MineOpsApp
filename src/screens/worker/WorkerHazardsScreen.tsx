@@ -6,6 +6,7 @@ import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
 import { createHazardReport, getHazardReports } from '../../services/api';
 import type { HazardReport } from '../../types/actions';
+import * as Location from 'expo-location';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
@@ -33,6 +34,17 @@ export function WorkerHazardsScreen({ session }: Props) {
     const description = hazardDescription.trim();
     if (!description) { Alert.alert('Missing details', 'Enter the hazard details.'); return; }
     try {
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          latitude = loc.coords.latitude;
+          longitude = loc.coords.longitude;
+        }
+      } catch { /* location optional */ }
+
       const report = await createHazardReport({
         description,
         hazardType: hazardType.trim() || 'General',
@@ -42,6 +54,8 @@ export function WorkerHazardsScreen({ session }: Props) {
         reportedByRole: session.user.role,
         site: 'Obuasi Mine',
         severity,
+        latitude,
+        longitude,
       });
       setHazards((c) => [report, ...c]);
       setHazardDescription('');
