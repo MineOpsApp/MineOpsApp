@@ -13,6 +13,8 @@ import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
+import { SupervisorDrillScreen } from '../screens/supervisor/SupervisorDrillScreen';
+
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -36,7 +38,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills'>('menu');
 
   const backBtn = (
     <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -47,6 +49,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'shifts') return <View style={{ flex: 1 }}>{backBtn}<SupervisorShiftScreen session={session} /></View>;
   if (screen === 'market') return <View style={{ flex: 1 }}>{backBtn}<MarketScreen session={session} /></View>;
   if (screen === 'audit') return <View style={{ flex: 1 }}>{backBtn}<SupervisorAuditScreen session={session} /></View>;
+  if (screen === 'drills') return <View style={{ flex: 1 }}>{backBtn}<SupervisorDrillScreen session={session} /></View>;
 
   return (
     <MoreScreen
@@ -54,6 +57,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '📋', label: 'Shift Logs', description: 'View all site shift production logs', onPress: () => setScreen('shifts') },
         { icon: '📈', label: 'Market Prices', description: 'Live commodity prices', onPress: () => setScreen('market') },
         { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
+        { icon: '⛏', label: 'Drill Operations', description: 'Active and completed drill sign-offs', onPress: () => setScreen('drills') },
       ]}
     />
   );
