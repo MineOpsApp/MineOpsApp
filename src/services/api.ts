@@ -325,3 +325,15 @@ export function getAuditLogs() {
     return response.json() as Promise<AuditLog[]>;
   });
 }
+
+export function startDrillOperation(payload: { zone: string; drillType: string; equipmentCode: string }) {
+  return post<any>('/drill-operations', payload);
+}
+
+export function signOffDrillStep(id: number, payload: { step: string; notes?: string }) {
+  return post<any>(`/drill-operations/${id}/sign-off`, payload);
+}
+
+export function getMyDrillOperations() {
+  return request<any[]>('/drill-operations/mine');
+}
