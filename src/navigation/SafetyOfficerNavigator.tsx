@@ -1,15 +1,17 @@
+import { useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { SafetyHomeScreen } from '../screens/safety/SafetyHomeScreen';
 import { SafetyHazardsScreen } from '../screens/safety/SafetyHazardsScreen';
 import { SafetyDangerZonesScreen } from '../screens/safety/SafetyDangerZonesScreen';
 import { SafetyNoticesScreen } from '../screens/safety/SafetyNoticesScreen';
 import { SafetyAuditScreen } from '../screens/safety/SafetyAuditScreen';
+import { MarketScreen } from '../screens/supervisor/MarketScreen';
+import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
-import { MarketScreen } from '../screens/supervisor/MarketScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SafetyOfficerTabParamList = {
@@ -17,8 +19,7 @@ export type SafetyOfficerTabParamList = {
   Hazards: undefined;
   Zones: undefined;
   Notices: undefined;
-  Audit: undefined;
-  Market: undefined;
+  More: undefined;
 };
 
 const Tab = createBottomTabNavigator<SafetyOfficerTabParamList>();
@@ -28,16 +29,34 @@ const TAB_ICONS: Record<string, string> = {
   Hazards: '⚠',
   Zones: '🗺',
   Notices: '📢',
-  Audit: '🔍',
-  Market: '📈',
+  More: '☰',
 };
 
-type SafetyOfficerNavigatorProps = {
-  session: AuthSession;
-  onLogout: () => void;
-};
+type Props = { session: AuthSession; onLogout: () => void };
 
-export function SafetyOfficerNavigator({ session, onLogout }: SafetyOfficerNavigatorProps) {
+function SafetyMoreStack({ session }: { session: AuthSession }) {
+  const [screen, setScreen] = useState<'menu' | 'market' | 'audit'>('menu');
+
+  const backBtn = (
+    <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+      <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+    </Pressable>
+  );
+
+  if (screen === 'market') return <View style={{ flex: 1 }}>{backBtn}<MarketScreen session={session} /></View>;
+  if (screen === 'audit') return <View style={{ flex: 1 }}>{backBtn}<SafetyAuditScreen session={session} /></View>;
+
+  return (
+    <MoreScreen
+      items={[
+        { icon: '📈', label: 'Market Prices', description: 'Live commodity prices', onPress: () => setScreen('market') },
+        { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
+      ]}
+    />
+  );
+}
+
+export function SafetyOfficerNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
 
@@ -54,7 +73,7 @@ export function SafetyOfficerNavigator({ session, onLogout }: SafetyOfficerNavig
             <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
           ),
           tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 18 }}>{TAB_ICONS[route.name]}</Text>
+            <Text style={{ color, fontSize: 20 }}>{TAB_ICONS[route.name]}</Text>
           ),
         })}
       >
@@ -62,8 +81,7 @@ export function SafetyOfficerNavigator({ session, onLogout }: SafetyOfficerNavig
         <Tab.Screen name="Hazards" children={() => <SafetyHazardsScreen session={session} />} />
         <Tab.Screen name="Zones" children={() => <SafetyDangerZonesScreen session={session} />} />
         <Tab.Screen name="Notices" children={() => <SafetyNoticesScreen session={session} />} />
-        <Tab.Screen name="Market" children={() => <MarketScreen session={session} />} />
-        <Tab.Screen name="Audit" children={() => <SafetyAuditScreen session={session} />} />
+        <Tab.Screen name="More" children={() => <SafetyMoreStack session={session} />} />
       </Tab.Navigator>
     </View>
   );
