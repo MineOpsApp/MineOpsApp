@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+
 
 import { WorkerHomeScreen } from '../screens/worker/WorkerHomeScreen';
 import { WorkerHazardsScreen } from '../screens/worker/WorkerHazardsScreen';
@@ -13,6 +13,8 @@ import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
+import { WorkerDrillScreen } from '../screens/worker/WorkerDrillScreen'; 
+
 import type { AuthSession } from '../types/auth';
 
 export type WorkerTabParamList = {
@@ -24,7 +26,6 @@ export type WorkerTabParamList = {
 };
 
 const Tab = createBottomTabNavigator<WorkerTabParamList>();
-const Stack = createNativeStackNavigator();
 
 const TAB_ICONS: Record<string, string> = {
   Home: '⌂',
@@ -37,7 +38,8 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function WorkerMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill'>('menu');
+  console.log('screens:', { WorkerShiftScreen, WorkerHandoverScreen, WorkerDrillScreen, MoreScreen });
 
   if (screen === 'shift') return (
     <View style={{ flex: 1 }}>
@@ -57,18 +59,26 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
     </View>
   );
 
+  if (screen === 'drill') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerDrillScreen session={session} />
+    </View>
+  );
+
   return (
     <MoreScreen
       items={[
         { icon: '📋', label: 'Shift Production', description: 'Log minerals extracted this shift', onPress: () => setScreen('shift') },
         { icon: '🔄', label: 'Shift Handover', description: 'View last 24h summary for handover', onPress: () => setScreen('handover') },
+        { icon: '⛏', label: 'Drill Operations', description: 'Step-by-step drill sign-off', onPress: () => setScreen('drill') },
       ]}
     />
   );
 }
 
-// Need Pressable import
-import { Pressable } from 'react-native';
 
 export function WorkerNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
