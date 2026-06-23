@@ -82,9 +82,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error('Backend request failed');
-  }
-
+  throw new Error('Backend request failed');
+}
   return response.json() as Promise<T>;
 }
 
@@ -137,6 +136,7 @@ export function createHazardReport(report: {
   description: string;
   severity?: string;
   latitude?: number; longitude?: number;
+  photoData?: string
 }) {
   return post<HazardReport>('/hazards', report);
 }
