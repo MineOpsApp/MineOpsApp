@@ -10,6 +10,7 @@ import { SupervisorAuditScreen } from '../screens/supervisor/SupervisorAuditScre
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
+import { MarketScreen } from '../screens/supervisor/MarketScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -19,6 +20,7 @@ export type SupervisorTabParamList = {
   Notices: undefined;
   Shifts: undefined;
   Audit: undefined;
+  Market: undefined;
 };
 
 const Tab = createBottomTabNavigator<SupervisorTabParamList>();
@@ -30,6 +32,7 @@ const TAB_ICONS: Record<string, string> = {
   Notices: '📢',
   Shifts: '📋',
   Audit: '🔍',
+  Market: '📈',
 };
 
 type SupervisorNavigatorProps = {
@@ -63,6 +66,7 @@ export function SupervisorNavigator({ session, onLogout }: SupervisorNavigatorPr
         <Tab.Screen name="SOS" children={() => <SupervisorSosScreen session={session} />} />
         <Tab.Screen name="Notices" children={() => <SupervisorNoticesScreen session={session} />} />
         <Tab.Screen name="Shifts" children={() => <SupervisorShiftScreen session={session} />} />
+        <Tab.Screen name="Market" children={() => <MarketScreen session={session} />} />
         <Tab.Screen name="Audit" children={() => <SupervisorAuditScreen session={session} />} />
       </Tab.Navigator>
     </View>

@@ -9,6 +9,7 @@ import { SafetyAuditScreen } from '../screens/safety/SafetyAuditScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
+import { MarketScreen } from '../screens/supervisor/MarketScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SafetyOfficerTabParamList = {
@@ -17,6 +18,7 @@ export type SafetyOfficerTabParamList = {
   Zones: undefined;
   Notices: undefined;
   Audit: undefined;
+  Market: undefined;
 };
 
 const Tab = createBottomTabNavigator<SafetyOfficerTabParamList>();
@@ -27,6 +29,7 @@ const TAB_ICONS: Record<string, string> = {
   Zones: '🗺',
   Notices: '📢',
   Audit: '🔍',
+  Market: '📈',
 };
 
 type SafetyOfficerNavigatorProps = {
@@ -59,6 +62,7 @@ export function SafetyOfficerNavigator({ session, onLogout }: SafetyOfficerNavig
         <Tab.Screen name="Hazards" children={() => <SafetyHazardsScreen session={session} />} />
         <Tab.Screen name="Zones" children={() => <SafetyDangerZonesScreen session={session} />} />
         <Tab.Screen name="Notices" children={() => <SafetyNoticesScreen session={session} />} />
+        <Tab.Screen name="Market" children={() => <MarketScreen session={session} />} />
         <Tab.Screen name="Audit" children={() => <SafetyAuditScreen session={session} />} />
       </Tab.Navigator>
     </View>
