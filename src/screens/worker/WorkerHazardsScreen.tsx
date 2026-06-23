@@ -27,6 +27,7 @@ export function WorkerHazardsScreen({ session }: Props) {
   const [hazardLocation, setHazardLocation] = useState('Zone A');
   const [hazardDescription, setHazardDescription] = useState('');
   const [severity, setSeverity] = useState<Severity>('Medium');
+  const [loading, setLoading] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export function WorkerHazardsScreen({ session }: Props) {
   async function submit() {
     const description = hazardDescription.trim();
     if (!description) { Alert.alert('Missing details', 'Enter the hazard details.'); return; }
+    setLoading(true);
     try {
       let latitude: number | undefined;
       let longitude: number | undefined;
@@ -81,10 +83,11 @@ export function WorkerHazardsScreen({ session }: Props) {
       setHazardDescription('');
       Alert.alert('Hazard reported', `Report #${report.id} sent to safety team.`);
     } catch {
-  Alert.alert('Failed', 'Could not submit the hazard report.');
-}
+      Alert.alert('Failed', 'Could not submit the hazard report.');
+    } finally {
+      setLoading(false);
+    }
   }
-
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
@@ -130,7 +133,7 @@ export function WorkerHazardsScreen({ session }: Props) {
     <Text style={styles.photoBtnText}>📷 Take Photo</Text>
   </Pressable>
 )}
-        <ActionButton label="Submit Hazard Report" onPress={submit} tone="danger" />
+        <ActionButton label={loading ? 'Submitting...' : 'Submit Hazard Report'} onPress={submit} tone="danger" />
       </View>
 
       {/* History */}
