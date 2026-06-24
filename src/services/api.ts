@@ -172,7 +172,7 @@ export function getHazardReports(reportedByEmail?: string) {
 }
 
 export function getSiteHazardAlerts() {
-  return request<HazardReport[]>('/hazards/alerts');
+  return request<{ content: HazardReport[] }>('/hazards').then((page) => page.content);
 }
 
 export function getSiteHazardReports(page = 0) {
@@ -369,4 +369,17 @@ export function getMyDrillOperations() {
 }
 export function getSiteDrillOperations() {
   return request<any[]>('/drill-operations');
+}
+
+export function createGuestAccount(payload: {
+  fullName: string;
+  email: string;
+  password: string;
+  guestSubRole: string;
+  assignedSite: string;
+  sessionHours: number;
+  createdByEmail: string;
+  createdByName: string;
+}) {
+  return post<any>('/admin/guests/create', payload);
 }

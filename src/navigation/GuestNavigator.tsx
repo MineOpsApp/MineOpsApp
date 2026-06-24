@@ -45,19 +45,26 @@ export function GuestNavigator({ session, onLogout }: GuestNavigatorProps) {
         <View style={styles.gateTop}>
           <Text style={styles.gateBrand}>MineOps</Text>
           <Text style={styles.gateTitle}>Welcome,{'\n'}{session.user.fullName}</Text>
-          <Text style={styles.gateSubtitle}>Select your visit type to continue</Text>
+          <Text style={styles.gateSubtitle}>Confirm your visit type to continue</Text>
         </View>
         <View style={styles.gateCards}>
-          {SUB_ROLES.map((sr) => (
-            <Pressable key={sr.id} onPress={() => setSubRole(sr.id)} style={styles.subRoleCard}>
-              <Text style={styles.subRoleIcon}>{sr.icon}</Text>
-              <View style={styles.subRoleRight}>
-                <Text style={[styles.subRoleLabel, { color: sr.color }]}>{sr.label}</Text>
-                <Text style={styles.subRoleDesc}>{sr.description}</Text>
-              </View>
-              <Text style={styles.subRoleArrow}>›</Text>
-            </Pressable>
-          ))}
+          {SUB_ROLES.map((sr) => {
+            const isRegistered = session.user.guestSubRole === sr.id || (!session.user.guestSubRole && sr.id === 'visitor');
+            return (
+              <Pressable
+                key={sr.id}
+                onPress={() => isRegistered ? setSubRole(sr.id) : null}
+                style={[styles.subRoleCard, !isRegistered && { opacity: 0.35 }]}
+              >
+                <Text style={styles.subRoleIcon}>{sr.icon}</Text>
+                <View style={styles.subRoleRight}>
+                  <Text style={[styles.subRoleLabel, { color: sr.color }]}>{sr.label}</Text>
+                  <Text style={styles.subRoleDesc}>{isRegistered ? sr.description : 'Not your registered type'}</Text>
+                </View>
+                <Text style={styles.subRoleArrow}>{isRegistered ? '›' : '🔒'}</Text>
+              </Pressable>
+            );
+          })}
         </View>
         <Pressable onPress={onLogout} style={styles.logoutLink}>
           <Text style={styles.logoutLinkText}>Not you? Sign out</Text>
@@ -65,6 +72,7 @@ export function GuestNavigator({ session, onLogout }: GuestNavigatorProps) {
       </SafeAreaView>
     );
   }
+  
 
   const activeSub = SUB_ROLES.find((sr) => sr.id === subRole)!;
 

@@ -6,6 +6,7 @@ export type AuthUser = {
   email: string;
   role: UserRole;
   assignedSite?: string;
+  guestSubRole?: string;
 };
 
 export type AuthSession = {
@@ -19,4 +20,5 @@ export type AuthPayload = {
   password: string;
   role?: UserRole;
   assignedSite?: string;
+  guestSubRole?: string;
 };
