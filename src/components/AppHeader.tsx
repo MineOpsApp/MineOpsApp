@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
+import { useEffect, useState } from 'react';
 import type { AuthSession } from '../types/auth';
 
 type AppHeaderProps = {
@@ -19,6 +20,21 @@ const ROLE_LABELS: Record<string, string> = {
 export function AppHeader({ session, onLogout }: AppHeaderProps) {
   const { mode, setMode } = useThemeMode();
   const theme = useTheme(mode);
+  const [serverDown, setServerDown] = useState(false);
+
+useEffect(() => {
+  const check = async () => {
+    try {
+      
+      setServerDown(false);
+    } catch {
+      setServerDown(true);
+    }
+  };
+  check();
+  const interval = setInterval(check, 30000);
+  return () => clearInterval(interval);
+}, []);
 
   function cycleTheme() {
     if (mode === 'system') setMode('light');

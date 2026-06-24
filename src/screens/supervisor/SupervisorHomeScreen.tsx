@@ -15,10 +15,11 @@ export function SupervisorHomeScreen({ session }: Props) {
   const [guestEmail, setGuestEmail] = useState('');
   const [guestHours, setGuestHours] = useState('24');
   const [renewing, setRenewing] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
-    getSiteHazardAlerts().then(setHazards).catch(() => {});
-    getNotices().then(setNotices).catch(() => {});
+    getSiteHazardAlerts().then(setHazards).catch(() => setConnectionError(true));
+    getNotices().then(setNotices).catch(() => setConnectionError(true));
   }, []);
 
   async function handleRenew() {
@@ -51,6 +52,11 @@ export function SupervisorHomeScreen({ session }: Props) {
             <Text style={styles.statusText}>Live</Text>
           </View>
         </View>
+        {connectionError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+          </View>
+        ) : null}
 
         {/* Stats */}
         <View style={styles.strip}>
@@ -185,4 +191,8 @@ const styles = StyleSheet.create({
   hoursRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   hoursPill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, color: '#5d6875', fontSize: 12, fontWeight: '800', overflow: 'hidden', paddingHorizontal: 14, paddingVertical: 6 },
   hoursPillActive: { backgroundColor: '#17212b', borderColor: '#17212b', color: '#ffffff' },
+
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
+errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 });
+

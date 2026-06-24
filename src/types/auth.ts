@@ -5,6 +5,7 @@ export type AuthUser = {
   fullName: string;
   email: string;
   role: UserRole;
+  assignedSite?: string;
 };
 
 export type AuthSession = {

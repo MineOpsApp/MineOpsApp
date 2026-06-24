@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
-import { getHazardReports, reviewHazardReport, closeHazardReport } from '../../services/api';
+import { getSiteHazardReports, reviewHazardReport, closeHazardReport } from '../../services/api';
 import type { HazardReport } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -13,10 +13,28 @@ export function SupervisorHazardsScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [actionTaken, setActionTaken] = useState('Area isolated and assigned for follow-up');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    getHazardReports().then((h) => { setHazards(h); setLoading(false); }).catch(() => setLoading(false));
+    getSiteHazardReports(0).then((data) => {
+      setHazards(data.content ?? []);
+      setHasMore(data.totalPages ? 0 < data.totalPages - 1 : false);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
+
+  async function loadMore() {
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const data = await getSiteHazardReports(nextPage);
+      setHazards((c) => [...c, ...(data.content ?? [])]);
+      setPage(nextPage);
+      setHasMore(nextPage < data.totalPages - 1);
+    } catch {} finally { setLoadingMore(false); }
+  }
 
   async function review(id: number) {
     try {
@@ -38,13 +56,11 @@ export function SupervisorHazardsScreen({ session }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Hazard Reports</Text>
         {open.length > 0 && <View style={styles.urgentBadge}><Text style={styles.urgentBadgeText}>{open.length} open</Text></View>}
       </View>
 
-      {/* Stats strip */}
       <View style={styles.strip}>
         <View style={styles.stripItem}>
           <Text style={[styles.stripValue, open.length > 0 && { color: '#b42318' }]}>{open.length}</Text>
@@ -62,7 +78,6 @@ export function SupervisorHazardsScreen({ session }: Props) {
         </View>
       </View>
 
-      {/* Action input */}
       <View style={styles.actionCard}>
         <Text style={styles.actionLabel}>Action taken (applied to reviewed/cleared reports)</Text>
         <InputField label="" multiline onChangeText={setActionTaken} value={actionTaken} placeholder="Describe the action taken..." />
@@ -81,6 +96,12 @@ export function SupervisorHazardsScreen({ session }: Props) {
       {hazards.map((h) => (
         <HazardCard key={h.id} hazard={h} canReview canClear onReview={review} onClear={close} />
       ))}
+
+      {hasMore ? (
+        <Pressable onPress={loadMore} style={styles.loadMoreBtn}>
+          <Text style={styles.loadMoreText}>{loadingMore ? 'Loading...' : 'Load More'}</Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }
@@ -103,4 +124,6 @@ const styles = StyleSheet.create({
   emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
   emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
   emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
+  loadMoreBtn: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginTop: 8, paddingVertical: 12 },
+  loadMoreText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
 });
