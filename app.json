@@ -25,6 +25,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5befeaf7-e38a-419e-8e5a-5cccd607e115"
+      }
+    },
+    "owner": "sa.kumi"
   }
 }
