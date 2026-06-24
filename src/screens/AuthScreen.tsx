@@ -21,6 +21,7 @@ const WORKER_ROLES = [
   { id: 'guest' as UserRole, label: 'Guest', icon: '👤', description: 'Visitor or contractor' },
 ];
 
+
 const SITES = ['Obuasi Mine', 'Tarkwa Mine', 'Bogoso Mine', 'Prestea Mine'];
 
 type AuthScreenProps = {
@@ -30,6 +31,7 @@ type AuthScreenProps = {
 export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [selectedRole, setSelectedRole] = useState<UserRole>('worker');
+  const [selectedSubRole, setSelectedSubRole] = useState<string>('visitor');
   const [selectedSite, setSelectedSite] = useState(SITES[0]);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -51,7 +53,8 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
     setIsSubmitting(true);
     try {
       const session = mode === 'register'
-        ? await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedSite })
+        ? await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedSite ,guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined,
+   })
         : await loginUser({ email: email.trim().toLowerCase(), password });
       onAuthenticated(session);
     } catch (error: any) {
@@ -113,6 +116,24 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
               <View style={styles.adminNote}>
                 <Text style={styles.adminNoteText}>🔒 Supervisor & Safety Officer accounts are set up by site administrators</Text>
               </View>
+
+                {selectedRole === 'guest' ? (
+  <>
+    <Text style={styles.fieldLabel}>Guest Type</Text>
+    <View style={styles.roleRow}>
+      {[
+        { id: 'visitor', label: 'Visitor', icon: '👤' },
+        { id: 'inspector', label: 'Inspector', icon: '🔍' },
+        { id: 'investor', label: 'Investor', icon: '📊' },
+      ].map((sub) => (
+        <Pressable key={sub.id} onPress={() => setSelectedSubRole(sub.id)} style={[styles.roleCard, selectedSubRole === sub.id && styles.roleCardActive]}>
+          <Text style={styles.roleIcon}>{sub.icon}</Text>
+          <Text style={[styles.roleLabel, selectedSubRole === sub.id && styles.roleLabelActive]}>{sub.label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  </>
+) : null}
 
               <Text style={styles.fieldLabel}>Assigned Site</Text>
               <View style={styles.siteGrid}>

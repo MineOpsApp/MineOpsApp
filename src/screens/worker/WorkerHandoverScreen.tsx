@@ -35,6 +35,7 @@ export function WorkerHandoverScreen({ session }: Props) {
   const [equipmentLogs, setEquipmentLogs] = useState<EquipmentLog[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState(false);
 
   function load() {
     return Promise.all([
@@ -47,7 +48,9 @@ export function WorkerHandoverScreen({ session }: Props) {
       setHazards(h as any[]);
       setNotices(n as any[]);
       setEquipmentLogs(e as EquipmentLog[]);
-    }).finally(() => setLoading(false));
+      setConnectionError(false);
+    }).catch(() => setConnectionError(true))
+    .finally(() => setLoading(false));
   }
 
   useEffect(() => { load(); }, []);
@@ -86,7 +89,11 @@ export function WorkerHandoverScreen({ session }: Props) {
       </View>
 
       <Text style={styles.handoverSub}>Summary of the last 24 hours for {session.user.fullName}</Text>
-
+      {connectionError ? (
+  <View style={styles.errorBanner}>
+    <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+  </View>
+) : null}
       {loading ? (
         <View style={styles.loadingCard}><Text style={styles.loadingText}>Loading handover summary...</Text></View>
       ) : null}
@@ -226,4 +233,7 @@ const styles = StyleSheet.create({
   emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
   clearRow: { padding: 14 },
   clearRowText: { color: '#1f6f5b', fontSize: 13, fontWeight: '700' },
+
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, marginBottom: 16, padding: 12 },
+errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 });
