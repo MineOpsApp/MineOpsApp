@@ -383,3 +383,7 @@ export function createGuestAccount(payload: {
 }) {
   return post<any>('/admin/guests/create', payload);
 }
+
+export function savePushToken(token: string) {
+  return post<any>('/auth/push-token', { token });
+}
