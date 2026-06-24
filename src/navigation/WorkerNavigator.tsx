@@ -13,7 +13,9 @@ import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
-import { WorkerDrillScreen } from '../screens/worker/WorkerDrillScreen'; 
+import { WorkerDrillScreen } from '../screens/worker/WorkerDrillScreen';
+import { SupervisorRosterScreen } from '../screens/supervisor/SupervisorRosterScreen';
+import { WorkerAttendanceScreen } from '../screens/worker/WorkerAttendanceScreen'; 
 
 import type { AuthSession } from '../types/auth';
 
@@ -38,7 +40,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function WorkerMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill' | 'attendance'>('menu');
   console.log('screens:', { WorkerShiftScreen, WorkerHandoverScreen, WorkerDrillScreen, MoreScreen });
 
   if (screen === 'shift') return (
@@ -68,12 +70,14 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
     </View>
   );
 
+  
   return (
     <MoreScreen
       items={[
         { icon: '📋', label: 'Shift Production', description: 'Log minerals extracted this shift', onPress: () => setScreen('shift') },
         { icon: '🔄', label: 'Shift Handover', description: 'View last 24h summary for handover', onPress: () => setScreen('handover') },
         { icon: '⛏', label: 'Drill Operations', description: 'Step-by-step drill sign-off', onPress: () => setScreen('drill') },
+        { icon: '🕐', label: 'Attendance', description: 'Clock in and out of site', onPress: () => setScreen('attendance') },
       ]}
     />
   );

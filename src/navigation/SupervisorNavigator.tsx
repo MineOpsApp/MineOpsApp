@@ -13,6 +13,7 @@ import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
+import { SupervisorRosterScreen } from '../screens/supervisor/SupervisorRosterScreen';
 
 import { SupervisorDrillScreen } from '../screens/supervisor/SupervisorDrillScreen';
 import { SupervisorGuestScreen } from '../screens/supervisor/SupervisorGuestScreen';
@@ -39,7 +40,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster'>('menu');
 
   const backBtn = (
     <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -52,7 +53,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'audit') return <View style={{ flex: 1 }}>{backBtn}<SupervisorAuditScreen session={session} /></View>;
   if (screen === 'drills') return <View style={{ flex: 1 }}>{backBtn}<SupervisorDrillScreen session={session} /></View>;
   if (screen === 'guests') return <View style={{ flex: 1 }}>{backBtn}<SupervisorGuestScreen session={session} /></View>;
-
+  if (screen === 'roster') return <View style={{ flex: 1 }}>{backBtn}<SupervisorRosterScreen session={session} /></View>;
 
   return (
     <MoreScreen
@@ -62,6 +63,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
         { icon: '⛏', label: 'Drill Operations', description: 'Active and completed drill sign-offs', onPress: () => setScreen('drills') },
         { icon: '👤', label: 'Guest Access', description: 'Create and manage guest accounts', onPress: () => setScreen('guests') },
+        { icon: '👷', label: 'Site Roster', description: 'Live headcount — who is on site now', onPress: () => setScreen('roster') },
       ]}
     />
   );
