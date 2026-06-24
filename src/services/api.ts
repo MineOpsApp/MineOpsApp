@@ -387,3 +387,23 @@ export function createGuestAccount(payload: {
 export function savePushToken(token: string) {
   return post<any>('/auth/push-token', { token });
 }
+
+export function clockIn(zone?: string, notes?: string) {
+  return post<any>('/attendance/clock-in', { zone, notes });
+}
+
+export function clockOut() {
+  return post<any>('/attendance/clock-out', {});
+}
+
+export function getMyAttendanceStatus() {
+  return request<{ onSite: boolean; record: any }>('/attendance/me');
+}
+
+export function getSiteRoster() {
+  return request<any[]>('/attendance/roster');
+}
+
+export function getMyAttendanceHistory() {
+  return request<any[]>('/attendance/history');
+}
