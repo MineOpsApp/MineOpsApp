@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { createSosAlert } from '../services/api';
@@ -10,39 +11,45 @@ type SosButtonProps = {
 };
 
 export function SosButton({ role, user }: SosButtonProps) {
+  const [onCooldown, setOnCooldown] = useState(false);
   async function sendAlert() {
-    try {
-      const alert = await createSosAlert({
-        actorEmail: user.email,
-        actorName: user.fullName,
-        message: 'Emergency assistance requested',
-        role,
-        site: 'Obuasi Mine',
-      });
-      Alert.alert('SOS sent', `Alert #${alert.id} — help is on the way.`);
-    } catch {
-      Alert.alert('SOS failed', 'Could not send alert. Try again.');
-    }
+  try {
+    const alert = await createSosAlert({
+      actorEmail: user.email,
+      actorName: user.fullName,
+      message: 'Emergency assistance requested',
+      role,
+      site: 'Obuasi Mine',
+    });
+    setOnCooldown(true);
+    setTimeout(() => setOnCooldown(false), 60000);
+    Alert.alert('SOS sent', `Alert #${alert.id} — help is on the way.`);
+  } catch {
+    Alert.alert('SOS failed', 'Could not send alert. Try again.');
   }
+}
 
   function handlePress() {
-    Alert.alert(
-      '🚨 Send SOS?',
-      'This will immediately alert the site supervisor and safety team.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Send Emergency Alert', onPress: sendAlert, style: 'destructive' },
-      ]
-    );
+  if (onCooldown) {
+    Alert.alert('Please wait', 'SOS was recently sent. Wait 60 seconds before sending again.');
+    return;
   }
-
+  Alert.alert(
+    '🚨 Send SOS?',
+    'This will immediately alert the site supervisor and safety team.',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Send Emergency Alert', onPress: sendAlert, style: 'destructive' },
+    ]
+  );
+}
   return (
     <View style={styles.wrapper}>
       <Pressable
         accessibilityLabel="Send SOS emergency alert"
         accessibilityRole="button"
         onPress={handlePress}
-        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed, onCooldown && styles.buttonCooldown]}
       >
         <Text style={styles.icon}>🚨</Text>
         <Text style={styles.text}>SOS</Text>
@@ -75,6 +82,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#7f1d1d',
     transform: [{ scale: 0.96 }],
   },
+  buttonCooldown: { backgroundColor: '#5d6875' },
   icon: { fontSize: 20, marginBottom: 1 },
   text: {
     color: '#ffffff',

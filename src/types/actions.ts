@@ -23,6 +23,7 @@ export type HazardReport = {
   closedAt?: string;
   latitude?: number;
 longitude?: number;
+photoData?: string
 };
 
 export type AuditLog = {

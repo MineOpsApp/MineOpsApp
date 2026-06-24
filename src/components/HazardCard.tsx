@@ -1,5 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { HazardReport } from '../types/actions';
+import { useState } from 'react';
 
 type HazardCardProps = {
   canClear: boolean;
@@ -28,6 +29,25 @@ function statusStyle(status: string) {
 
 function severityStyle(severity?: string) {
   return SEVERITY_STYLES[severity ?? 'Medium'] ?? SEVERITY_STYLES['Medium'];
+}
+
+function HazardPhoto({ photoData }: { photoData: string }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Pressable onPress={() => setExpanded((e) => !e)} style={{ marginTop: 8 }}>
+      {expanded ? (
+        <Image
+          source={{ uri: `data:image/jpeg;base64,${photoData}` }}
+          style={{ borderRadius: 8, height: 180, width: '100%' }}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={{ alignItems: 'center', backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
+          <Text style={{ color: '#5d6875', fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+        </View>
+      )}
+    </Pressable>
+  );
 }
 
 export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: HazardCardProps) {
@@ -72,12 +92,8 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
         ) : null}
 
         {hazard.photoData ? (
-          <Image
-            source={{ uri: `data:image/jpeg;base64,${hazard.photoData}` }}
-            style={{ borderRadius: 8, height: 160, marginTop: 8, width: '100%' }}
-            resizeMode="cover"
-          />
-        ) : null}
+  <HazardPhoto photoData={hazard.photoData} />
+) : null}
       {hazard.actionTaken ? (
         <Text style={styles.action}>Action: {hazard.actionTaken}</Text>
       ) : null}

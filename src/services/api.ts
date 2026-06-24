@@ -18,7 +18,7 @@ import type { AuthUser } from '../types/auth';
 
 const API_BASE_URL = 'http://172.20.10.4:8080/api';
 const AUDIT_API_BASE_URL = API_BASE_URL.replace(':8080/api', ':8081/api');
-const REQUEST_TIMEOUT_MS = 10000;
+const REQUEST_TIMEOUT_MS = 30000;
 let authToken: string | null = null;
 
 export function setAuthToken(token: string | null) {
@@ -52,39 +52,64 @@ async function fetchWithTimeout(url: string, options?: RequestInit) {
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    return await fetch(url, {
+    const response = await fetch(url, {
       ...options,
       headers: withAuthHeaders(options?.headers),
       signal: controller.signal,
     });
+    return response;
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Request timed out — server may be unreachable');
+    }
+    throw new Error('Could not connect to server — check your connection');
   } finally {
     clearTimeout(timeoutId);
   }
 }
 
 async function request<T>(path: string): Promise<T> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`);
-
-  if (!response.ok) {
-    throw new Error('Backend request failed');
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`);
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`${response.status}: ${text}`);
+    }
+    return response.json() as Promise<T>;
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Request timed out. Check your connection.');
+    }
+    if (error?.message?.includes('Network request failed')) {
+      throw new Error('Cannot reach server. Check your connection.');
+    }
+    throw error;
   }
-
-  return response.json() as Promise<T>;
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
-    body: JSON.stringify(body),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    method: 'POST',
-  });
-
-  if (!response.ok) {
-  throw new Error('Backend request failed');
-}
-  return response.json() as Promise<T>;
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`${response.status}: ${text}`);
+    }
+    return response.json() as Promise<T>;
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Request timed out. Check your connection.');
+    }
+    if (error?.message?.includes('Network request failed')) {
+      throw new Error('Cannot reach server. Check your connection.');
+    }
+    throw error;
+  }
 }
 
 export function getDashboard() {
@@ -147,7 +172,11 @@ export function getHazardReports(reportedByEmail?: string) {
 }
 
 export function getSiteHazardAlerts() {
-  return request<HazardReport[]>('/hazards/site-alerts');
+  return request<HazardReport[]>('/hazards/alerts');
+}
+
+export function getSiteHazardReports(page = 0) {
+  return request<any>(`/hazards?page=${page}`);
 }
 
 export function reviewHazardReport(id: number, payload: {

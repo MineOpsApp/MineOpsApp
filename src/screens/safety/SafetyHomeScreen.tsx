@@ -11,10 +11,11 @@ type Props = { session: AuthSession };
 export function SafetyHomeScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [zones, setZones] = useState<DangerZone[]>([]);
+  const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
-    getSiteHazardAlerts().then(setHazards).catch(() => {});
-    getDangerZones().then(setZones).catch(() => {});
+    getSiteHazardAlerts().then(setHazards).catch(() => setConnectionError(true));
+getDangerZones().then(setZones).catch(() => setConnectionError(true));
   }, []);
 
   const openHazards = hazards.filter((h) => h.status.toUpperCase() === 'OPEN');
@@ -34,7 +35,11 @@ export function SafetyHomeScreen({ session }: Props) {
             <Text style={styles.statusText}>{openHazards.length > 0 ? 'Alerts Active' : 'All Clear'}</Text>
           </View>
         </View>
-
+           {connectionError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+          </View>
+        ) : null}
         <View style={styles.strip}>
           <View style={styles.stripItem}>
             <Text style={[styles.stripValue, openHazards.length > 0 && { color: '#b42318' }]}>{openHazards.length}</Text>
@@ -135,4 +140,7 @@ const styles = StyleSheet.create({
   riskMed: { backgroundColor: '#a15c00' },
   riskLow: { backgroundColor: '#1f6f5b' },
   riskPillText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
+errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+
 });

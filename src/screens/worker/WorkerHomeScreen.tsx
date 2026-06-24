@@ -19,12 +19,13 @@ export function WorkerHomeScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
     Promise.all([getSiteHazardAlerts(), getNotices()])
       .then(([h, n]) => { setHazards(h); setNotices(n); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => setConnectionError(true))
+.finally(() => setLoading(false));
   }, []);
 
   const hour = new Date().getHours();
@@ -44,7 +45,16 @@ export function WorkerHomeScreen({ session }: Props) {
             <View style={styles.shiftDot} />
             <Text style={styles.shiftText}>On Shift</Text>
           </View>
-        </View>
+          </View>
+          {connectionError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+          </View>
+        ) : null}
+          
+        
+
+        
 
         {/* Status strip */}
         <View style={styles.strip}>
@@ -176,4 +186,7 @@ const styles = StyleSheet.create({
   noticeBody: { flex: 1, padding: 12 },
   noticeTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 3 },
   noticeMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 17 },
+
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
+errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 });
