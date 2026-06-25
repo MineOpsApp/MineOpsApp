@@ -5,6 +5,7 @@ import { SosButton } from '../../components/SosButton';
 import { getNotices, getSiteHazardAlerts } from '../../services/api';
 import type { HazardReport, Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { BlastAlert } from '../../components/BlastAlert';
 
 type Props = { session: AuthSession };
 
@@ -73,6 +74,11 @@ export function WorkerHomeScreen({ session }: Props) {
             <Text style={styles.stripLabel}>Site Status</Text>
           </View>
         </View>
+
+        <View style={styles.strip}>
+  ...
+</View>
+<BlastAlert />
 
         {/* Alerts */}
         <View style={styles.section}>

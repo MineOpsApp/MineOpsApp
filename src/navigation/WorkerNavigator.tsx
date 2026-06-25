@@ -41,7 +41,7 @@ type Props = { session: AuthSession; onLogout: () => void };
 
 function WorkerMoreStack({ session }: { session: AuthSession }) {
   const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill' | 'attendance'>('menu');
-  console.log('screens:', { WorkerShiftScreen, WorkerHandoverScreen, WorkerDrillScreen, MoreScreen });
+  
 
   if (screen === 'shift') return (
     <View style={{ flex: 1 }}>
