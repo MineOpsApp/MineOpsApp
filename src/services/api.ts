@@ -407,3 +407,23 @@ export function getSiteRoster() {
 export function getMyAttendanceHistory() {
   return request<any[]>('/attendance/history');
 }
+
+export function scheduleBlast(payload: { zone: string; blastTime: string; notes?: string }) {
+  return post<any>('/blasts', payload);
+}
+
+export function getScheduledBlasts() {
+  return request<any[]>('/blasts');
+}
+
+export function getAllBlasts() {
+  return request<any[]>('/blasts/all');
+}
+
+export function cancelBlast(id: number) {
+  return post<any>(`/blasts/${id}/cancel`, {});
+}
+
+export function executeBlast(id: number) {
+  return post<any>(`/blasts/${id}/execute`, {});
+}

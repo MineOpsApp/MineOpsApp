@@ -1,0 +1,51 @@
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { getScheduledBlasts } from '../services/api';
+
+export function BlastAlert() {
+  const [blasts, setBlasts] = useState<any[]>([]);
+
+  useEffect(() => {
+    getScheduledBlasts().then(setBlasts).catch(() => {});
+    const interval = setInterval(() => {
+      getScheduledBlasts().then(setBlasts).catch(() => {});
+    }, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  if (blasts.length === 0) return null;
+
+  return (
+    <>
+      {blasts.map((blast) => {
+        const diff = new Date(blast.blastTime).getTime() - Date.now();
+        const mins = Math.floor(diff / 60000);
+        const isImminent = mins < 15;
+
+        return (
+          <View key={blast.id} style={[styles.banner, isImminent ? styles.bannerRed : styles.bannerAmber]}>
+            <Text style={styles.bannerIcon}>💥</Text>
+            <View style={styles.bannerBody}>
+              <Text style={styles.bannerTitle}>
+                {isImminent ? 'BLAST IMMINENT' : 'BLAST SCHEDULED'} — {blast.zone}
+              </Text>
+              <Text style={styles.bannerSub}>
+                {mins < 0 ? 'Blast time passed' : `In ${mins < 60 ? `${mins} minutes` : `${Math.floor(mins / 60)}h ${mins % 60}m`}`}
+              </Text>
+            </View>
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  banner: { alignItems: 'center', flexDirection: 'row', gap: 10, marginHorizontal: 20, marginTop: 10, padding: 12, borderRadius: 10, borderWidth: 1 },
+  bannerRed: { backgroundColor: '#fff5f5', borderColor: '#b42318' },
+  bannerAmber: { backgroundColor: '#fffbeb', borderColor: '#d29922' },
+  bannerIcon: { fontSize: 24 },
+  bannerBody: { flex: 1 },
+  bannerTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 2 },
+  bannerSub: { color: '#5d6875', fontSize: 12, fontWeight: '600' },
+});
