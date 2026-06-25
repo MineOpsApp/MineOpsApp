@@ -70,6 +70,14 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
     </View>
   );
 
+  if (screen === 'attendance') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerAttendanceScreen session={session} />
+    </View>
+  );
   
   return (
     <MoreScreen

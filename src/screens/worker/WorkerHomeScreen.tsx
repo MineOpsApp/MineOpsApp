@@ -75,9 +75,7 @@ export function WorkerHomeScreen({ session }: Props) {
           </View>
         </View>
 
-        <View style={styles.strip}>
-  ...
-</View>
+        
 <BlastAlert />
 
         {/* Alerts */}
