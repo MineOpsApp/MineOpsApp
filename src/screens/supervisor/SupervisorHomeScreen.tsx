@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nati
 
 import { SosButton } from '../../components/SosButton';
 import { ActionButton } from '../../components/ActionButton';
-import { getSiteHazardAlerts, getNotices, renewGuestSession } from '../../services/api';
+import { getSiteHazardAlerts, getNotices } from '../../services/api';
 import type { HazardReport, Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -12,9 +12,6 @@ type Props = { session: AuthSession };
 export function SupervisorHomeScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [guestEmail, setGuestEmail] = useState('');
-  const [guestHours, setGuestHours] = useState('24');
-  const [renewing, setRenewing] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
@@ -22,20 +19,6 @@ export function SupervisorHomeScreen({ session }: Props) {
     getNotices().then(setNotices).catch(() => setConnectionError(true));
   }, []);
 
-  async function handleRenew() {
-    if (!guestEmail.trim()) { Alert.alert('Missing email', 'Enter the guest email address.'); return; }
-    setRenewing(true);
-    try {
-      const result = await renewGuestSession(guestEmail.trim(), parseInt(guestHours) || 24);
-      setGuestEmail('');
-      Alert.alert('Access renewed', `${result.fullName} can access the site for ${result.hoursGranted} more hours.`);
-    } catch (error: any) {
-      const msg = error?.message ?? '';
-      if (msg.includes('404')) Alert.alert('Not found', 'No guest account found with that email.');
-      else if (msg.includes('400')) Alert.alert('Not a guest', 'That account is not a guest account.');
-      else Alert.alert('Action failed', 'Could not renew guest session.');
-    } finally { setRenewing(false); }
-  }
 
   return (
     <View style={styles.flex}>
@@ -116,34 +99,6 @@ export function SupervisorHomeScreen({ session }: Props) {
           ))}
         </View>
 
-        {/* Guest Access */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Guest Access</Text>
-          <View style={styles.guestCard}>
-            <Text style={styles.guestLabel}>Renew guest session</Text>
-            <TextInput
-              autoCapitalize="none"
-              keyboardType="email-address"
-              onChangeText={setGuestEmail}
-              placeholder="Guest email address"
-              placeholderTextColor="#8fa3b8"
-              style={styles.input}
-              value={guestEmail}
-            />
-            <View style={styles.hoursRow}>
-              {['8', '24', '48', '72'].map((h) => (
-                <Text
-                  key={h}
-                  onPress={() => setGuestHours(h)}
-                  style={[styles.hoursPill, guestHours === h && styles.hoursPillActive]}
-                >
-                  {h}h
-                </Text>
-              ))}
-            </View>
-            <ActionButton label={renewing ? 'Renewing...' : `Renew ${guestHours}h Access`} onPress={handleRenew} />
-          </View>
-        </View>
 
       </ScrollView>
       <SosButton role={session.user.role} user={session.user} />
@@ -185,13 +140,10 @@ const styles = StyleSheet.create({
   noticeBody: { flex: 1, padding: 12 },
   noticeTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 3 },
   noticeMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 17 },
-  guestCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, padding: 14 },
   guestLabel: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 10 },
   input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 10, minHeight: 42, paddingHorizontal: 12 },
   hoursRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  hoursPill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, color: '#5d6875', fontSize: 12, fontWeight: '800', overflow: 'hidden', paddingHorizontal: 14, paddingVertical: 6 },
-  hoursPillActive: { backgroundColor: '#17212b', borderColor: '#17212b', color: '#ffffff' },
-
+ 
   errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
 errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 });

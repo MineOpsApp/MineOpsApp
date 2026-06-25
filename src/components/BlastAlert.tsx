@@ -16,7 +16,7 @@ export function BlastAlert() {
   if (blasts.length === 0) return null;
 
   return (
-    <>
+    <View>
       {blasts.map((blast) => {
         const diff = new Date(blast.blastTime).getTime() - Date.now();
         const mins = Math.floor(diff / 60000);
@@ -36,7 +36,7 @@ export function BlastAlert() {
           </View>
         );
       })}
-    </>
+    </View>
   );
 }
 
