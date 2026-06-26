@@ -19,7 +19,7 @@ export function SosButton({ role, user }: SosButtonProps) {
       actorName: user.fullName,
       message: 'Emergency assistance requested',
       role,
-      site: 'Obuasi Mine',
+      site: user.assignedSite ?? 'Obuasi Mine',
     });
     setOnCooldown(true);
     setTimeout(() => setOnCooldown(false), 60000);

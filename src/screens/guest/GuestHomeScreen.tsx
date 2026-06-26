@@ -34,7 +34,7 @@ export function GuestHomeScreen({ session, subRole }: Props) {
         actorEmail: session.user.email,
         actorName: session.user.fullName,
         actorRole: session.user.role,
-        site: 'Obuasi Mine',
+        site: session.user.assignedSite ?? 'Obuasi Mine',
         visitorType: subRole.charAt(0).toUpperCase() + subRole.slice(1),
       });
       Alert.alert('Induction complete', `Induction #${induction.id} recorded.`);

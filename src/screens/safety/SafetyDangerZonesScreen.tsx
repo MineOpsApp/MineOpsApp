@@ -24,7 +24,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
 
   async function create() {
     try {
-      const zone = await createDangerZone({ actorEmail: session.user.email, actorName: session.user.fullName, actorRole: session.user.role, riskLevel: 'High', site: 'Obuasi Mine', zoneName: 'Zone B - Blasting Area' });
+      const zone = await createDangerZone({ actorEmail: session.user.email, actorName: session.user.fullName, actorRole: session.user.role, riskLevel: 'High', site: session.user.assignedSite ?? 'Obuasi Mine', zoneName: 'Zone B - Blasting Area' });
       setZones((c) => [zone, ...c]);
       Alert.alert('Created', `${zone.zoneName} is now active.`);
     } catch { Alert.alert('Failed', 'Could not create danger zone.'); }

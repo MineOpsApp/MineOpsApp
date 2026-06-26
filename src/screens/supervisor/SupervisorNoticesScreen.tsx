@@ -27,7 +27,7 @@ export function SupervisorNoticesScreen({ session }: Props) {
 
   async function sendBriefing() {
     try {
-      await createSupervisorMessage({ senderRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email, audience: 'Workers - Obuasi Mine', message: briefing.trim() || 'Daily briefing sent' });
+      await createSupervisorMessage({ senderRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email, audience:`Workers - ${session.user.assignedSite ?? 'Obuasi Mine'}`, message: briefing.trim() || 'Daily briefing sent' });
       Alert.alert('Sent', 'Briefing sent to all workers.');
     } catch { Alert.alert('Failed', 'Could not send briefing.'); }
   }
