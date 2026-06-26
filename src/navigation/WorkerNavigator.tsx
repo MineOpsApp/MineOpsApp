@@ -16,6 +16,8 @@ import { useThemeMode } from '../theme/ThemeContext';
 import { WorkerDrillScreen } from '../screens/worker/WorkerDrillScreen';
 import { SupervisorRosterScreen } from '../screens/supervisor/SupervisorRosterScreen';
 import { WorkerAttendanceScreen } from '../screens/worker/WorkerAttendanceScreen'; 
+import { WorkerIncidentScreen } from '../screens/worker/WorkerIncidentScreen';
+
 
 import type { AuthSession } from '../types/auth';
 
@@ -40,7 +42,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function WorkerMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill' | 'attendance'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident'>('menu');
   
 
   if (screen === 'shift') return (
@@ -79,6 +81,17 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
     </View>
   );
   
+  if (screen === 'incident') return (
+  <View style={{ flex: 1 }}>
+    <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+      <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+    </Pressable>
+    <WorkerIncidentScreen session={session} />
+  </View>
+);
+
+
+
   return (
     <MoreScreen
       items={[
@@ -86,6 +99,7 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
         { icon: '🔄', label: 'Shift Handover', description: 'View last 24h summary for handover', onPress: () => setScreen('handover') },
         { icon: '⛏', label: 'Drill Operations', description: 'Step-by-step drill sign-off', onPress: () => setScreen('drill') },
         { icon: '🕐', label: 'Attendance', description: 'Clock in and out of site', onPress: () => setScreen('attendance') },
+        { icon: '🚨', label: 'Report Incident', description: 'Log injuries, near misses, equipment damage', onPress: () => setScreen('incident') },
       ]}
     />
   );

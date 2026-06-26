@@ -112,6 +112,31 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   }
 }
 
+async function patch<T>(path: string, body: unknown): Promise<T> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`${response.status}: ${text}`);
+    }
+    return response.json() as Promise<T>;
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Request timed out. Check your connection.');
+    }
+    if (error?.message?.includes('Network request failed')) {
+      throw new Error('Cannot reach server. Check your connection.');
+    }
+    throw error;
+  }
+}
+
 export function getDashboard() {
   return request<DashboardData>('/dashboard');
 }
@@ -426,4 +451,33 @@ export function cancelBlast(id: number) {
 
 export function executeBlast(id: number) {
   return post<any>(`/blasts/${id}/execute`, {});
+}
+
+export function createIncident(payload: {
+  zone: string;
+  category: string;
+  severity: string;
+  description: string;
+  involvedPersons?: string;
+  firstAidGiven?: boolean;
+  hospitalRequired?: boolean;
+  immediateAction?: string;
+  latitude?: number;
+  longitude?: number;
+  photoData?: string;
+  incidentAt?: string;
+}) {
+  return post<any>('/incidents', payload);
+}
+
+export function getMyIncidents() {
+  return request<any[]>('/incidents/mine');
+}
+
+export function getSiteIncidents() {
+  return request<any[]>('/incidents');
+}
+
+export function updateIncidentStatus(id: number, status: string) {
+  return patch<any>(`/incidents/${id}/status`, { status });
 }
