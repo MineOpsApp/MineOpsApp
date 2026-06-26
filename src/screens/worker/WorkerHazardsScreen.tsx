@@ -73,7 +73,7 @@ export function WorkerHazardsScreen({ session }: Props) {
         reportedByEmail: session.user.email,
         reportedByName: session.user.fullName,
         reportedByRole: session.user.role,
-        site: 'Obuasi Mine',
+        site: session.user.assignedSite ?? 'Obuasi Mine',
         severity,
         latitude,
         longitude,

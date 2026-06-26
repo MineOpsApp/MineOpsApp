@@ -446,7 +446,7 @@ export function getAllBlasts() {
 }
 
 export function cancelBlast(id: number) {
-  return post<any>(`/blasts/${id}/cancel`, {});
+  return patch<any>(`/blasts/${id}/cancel`, {});
 }
 
 export function executeBlast(id: number) {
