@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
-import { createGuestAccount, renewGuestSession } from '../../services/api';
+import { createGuestAccount, renewGuestSession, getGuestList } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
 type GuestType = 'visitor' | 'inspector' | 'investor';
-type ActiveTab = 'create' | 'renew';
+type ActiveTab = 'create' | 'renew' | 'list';
 
 const GUEST_TYPES: { id: GuestType; label: string; icon: string; description: string; color: string }[] = [
   { id: 'visitor', label: 'Visitor', icon: '👤', description: 'General site visit or contractor', color: '#1f6f5b' },
@@ -35,6 +35,8 @@ export function SupervisorGuestScreen({ session }: Props) {
   const [duration, setDuration] = useState(24);
   const [loading, setLoading] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<{ email: string; password: string; fullName: string; guestType: string; expiresIn: string } | null>(null);
+  const [guests, setGuests] = useState<any[]>([]);
+const [loadingGuests, setLoadingGuests] = useState(false);
 
   // Renew state
   const [renewEmail, setRenewEmail] = useState('');
@@ -88,6 +90,13 @@ export function SupervisorGuestScreen({ session }: Props) {
     } finally { setRenewing(false); }
   }
 
+  async function loadGuests() {
+  setLoadingGuests(true);
+  try { setGuests(await getGuestList()); } 
+  catch {} 
+  finally { setLoadingGuests(false); }
+}
+
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Guest Access</Text>
@@ -100,6 +109,9 @@ export function SupervisorGuestScreen({ session }: Props) {
         <Pressable onPress={() => setActiveTab('renew')} style={[styles.tab, activeTab === 'renew' && styles.tabActive]}>
           <Text style={[styles.tabText, activeTab === 'renew' && styles.tabTextActive]}>Renew Access</Text>
         </Pressable>
+       <Pressable onPress={() => { setActiveTab('list'); loadGuests(); }} style={[styles.tab, activeTab === 'list' && styles.tabActive]}>
+  <Text style={[styles.tabText, activeTab === 'list' && styles.tabTextActive]}>Guest List</Text>
+</Pressable>
       </View>
 
       {activeTab === 'create' ? (
@@ -182,7 +194,7 @@ export function SupervisorGuestScreen({ session }: Props) {
             </>
           )}
         </>
-      ) : (
+      ) : activeTab === 'renew' ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Renew Guest Session</Text>
           <Text style={styles.renewSub}>Extend access for a guest whose session has expired</Text>
@@ -206,11 +218,33 @@ export function SupervisorGuestScreen({ session }: Props) {
           </View>
           <ActionButton label={renewing ? 'Renewing...' : `Renew ${renewHours}h Access`} onPress={handleRenew} />
         </View>
+      ) : (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Current Guests</Text>
+          {loadingGuests ? (
+            <Text style={styles.renewSub}>Loading...</Text>
+          ) : guests.length === 0 ? (
+            <Text style={styles.renewSub}>No guests on site</Text>
+          ) : guests.map((g) => (
+            <View key={g.id} style={styles.guestRow}>
+              <View style={styles.guestLeft}>
+                <Text style={styles.guestName}>{g.fullName}</Text>
+                <Text style={styles.guestEmail}>{g.email}</Text>
+                <Text style={styles.guestRole}>{g.guestSubRole ?? 'visitor'}</Text>
+              </View>
+              <View style={[styles.guestExpiry, g.expired ? styles.guestExpired : styles.guestActive]}>
+                <Text style={styles.guestExpiryText}>{g.expired ? 'Expired' : 'Active'}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
       )}
     </ScrollView>
   );
+  
+   
+  
 }
-
 const styles = StyleSheet.create({
   container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
   pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 16 },
@@ -248,4 +282,13 @@ const styles = StyleSheet.create({
   credentialLabel: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
   credentialValue: { color: '#17212b', fontSize: 13, fontWeight: '700' },
   credentialValueBold: { color: '#15803d', fontSize: 15, fontWeight: '900' },
+  guestRow: { borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
+guestLeft: { flex: 1 },
+guestName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
+guestEmail: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 2 },
+guestRole: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
+guestExpiry: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
+guestActive: { backgroundColor: '#e7f6ef' },
+guestExpired: { backgroundColor: '#fff5f5' },
+guestExpiryText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
 });
