@@ -192,9 +192,11 @@ export function createHazardReport(report: {
   return post<HazardReport>('/hazards', report);
 }
 
-export function getHazardReports(reportedByEmail?: string) {
-  const query = reportedByEmail ? `?reportedByEmail=${encodeURIComponent(reportedByEmail)}` : '';
-  return request<{ content: HazardReport[] }>(`/hazards${query}`).then((page) => page.content);
+export function getHazardReports(reportedByEmail?: string, page = 0) {
+  const query = reportedByEmail 
+    ? `?reportedByEmail=${encodeURIComponent(reportedByEmail)}&page=${page}` 
+    : `?page=${page}`;
+  return request<any>(`/hazards${query}`);
 }
 
 export function getSiteHazardAlerts() {
@@ -491,4 +493,8 @@ export function getBlastHistory() {
 
 export function updateIncidentStatus(id: number, status: string, notes?: string) {
   return patch<any>(`/incidents/${id}/status`, { status, notes });
+}
+
+export function getGuestList() {
+  return request<any[]>('/admin/guests');
 }
