@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getSiteIncidents, updateIncidentStatus } from '../../services/api';
-import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-
+import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AuthSession } from '../../types/auth';
 
 type Incident = {
@@ -140,12 +139,21 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
                 {inc.hospitalRequired ? <Text style={[styles.medicalTag, { color: '#b42318' }]}>🏥 Hospital Required</Text> : null}
               </View>
 
+              <TextInput
+  multiline
+  onChangeText={(text) => setInvestigationNotes((c) => ({ ...c, [inc.id]: text }))}
+  placeholder="Investigation notes or corrective actions..."
+  placeholderTextColor="#8fa3b8"
+  style={styles.notesInput}
+  value={investigationNotes[inc.id] ?? ''}
+/>
+
               <Text style={styles.statusLabel}>Update Status</Text>
               <View style={styles.statusRow}>
                 {STATUSES.map((s) => (
                   <Pressable
                     key={s}
-                    onPress={() => handleStatusChange(inc, s)}
+                    onPress={() => handleStatusChange(inc, s, investigationNotes[inc.id])}
                     style={[styles.statusBtn, inc.status === s && styles.statusBtnActive]}
                   >
                     <Text style={[styles.statusBtnText, inc.status === s && styles.statusBtnTextActive]}>
@@ -196,4 +204,5 @@ const styles = StyleSheet.create({
   statusBtnActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
   statusBtnText: { color: '#8fa3b8', fontSize: 11, fontWeight: '800' },
   statusBtnTextActive: { color: '#ffffff' },
+  notesInput: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 13, marginBottom: 10, minHeight: 70, padding: 10 },
 });

@@ -23,6 +23,9 @@ const SEVERITY_COLORS: Record<Severity, { bg: string; text: string }> = {
 
 export function WorkerHazardsScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
+  const [page, setPage] = useState(0);
+const [hasMore, setHasMore] = useState(false);
+const [loadingMore, setLoadingMore] = useState(false);
   const [hazardType, setHazardType] = useState('Ground instability');
   const [hazardLocation, setHazardLocation] = useState('Zone A');
   const [hazardDescription, setHazardDescription] = useState('');
@@ -30,9 +33,12 @@ export function WorkerHazardsScreen({ session }: Props) {
   const [loading, setLoading] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
 
-  useEffect(() => {
-    getHazardReports(session.user.email).then(setHazards).catch(() => {});
-  }, []);
+useEffect(() => {
+  getHazardReports(session.user.email, 0).then((data) => {
+    setHazards(data.content ?? data);
+    setHasMore(data.totalPages ? 0 < data.totalPages - 1 : false);
+  }).catch(() => {});
+}, []);
 
   async function takePhoto() {
   const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -50,6 +56,19 @@ export function WorkerHazardsScreen({ session }: Props) {
     setPhoto(result.assets[0].base64);
   }
 }
+
+  async function loadMore() {
+  setLoadingMore(true);
+  const nextPage = page + 1;
+  try {
+    const data = await getHazardReports(session.user.email, nextPage);
+    setHazards((c) => [...c, ...(data.content ?? [])]);
+    setPage(nextPage);
+    setHasMore(nextPage < data.totalPages - 1);
+  } catch {} finally { setLoadingMore(false); }
+}
+
+
   async function submit() {
     const description = hazardDescription.trim();
     if (!description) { Alert.alert('Missing details', 'Enter the hazard details.'); return; }
@@ -87,6 +106,18 @@ export function WorkerHazardsScreen({ session }: Props) {
     } finally {
       setLoading(false);
     }
+
+    async function loadMore() {
+  setLoadingMore(true);
+  const nextPage = page + 1;
+  try {
+    const data = await getHazardReports(session.user.email, nextPage);
+    setHazards((c) => [...c, ...(data.content ?? [])]);
+    setPage(nextPage);
+    setHasMore(nextPage < data.totalPages - 1);
+  } catch {} finally { setLoadingMore(false); }
+}
+
   }
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -152,9 +183,15 @@ export function WorkerHazardsScreen({ session }: Props) {
       {hazards.map((h) => (
         <HazardCard key={h.id} hazard={h} canReview={false} canClear={false} onReview={() => {}} onClear={() => {}} />
       ))}
+      {hasMore ? (
+        <Pressable onPress={loadMore} style={styles.loadMoreBtn}>
+          <Text style={styles.loadMoreText}>{loadingMore ? 'Loading...' : 'Load More'}</Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }
+    
 
 const styles = StyleSheet.create({
   container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
@@ -181,4 +218,6 @@ photoPreview: { marginBottom: 16 },
 photoImage: { borderRadius: 8, height: 180, width: '100%' },
 removePhoto: { alignItems: 'center', marginTop: 8 },
 removePhotoText: { color: '#b42318', fontSize: 13, fontWeight: '700' },
+loadMoreBtn: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginTop: 8, paddingVertical: 12 },
+loadMoreText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
 });
