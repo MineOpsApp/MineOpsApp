@@ -56,6 +56,14 @@ export function WorkerNoticesScreen({ session }: Props) {
                 <Text style={styles.urgentFlag}>⚠ Acknowledgment required</Text>
                 <Text style={styles.noticeRole}>{n.postedByRole}</Text>
               </View>
+              {n.category ? (
+  <View style={[styles.categoryBadge,
+    n.category === 'Safety' ? styles.badgeSafety :
+    n.category === 'Administrative' ? styles.badgeAdmin : styles.badgeOps]}>
+    <Text style={styles.categoryText}>{n.category}</Text>
+  </View>
+) : null}
+
               <Text style={styles.noticeTitle}>{n.title}</Text>
               <Text style={styles.noticeMessage}>{n.message}</Text>
               <Pressable
@@ -89,6 +97,13 @@ export function WorkerNoticesScreen({ session }: Props) {
                   <Text style={styles.doneCheckText}>✓</Text>
                 </View>
                 <View style={styles.doneBody}>
+                  {n.category ? (
+  <View style={[styles.categoryBadge,
+    n.category === 'Safety' ? styles.badgeSafety :
+    n.category === 'Administrative' ? styles.badgeAdmin : styles.badgeOps]}>
+    <Text style={styles.categoryText}>{n.category}</Text>
+  </View>
+) : null}
                   <Text style={styles.doneTitle}>{n.title}</Text>
                   <Text style={styles.doneMeta}>{n.message}</Text>
                 </View>
@@ -140,4 +155,9 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 32, marginBottom: 10 },
   emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
   emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
+  categoryBadge: { alignSelf: 'flex-start', borderRadius: 6, borderWidth: 1, marginBottom: 4, marginHorizontal: 14, marginTop: 10, paddingHorizontal: 8, paddingVertical: 3 },
+badgeSafety: { backgroundColor: '#fff5f5', borderColor: '#b42318' },
+badgeOps: { backgroundColor: '#fffbeb', borderColor: '#d29922' },
+badgeAdmin: { backgroundColor: '#f0f4ff', borderColor: '#4a6fa5' },
+categoryText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
 });

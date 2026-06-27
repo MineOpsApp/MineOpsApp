@@ -321,6 +321,7 @@ export function createNotice(notice: {
   postedByRole: string;
   actorName: string;
   actorEmail: string;
+  category?: string
 }) {
   return post<Notice>('/notices', notice);
 }
