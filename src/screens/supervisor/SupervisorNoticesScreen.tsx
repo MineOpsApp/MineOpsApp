@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
@@ -14,12 +14,13 @@ export function SupervisorNoticesScreen({ session }: Props) {
   const [title, setTitle] = useState('Zone B restriction');
   const [message, setMessage] = useState('Zone B is restricted until clearance.');
   const [briefing, setBriefing] = useState('Avoid Zone B until clearance is completed.');
+  const [category, setCategory] = useState('Operational');
 
   useEffect(() => { getNotices().then(setNotices).catch(() => {}); }, []);
 
   async function post() {
     try {
-      const notice = await createNotice({ title: title.trim() || 'Site Notice', message: message.trim() || 'New notice', postedByRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email });
+      const notice = await createNotice({ title: title.trim() || 'Site Notice', message: message.trim() || 'New notice', postedByRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email, category });
       setNotices((c) => [notice, ...c]);
       Alert.alert('Posted', `Notice #${notice.id} posted.`);
     } catch { Alert.alert('Failed', 'Could not post notice.'); }
@@ -40,6 +41,16 @@ export function SupervisorNoticesScreen({ session }: Props) {
         <Text style={styles.cardTitle}>📣 Send Briefing</Text>
         <Text style={styles.cardSub}>Broadcast a message to all workers on site</Text>
         <InputField label="Message" multiline onChangeText={setBriefing} value={briefing} />
+
+        <Text style={styles.fieldLabel}>Category</Text>
+<View style={styles.pillRow}>
+  {['Safety', 'Operational', 'Administrative'].map((c) => (
+    <Pressable key={c} onPress={() => setCategory(c)} style={[styles.pill, category === c && styles.pillActive]}>
+      <Text style={[styles.pillText, category === c && styles.pillActiveText]}>{c}</Text>
+    </Pressable>
+  ))}
+</View>
+
         <ActionButton label="Send Briefing to Workers" onPress={sendBriefing} />
       </View>
 
@@ -65,6 +76,14 @@ export function SupervisorNoticesScreen({ session }: Props) {
                 <Text style={styles.noticeTitle}>{n.title}</Text>
                 <Text style={styles.noticeMessage}>{n.message}</Text>
                 <Text style={styles.noticeRole}>Posted by {n.postedByRole}</Text>
+
+                {n.category ? (
+  <View style={[styles.categoryBadge,
+    n.category === 'Safety' ? styles.badgeSafety :
+    n.category === 'Administrative' ? styles.badgeAdmin : styles.badgeOps]}>
+    <Text style={styles.categoryText}>{n.category}</Text>
+  </View>
+) : null}
               </View>
               <View style={[styles.ackBadge, ackCount > 0 ? styles.ackBadgeGreen : styles.ackBadgeGrey]}>
                 <Text style={[styles.ackBadgeText, ackCount > 0 ? styles.ackBadgeTextGreen : styles.ackBadgeTextGrey]}>{ackCount} ✓</Text>
@@ -113,4 +132,15 @@ const styles = StyleSheet.create({
   noAckText: { borderTopColor: '#f4f6f8', borderTopWidth: 1, color: '#b42318', fontSize: 12, fontWeight: '700', padding: 10 },
   emptyCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 20 },
   emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
+pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+pill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
+pillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
+pillActiveText: { color: '#ffffff' },
+categoryBadge: { alignSelf: 'flex-start', borderRadius: 6, borderWidth: 1, marginTop: 4, paddingHorizontal: 8, paddingVertical: 3 },
+badgeSafety: { backgroundColor: '#fff5f5', borderColor: '#b42318' },
+badgeOps: { backgroundColor: '#fffbeb', borderColor: '#d29922' },
+badgeAdmin: { backgroundColor: '#f0f4ff', borderColor: '#4a6fa5' },
+categoryText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
 });

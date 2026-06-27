@@ -79,6 +79,7 @@ export type Notice = {
   postedByRole: UserRole | string;
   createdAt: string;
   seenBy: NoticeSeen[];
+  category?: string;
 };
 
 export type WorkerEquipment = {
