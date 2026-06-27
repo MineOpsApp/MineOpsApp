@@ -13,6 +13,7 @@ import type {
   WorkerEquipment,
   WorkerProfile,
 } from '../types/actions';
+
 import type { AuthPayload, AuthSession } from '../types/auth';
 import type { AuthUser } from '../types/auth';
 
@@ -481,4 +482,12 @@ export function getSiteIncidents() {
 
 export function updateIncidentStatus(id: number, status: string) {
   return patch<any>(`/incidents/${id}/status`, { status });
+}
+
+export function getWorkerBlastHistory() {
+  return request<any[]>('/blasts/all');
+}
+
+export function getBlastHistory() {
+  return request<any[]>('/blasts/history');
 }
