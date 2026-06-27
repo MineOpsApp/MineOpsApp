@@ -480,9 +480,6 @@ export function getSiteIncidents() {
   return request<any[]>('/incidents');
 }
 
-export function updateIncidentStatus(id: number, status: string) {
-  return patch<any>(`/incidents/${id}/status`, { status });
-}
 
 export function getWorkerBlastHistory() {
   return request<any[]>('/blasts/all');
@@ -490,4 +487,8 @@ export function getWorkerBlastHistory() {
 
 export function getBlastHistory() {
   return request<any[]>('/blasts/history');
+}
+
+export function updateIncidentStatus(id: number, status: string, notes?: string) {
+  return patch<any>(`/incidents/${id}/status`, { status, notes });
 }

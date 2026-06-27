@@ -56,17 +56,18 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [investigationNotes, setInvestigationNotes] = useState<Record<number, string>>({});
 
   function load() { return getSiteIncidents().then(setIncidents).catch(() => {}); }
   useEffect(() => { load(); }, []);
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
-  async function handleStatusChange(incident: Incident, status: string) {
-    try {
-      const updated = await updateIncidentStatus(incident.id, status);
-      setIncidents((c) => c.map((i) => i.id === updated.id ? updated : i));
-    } catch { Alert.alert('Failed', 'Could not update incident status.'); }
-  }
+  async function handleStatusChange(incident: Incident, status: string, notes?: string) {
+  try {
+    const updated = await updateIncidentStatus(incident.id, status, notes);
+    setIncidents((c) => c.map((i) => i.id === updated.id ? updated : i));
+  } catch { Alert.alert('Failed', 'Could not update incident status.'); }
+}
 
   function formatDate(dateStr: string) {
     try { return new Date(dateStr).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
