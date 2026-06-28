@@ -499,3 +499,7 @@ export function updateIncidentStatus(id: number, status: string, notes?: string)
 export function getGuestList() {
   return request<any[]>('/admin/guests');
 }
+
+export function resetUserPassword(email: string) {
+  return post<{ email: string; fullName: string; temporaryPassword: string }>('/admin/users/reset-password', { email });
+}
