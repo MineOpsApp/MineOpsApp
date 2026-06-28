@@ -65,6 +65,12 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
         Alert.alert('Already registered', 'An account with this email exists. Try signing in.');
       } else if (msg.includes('401') || (msg.includes('403') && msg === '403: ')) {
   Alert.alert('Incorrect credentials', 'Check your email and password.');
+} else if (msg.includes('403') && msg === '403: ') {
+  Alert.alert('Incorrect credentials', 'Check your email and password.');
+} else if (msg.includes('suspended')) {
+  Alert.alert('Account suspended', 'Your account has been suspended. Contact your supervisor.');
+} else if (msg.includes('suspended')) {
+  Alert.alert('Account suspended', 'Your account has been suspended. Contact your supervisor.');
 } else if (msg.includes('403')) {
   Alert.alert('Access expired', 'Your guest session has expired. Contact your site administrator.');
       } else if (msg.includes('400')) {
