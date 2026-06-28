@@ -36,6 +36,7 @@ export function WorkerShiftScreen({ session }: Props) {
   const [equipmentCode, setEquipmentCode] = useState('EX-01');
   const [equipmentName, setEquipmentName] = useState('Excavator');
   const [notes, setNotes] = useState('');
+  const [shiftDate, setShiftDate] = useState(new Date().toISOString().slice(0, 10));
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -47,12 +48,14 @@ export function WorkerShiftScreen({ session }: Props) {
     if (!volume || isNaN(vol) || vol <= 0) { Alert.alert('Invalid volume', 'Enter a valid volume greater than 0.'); return; }
     setSubmitting(true);
     try {
-      const log = await submitShiftLog({
-        zone, shiftType, mineralType,
-        volumeExtracted: vol,
-        unit, equipmentCode, equipmentName,
-        notes: notes.trim(),
-      });
+        const log = await submitShiftLog({
+  zone, shiftType, mineralType,
+  volumeExtracted: vol,
+  unit, equipmentCode, equipmentName,
+  notes: notes.trim(),
+  shiftDate,
+});
+
       setLogs((c) => [log, ...c]);
       setVolume('');
       setNotes('');
@@ -122,6 +125,18 @@ export function WorkerShiftScreen({ session }: Props) {
         <TextInput onChangeText={setEquipmentCode} placeholder="Code (e.g. EX-01)" style={[styles.input, { flex: 1, marginRight: 8 }]} value={equipmentCode} />
         <TextInput onChangeText={setEquipmentName} placeholder="Name" style={[styles.input, { flex: 2 }]} value={equipmentName} />
       </View>
+
+          <Text style={styles.label}>Shift Date</Text>
+<TextInput
+  onChangeText={setShiftDate}
+  placeholder="YYYY-MM-DD"
+  placeholderTextColor="#8fa3b8"
+  style={styles.input}
+  value={shiftDate}
+  keyboardType="numbers-and-punctuation"
+/>
+<Text style={styles.label}>Notes (optional)</Text>
+<TextInput multiline onChangeText={setNotes} placeholder="Any observations for this shift..." style={styles.textArea} value={notes} />
 
       <Text style={styles.label}>Notes (optional)</Text>
       <TextInput multiline onChangeText={setNotes} placeholder="Any observations for this shift..." style={styles.textArea} value={notes} />
