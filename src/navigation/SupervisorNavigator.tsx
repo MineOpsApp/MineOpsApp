@@ -19,6 +19,7 @@ import { SupervisorBlastScreen } from '../screens/supervisor/SupervisorBlastScre
 import { SupervisorDrillScreen } from '../screens/supervisor/SupervisorDrillScreen';
 import { SupervisorGuestScreen } from '../screens/supervisor/SupervisorGuestScreen';
 import { SupervisorIncidentScreen } from '../screens/supervisor/SupervisorIncidentScreen';
+import { SupervisorResetPasswordScreen } from '../screens/supervisor/SupervisorResetPasswordScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -42,7 +43,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'incidents'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' |'reset' | 'incidents'>('menu');
 
   const backBtn = (
     <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -58,6 +59,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'roster') return <View style={{ flex: 1 }}>{backBtn}<SupervisorRosterScreen session={session} /></View>;
   if (screen === 'blast') return <View style={{ flex: 1 }}>{backBtn}<SupervisorBlastScreen session={session} /></View>;
   if (screen === 'incidents') return <View style={{ flex: 1 }}>{backBtn}<SupervisorIncidentScreen session={session} /></View>;
+  if (screen === 'reset') return <View style={{ flex: 1 }}>{backBtn}<SupervisorResetPasswordScreen session={session} /></View>;
   return (
     <MoreScreen
       items={[
@@ -69,6 +71,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '👷', label: 'Site Roster', description: 'Live headcount — who is on site now', onPress: () => setScreen('roster') },
         { icon: '💥', label: 'Blast Management', description: 'Schedule and notify blast operations', onPress: () => setScreen('blast') },
         { icon: '🚨', label: 'Incident Reports', description: 'View and manage site incident reports', onPress: () => setScreen('incidents') },
+        { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for locked out worker', onPress: () => setScreen('reset') },
       ]}
     />
   );
