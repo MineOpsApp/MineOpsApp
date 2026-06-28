@@ -250,6 +250,7 @@ export function submitShiftLog(payload: {
   equipmentCode: string;
   equipmentName: string;
   notes?: string;
+  shiftDate?: string;
 }) {
   return post<any>('/shift-logs', payload);
 }
