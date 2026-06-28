@@ -59,12 +59,14 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
       onAuthenticated(session);
     } catch (error: any) {
       const msg = error?.message ?? '';
+      
+      
       if (msg.includes('409') || msg.includes('Conflict')) {
         Alert.alert('Already registered', 'An account with this email exists. Try signing in.');
-      } else if (msg.includes('401')) {
-        Alert.alert('Incorrect credentials', 'Check your email and password.');
-      } else if (msg.includes('403')) {
-        Alert.alert('Access expired', 'Your guest session has expired. Contact your site administrator.');
+      } else if (msg.includes('401') || (msg.includes('403') && msg === '403: ')) {
+  Alert.alert('Incorrect credentials', 'Check your email and password.');
+} else if (msg.includes('403')) {
+  Alert.alert('Access expired', 'Your guest session has expired. Contact your site administrator.');
       } else if (msg.includes('400')) {
         Alert.alert('Invalid details', 'Check your information and try again.');
       } else {
