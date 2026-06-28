@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
-import { resetUserPassword } from '../../services/api';
+import { resetUserPassword, suspendUser } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
@@ -11,6 +11,8 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ email: string; fullName: string; temporaryPassword: string } | null>(null);
+  const [suspendEmail, setSuspendEmail] = useState('');
+const [suspending, setSuspending] = useState(false);
 
   async function handleReset() {
     if (!email.trim()) { Alert.alert('Missing email', 'Enter the worker email address.'); return; }
@@ -26,6 +28,24 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
       else Alert.alert('Failed', 'Could not reset password.');
     } finally { setLoading(false); }
   }
+
+  async function handleSuspend(suspend: boolean) {
+  if (!suspendEmail.trim()) { Alert.alert('Missing email', 'Enter the worker email address.'); return; }
+  setSuspending(true);
+  try {
+    const res = await suspendUser(suspendEmail.trim().toLowerCase(), suspend);
+    setSuspendEmail('');
+    Alert.alert(
+      suspend ? 'Account suspended' : 'Account reinstated',
+      `${res.fullName} has been ${suspend ? 'suspended' : 'reinstated'}.`
+    );
+  } catch (error: any) {
+    const msg = error?.message ?? '';
+    if (msg.includes('404')) Alert.alert('Not found', 'No account found with that email.');
+    else if (msg.includes('403')) Alert.alert('Not allowed', 'Cannot suspend supervisors or safety officers.');
+    else Alert.alert('Failed', 'Could not update account status.');
+  } finally { setSuspending(false); }
+}
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -70,10 +90,38 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
           </View>
           <ActionButton label={loading ? 'Resetting...' : 'Reset Password'} onPress={handleReset} />
         </View>
+        
       )}
+
+      <View style={styles.card}>
+  <Text style={styles.cardTitle}>Suspend / Reinstate Account</Text>
+  <TextInput
+    autoCapitalize="none"
+    keyboardType="email-address"
+    onChangeText={setSuspendEmail}
+    placeholder="worker@example.com"
+    placeholderTextColor="#8fa3b8"
+    style={styles.input}
+    value={suspendEmail}
+  />
+  <View style={styles.suspendRow}>
+    <Pressable
+      onPress={() => handleSuspend(true)}
+      style={[styles.suspendBtn, styles.suspendBtnRed]}>
+      <Text style={styles.suspendBtnText}>{suspending ? '...' : 'Suspend'}</Text>
+    </Pressable>
+    <Pressable
+      onPress={() => handleSuspend(false)}
+      style={[styles.suspendBtn, styles.suspendBtnGreen]}>
+      <Text style={styles.suspendBtnText}>{suspending ? '...' : 'Reinstate'}</Text>
+    </Pressable>
+  </View>
+</View>
+      
     </ScrollView>
   );
-}
+  }
+
 
 const styles = StyleSheet.create({
   container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
@@ -93,5 +141,10 @@ const styles = StyleSheet.create({
   credentialValueBold: { color: '#15803d', fontSize: 15, fontWeight: '900' },
   warningBox: { backgroundColor: '#fffbeb', borderColor: '#d29922', borderRadius: 8, borderWidth: 1, marginBottom: 16, marginTop: 8, padding: 12 },
   warningText: { color: '#a15c00', fontSize: 12, fontWeight: '700' },
+  suspendRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+suspendBtn: { alignItems: 'center', borderRadius: 8, flex: 1, paddingVertical: 12 },
+suspendBtnRed: { backgroundColor: '#b42318' },
+suspendBtnGreen: { backgroundColor: '#1f6f5b' },
+suspendBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
 });
 
