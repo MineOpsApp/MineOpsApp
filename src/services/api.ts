@@ -48,17 +48,16 @@ function withAuthHeaders(headers?: HeadersInit): HeadersInit {
   return nextHeaders;
 }
 
-async function fetchWithTimeout(url: string, options?: RequestInit) {
+async function fetchWithTimeout(url: string, options?: RequestInit & { skipAuth?: boolean }) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, {
+    return await fetch(url, {
       ...options,
-      headers: withAuthHeaders(options?.headers),
+      headers: options?.skipAuth ? (options?.headers ?? {}) : withAuthHeaders(options?.headers),
       signal: controller.signal,
     });
-    return response;
   } catch (error: any) {
     if (error?.name === 'AbortError') {
       throw new Error('Request timed out — server may be unreachable');
@@ -138,6 +137,26 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
   }
 }
 
+async function postPublic<T>(path: string, body: unknown): Promise<T> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      skipAuth: true,
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`${response.status}: ${text}`);
+    }
+    return response.json() as Promise<T>;
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
+    throw error;
+  }
+}
+
 export function getDashboard() {
   return request<DashboardData>('/dashboard');
 }
@@ -147,11 +166,13 @@ export function getSites() {
 }
 
 export function registerUser(payload: AuthPayload) {
-  return post<AuthSession>('/auth/register', payload);
+  setAuthToken(null);
+  return postPublic<AuthSession>('/auth/register', payload);
 }
 
 export function loginUser(payload: AuthPayload) {
-  return post<AuthSession>('/auth/login', payload);
+  setAuthToken(null);
+  return postPublic<AuthSession>('/auth/login', payload);
 }
 
 export function renewGuestSession(email: string, hours: number) {
