@@ -51,7 +51,6 @@ function withAuthHeaders(headers?: HeadersInit): HeadersInit {
 async function fetchWithTimeout(url: string, options?: RequestInit & { skipAuth?: boolean }) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
   try {
     return await fetch(url, {
       ...options,
@@ -126,7 +125,8 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
       throw new Error(`${response.status}: ${text}`);
     }
     return response.json() as Promise<T>;
-  } catch (error: any) {
+  } 
+catch (error: any) {
     if (error?.name === 'AbortError') {
       throw new Error('Request timed out. Check your connection.');
     }
@@ -146,10 +146,16 @@ async function postPublic<T>(path: string, body: unknown): Promise<T> {
       skipAuth: true,
     });
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`${response.status}: ${text}`);
+      const statusCode = response.status;
+      let text = '';
+      try { text = await response.text(); } catch {}
+      throw new Error(`${statusCode}: ${text}`);
     }
-    return response.json() as Promise<T>;
+    const json = await response.json();
+    if (json.error) {
+      throw new Error(`LOGIN_ERROR: ${json.error}`);
+    }
+    return json as T;
   } catch (error: any) {
     if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
     if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
@@ -523,4 +529,8 @@ export function getGuestList() {
 
 export function resetUserPassword(email: string) {
   return post<{ email: string; fullName: string; temporaryPassword: string }>('/admin/users/reset-password', { email });
+}
+
+export function suspendUser(email: string, suspend: boolean) {
+  return post<any>('/admin/users/suspend', { email, suspend: suspend ? 'true' : 'false' });
 }
