@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
-import { submitShiftLog, getMyShiftLogs } from '../../services/api';
+import { submitShiftLog, getMyShiftLogs, getSiteEquipment } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
 type ShiftLog = {
@@ -38,9 +38,11 @@ export function WorkerShiftScreen({ session }: Props) {
   const [notes, setNotes] = useState('');
   const [shiftDate, setShiftDate] = useState(new Date().toISOString().slice(0, 10));
   const [submitting, setSubmitting] = useState(false);
+  const [equipmentList, setEquipmentList] = useState<any[]>([]);
 
   useEffect(() => {
     getMyShiftLogs().then(setLogs).catch(() => {});
+    getSiteEquipment().then(setEquipmentList).catch(() => {});
   }, []);
 
   async function submit() {
@@ -121,10 +123,24 @@ export function WorkerShiftScreen({ session }: Props) {
       </View>
 
       <Text style={styles.label}>Equipment</Text>
-      <View style={styles.equipRow}>
-        <TextInput onChangeText={setEquipmentCode} placeholder="Code (e.g. EX-01)" style={[styles.input, { flex: 1, marginRight: 8 }]} value={equipmentCode} />
-        <TextInput onChangeText={setEquipmentName} placeholder="Name" style={[styles.input, { flex: 2 }]} value={equipmentName} />
-      </View>
+{equipmentList.length > 0 ? (
+  <View style={styles.pillRow}>
+    {equipmentList.map((eq) => (
+      <Pressable
+        key={eq.id}
+        onPress={() => { setEquipmentCode(eq.code); setEquipmentName(eq.name); }}
+        style={[styles.pill, equipmentCode === eq.code && styles.pillActive]}
+      >
+        <Text style={[styles.pillText, equipmentCode === eq.code && styles.pillActiveText]}>{eq.code} — {eq.name}</Text>
+      </Pressable>
+    ))}
+  </View>
+) : (
+  <View style={styles.equipRow}>
+    <TextInput onChangeText={setEquipmentCode} placeholder="Code (e.g. EX-01)" style={[styles.input, { flex: 1, marginRight: 8 }]} value={equipmentCode} />
+    <TextInput onChangeText={setEquipmentName} placeholder="Name" style={[styles.input, { flex: 2 }]} value={equipmentName} />
+  </View>
+)}
 
           <Text style={styles.label}>Shift Date</Text>
 <TextInput
