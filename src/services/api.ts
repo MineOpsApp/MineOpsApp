@@ -534,3 +534,15 @@ export function resetUserPassword(email: string) {
 export function suspendUser(email: string, suspend: boolean) {
   return post<any>('/admin/users/suspend', { email, suspend: suspend ? 'true' : 'false' });
 }
+
+export function getSiteEquipment() {
+  return request<any[]>('/equipment');
+}
+
+export function addEquipment(payload: { code: string; name: string; type: string; notes?: string }) {
+  return post<any>('/equipment', payload);
+}
+
+export function updateEquipmentRegistryStatus(id: number, status: string, notes?: string) {
+  return patch<any>(`/equipment/${id}/status`, { status, notes });
+}
