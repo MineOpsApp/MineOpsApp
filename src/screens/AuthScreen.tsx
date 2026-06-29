@@ -41,16 +41,17 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   async function submit() {
-    if (mode === 'register') {
-      if (!fullName.trim()) { Alert.alert('Missing information', 'Enter your full name.'); return; }
-      if (!email.trim()) { Alert.alert('Missing information', 'Enter your email.'); return; }
-      if (password.length < 6) { Alert.alert('Weak password', 'Password must be at least 6 characters.'); return; }
-      if (password !== confirmPassword) { Alert.alert('Password mismatch', 'Passwords do not match.'); return; }
-    } else {
-      if (!email.trim() || !password.trim()) { Alert.alert('Missing information', 'Enter your email and password.'); return; }
-    }
+  if (isSubmitting) return;
+  if (mode === 'register') {
+    if (!fullName.trim()) { Alert.alert('Missing information', 'Enter your full name.'); return; }
+    if (!email.trim()) { Alert.alert('Missing information', 'Enter your email.'); return; }
+    if (password.length < 6) { Alert.alert('Weak password', 'Password must be at least 6 characters.'); return; }
+    if (password !== confirmPassword) { Alert.alert('Password mismatch', 'Passwords do not match.'); return; }
+  } else {
+    if (!email.trim() || !password.trim()) { Alert.alert('Missing information', 'Enter your email and password.'); return; }
+  }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
     try {
       const session = mode === 'register'
         ? await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedSite ,guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined,
@@ -58,29 +59,24 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
         : await loginUser({ email: email.trim().toLowerCase(), password });
       onAuthenticated(session);
     } catch (error: any) {
-      const msg = error?.message ?? '';
-      
-      
-      if (msg.includes('409') || msg.includes('Conflict')) {
-        Alert.alert('Already registered', 'An account with this email exists. Try signing in.');
-      } else if (msg.includes('401') || (msg.includes('403') && msg === '403: ')) {
-  Alert.alert('Incorrect credentials', 'Check your email and password.');
-} else if (msg.includes('403') && msg === '403: ') {
-  Alert.alert('Incorrect credentials', 'Check your email and password.');
-} else if (msg.includes('suspended')) {
+  const msg = error?.message ?? '';
+ 
+  if (msg.includes('SUSPENDED')) {
   Alert.alert('Account suspended', 'Your account has been suspended. Contact your supervisor.');
-} else if (msg.includes('suspended')) {
-  Alert.alert('Account suspended', 'Your account has been suspended. Contact your supervisor.');
-} else if (msg.includes('403')) {
+} else if (msg.includes('EXPIRED')) {
   Alert.alert('Access expired', 'Your guest session has expired. Contact your site administrator.');
-      } else if (msg.includes('400')) {
-        Alert.alert('Invalid details', 'Check your information and try again.');
-      } else {
-        Alert.alert('Connection failed', 'Could not reach the server. Check your connection.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+} else if (msg.includes('INVALID_CREDENTIALS') || msg.includes('401')) {
+  Alert.alert('Incorrect credentials', 'Check your email and password.');
+} else if (msg.includes('409') || msg.includes('Conflict')) {
+  Alert.alert('Already registered', 'An account with this email exists. Try signing in.');
+} else if (msg.includes('400')) {
+  Alert.alert('Invalid details', 'Check your information and try again.');
+} else {
+  Alert.alert('Connection failed', 'Could not reach the server. Check your connection.');
+}
+} finally {
+  setIsSubmitting(false);
+}
   }
 
   return (

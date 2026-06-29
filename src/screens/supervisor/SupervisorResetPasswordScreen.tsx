@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { resetUserPassword, suspendUser } from '../../services/api';
@@ -48,7 +48,8 @@ const [suspending, setSuspending] = useState(false);
 }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <Text style={styles.pageTitle}>Reset Password</Text>
       <Text style={styles.pageSub}>Generate a temporary password for a worker who has been locked out</Text>
 
@@ -119,6 +120,7 @@ const [suspending, setSuspending] = useState(false);
 </View>
       
     </ScrollView>
+     </KeyboardAvoidingView>
   );
   }
 
