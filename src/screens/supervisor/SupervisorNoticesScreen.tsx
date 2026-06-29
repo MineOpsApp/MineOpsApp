@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
 import { getNotices, createNotice, createSupervisorMessage } from '../../services/api';
+import { deleteNotice } from '../../services/api';
 import type { Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -15,16 +16,28 @@ export function SupervisorNoticesScreen({ session }: Props) {
   const [message, setMessage] = useState('Zone B is restricted until clearance.');
   const [briefing, setBriefing] = useState('Avoid Zone B until clearance is completed.');
   const [category, setCategory] = useState('Operational');
+  const [expiryDays, setExpiryDays] = useState<number | null>(null);
 
   useEffect(() => { getNotices().then(setNotices).catch(() => {}); }, []);
 
   async function post() {
-    try {
-      const notice = await createNotice({ title: title.trim() || 'Site Notice', message: message.trim() || 'New notice', postedByRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email, category });
-      setNotices((c) => [notice, ...c]);
-      Alert.alert('Posted', `Notice #${notice.id} posted.`);
-    } catch { Alert.alert('Failed', 'Could not post notice.'); }
-  }
+  try {
+    const expiresAt = expiryDays
+      ? new Date(Date.now() + expiryDays * 86400000).toISOString().slice(0, 19)
+      : undefined;
+    const notice = await createNotice({
+      title: title.trim() || 'Site Notice',
+      message: message.trim() || 'New notice',
+      postedByRole: session.user.role,
+      actorName: session.user.fullName,
+      actorEmail: session.user.email,
+      category,
+      expiresAt,
+    });
+    setNotices((c) => [notice, ...c]);
+    Alert.alert('Posted', `Notice #${notice.id} posted.`);
+  } catch { Alert.alert('Failed', 'Could not post notice.'); }
+}
 
   async function sendBriefing() {
     try {
@@ -32,6 +45,18 @@ export function SupervisorNoticesScreen({ session }: Props) {
       Alert.alert('Sent', 'Briefing sent to all workers.');
     } catch { Alert.alert('Failed', 'Could not send briefing.'); }
   }
+
+  async function handleDelete(id: number) {
+  Alert.alert('Delete notice?', 'This cannot be undone.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: async () => {
+      try {
+        await deleteNotice(id);
+        setNotices((c) => c.filter((n) => n.id !== id));
+      } catch { Alert.alert('Failed', 'Could not delete notice.'); }
+    }}
+  ]);
+}
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -47,6 +72,21 @@ export function SupervisorNoticesScreen({ session }: Props) {
   {['Safety', 'Operational', 'Administrative'].map((c) => (
     <Pressable key={c} onPress={() => setCategory(c)} style={[styles.pill, category === c && styles.pillActive]}>
       <Text style={[styles.pillText, category === c && styles.pillActiveText]}>{c}</Text>
+    </Pressable>
+  ))}
+</View>
+
+<Text style={styles.cardSub}>Expiry (optional)</Text>
+<View style={styles.pillRow}>
+  {[
+    { label: 'No expiry', value: null },
+    { label: '1 day', value: 1 },
+    { label: '3 days', value: 3 },
+    { label: '7 days', value: 7 },
+    { label: '30 days', value: 30 },
+  ].map((opt) => (
+    <Pressable key={String(opt.value)} onPress={() => setExpiryDays(opt.value)} style={[styles.pill, expiryDays === opt.value && styles.pillActive]}>
+      <Text style={[styles.pillText, expiryDays === opt.value && styles.pillActiveText]}>{opt.label}</Text>
     </Pressable>
   ))}
 </View>
@@ -76,6 +116,9 @@ export function SupervisorNoticesScreen({ session }: Props) {
                 <Text style={styles.noticeTitle}>{n.title}</Text>
                 <Text style={styles.noticeMessage}>{n.message}</Text>
                 <Text style={styles.noticeRole}>Posted by {n.postedByRole}</Text>
+                <Pressable onPress={() => handleDelete(n.id)} style={styles.deleteBtn}>
+  <Text style={styles.deleteBtnText}>Delete</Text>
+</Pressable>
 
                 {n.category ? (
   <View style={[styles.categoryBadge,
@@ -143,4 +186,6 @@ badgeSafety: { backgroundColor: '#fff5f5', borderColor: '#b42318' },
 badgeOps: { backgroundColor: '#fffbeb', borderColor: '#d29922' },
 badgeAdmin: { backgroundColor: '#f0f4ff', borderColor: '#4a6fa5' },
 categoryText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
+deleteBtn: { alignSelf: 'flex-start', marginTop: 4 },
+deleteBtnText: { color: '#b42318', fontSize: 11, fontWeight: '800' },
 });

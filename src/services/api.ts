@@ -161,6 +161,28 @@ async function postPublic<T>(path: string, body: unknown): Promise<T> {
     if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
     throw error;
   }
+
+  async function del<T>(path: string): Promise<T> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) {
+      const statusCode = response.status;
+      let text = '';
+      try { text = await response.text(); } catch {}
+      throw new Error(`${statusCode}: ${text}`);
+    }
+    return response.json() as Promise<T>;
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
+    throw error;
+  }
+}
+
+
 }
 
 export function getDashboard() {
@@ -352,7 +374,8 @@ export function createNotice(notice: {
   postedByRole: string;
   actorName: string;
   actorEmail: string;
-  category?: string
+  category?: string;
+  expiresAt?: string;
 }) {
   return post<Notice>('/notices', notice);
 }
@@ -545,4 +568,8 @@ export function addEquipment(payload: { code: string; name: string; type: string
 
 export function updateEquipmentRegistryStatus(id: number, status: string, notes?: string) {
   return patch<any>(`/equipment/${id}/status`, { status, notes });
+}
+
+export function deleteNotice(id: number) {
+  return request<any>(`/notices/${id}`);
 }
