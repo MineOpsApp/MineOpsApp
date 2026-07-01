@@ -39,6 +39,7 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState(false);
 
   async function submit() {
   if (isSubmitting) return;
@@ -53,30 +54,54 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
 
   setIsSubmitting(true);
     try {
-      const session = mode === 'register'
-        ? await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedSite ,guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined,
-   })
-        : await loginUser({ email: email.trim().toLowerCase(), password });
-      onAuthenticated(session);
+      if (mode === 'register') {
+        const result = await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedSite, guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined });
+        if (result?.pending) {
+          setPendingApproval(true);
+        } else {
+          onAuthenticated(result);
+        }
+      } else {
+        const session = await loginUser({ email: email.trim().toLowerCase(), password });
+        onAuthenticated(session);
+      }
     } catch (error: any) {
-  const msg = error?.message ?? '';
- 
-  if (msg.includes('SUSPENDED')) {
-  Alert.alert('Account suspended', 'Your account has been suspended. Contact your supervisor.');
-} else if (msg.includes('EXPIRED')) {
-  Alert.alert('Access expired', 'Your guest session has expired. Contact your site administrator.');
-} else if (msg.includes('INVALID_CREDENTIALS') || msg.includes('401')) {
-  Alert.alert('Incorrect credentials', 'Check your email and password.');
-} else if (msg.includes('409') || msg.includes('Conflict')) {
-  Alert.alert('Already registered', 'An account with this email exists. Try signing in.');
-} else if (msg.includes('400')) {
-  Alert.alert('Invalid details', 'Check your information and try again.');
-} else {
-  Alert.alert('Connection failed', 'Could not reach the server. Check your connection.');
-}
-} finally {
-  setIsSubmitting(false);
-}
+      const msg = error?.message ?? '';
+      if (msg.includes('PENDING_APPROVAL')) {
+        Alert.alert('Pending approval', 'Your account is awaiting supervisor approval. Try again once approved.');
+      } else if (msg.includes('SUSPENDED')) {
+        Alert.alert('Account suspended', 'Your account has been suspended. Contact your supervisor.');
+      } else if (msg.includes('EXPIRED')) {
+        Alert.alert('Access expired', 'Your guest session has expired. Contact your site administrator.');
+      } else if (msg.includes('INVALID_CREDENTIALS') || msg.includes('401')) {
+        Alert.alert('Incorrect credentials', 'Check your email and password.');
+      } else if (msg.includes('409') || msg.includes('Conflict')) {
+        Alert.alert('Already registered', 'An account with this email exists. Try signing in.');
+      } else if (msg.includes('400')) {
+        Alert.alert('Invalid details', 'Check your information and try again.');
+      } else {
+        Alert.alert('Connection failed', 'Could not reach the server. Check your connection.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (pendingApproval) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.pendingContainer}>
+          <View style={styles.pendingIcon}><Text style={{ fontSize: 40 }}>⏳</Text></View>
+          <Text style={styles.pendingTitle}>Account Submitted</Text>
+          <Text style={styles.pendingBody}>
+            Your account is pending supervisor approval. You'll be able to sign in once a supervisor reviews and approves your registration.
+          </Text>
+          <Pressable onPress={() => { setPendingApproval(false); setMode('login'); }} style={styles.submitBtn}>
+            <Text style={styles.submitBtnText}>Back to Sign In</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -245,4 +270,8 @@ const styles = StyleSheet.create({
   submitBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
 
   hint: { color: '#4d6475', fontSize: 13, fontWeight: '600', marginTop: 16, textAlign: 'center' },
+  pendingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  pendingIcon: { marginBottom: 20 },
+  pendingTitle: { color: '#ffffff', fontSize: 22, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
+  pendingBody: { color: '#4d6475', fontSize: 14, fontWeight: '600', lineHeight: 22, marginBottom: 32, textAlign: 'center' },
 });

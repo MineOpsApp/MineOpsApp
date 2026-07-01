@@ -21,6 +21,31 @@ type Incident = {
 
 type Props = { session: AuthSession };
 
+type StatusFilter = 'all' | 'Open' | 'Under Investigation' | 'Closed';
+type SeverityFilter = 'all' | 'Critical' | 'Serious' | 'Minor';
+
+const STATUS_CHIPS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'Open', label: 'Open' },
+  { key: 'Under Investigation', label: 'Investigating' },
+  { key: 'Closed', label: 'Closed' },
+];
+
+const SEVERITY_CHIPS: { key: SeverityFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'Critical', label: 'Critical' },
+  { key: 'Serious', label: 'Serious' },
+  { key: 'Minor', label: 'Minor' },
+];
+
+function applyFilters(incidents: Incident[], status: StatusFilter, severity: SeverityFilter): Incident[] {
+  return incidents.filter((i) => {
+    const statusMatch = status === 'all' || i.status === status;
+    const severityMatch = severity === 'all' || i.severity === severity;
+    return statusMatch && severityMatch;
+  });
+}
+
 const SEVERITY_COLORS: Record<string, string> = {
   Minor: '#1f6f5b',
   Serious: '#a15c00',
@@ -56,17 +81,19 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [investigationNotes, setInvestigationNotes] = useState<Record<number, string>>({});
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
 
   function load() { return getSiteIncidents().then(setIncidents).catch(() => {}); }
   useEffect(() => { load(); }, []);
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function handleStatusChange(incident: Incident, status: string, notes?: string) {
-  try {
-    const updated = await updateIncidentStatus(incident.id, status, notes);
-    setIncidents((c) => c.map((i) => i.id === updated.id ? updated : i));
-  } catch { Alert.alert('Failed', 'Could not update incident status.'); }
-}
+    try {
+      const updated = await updateIncidentStatus(incident.id, status, notes);
+      setIncidents((c) => c.map((i) => i.id === updated.id ? updated : i));
+    } catch { Alert.alert('Failed', 'Could not update incident status.'); }
+  }
 
   function formatDate(dateStr: string) {
     try { return new Date(dateStr).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -77,6 +104,9 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
   const investigating = incidents.filter((i) => i.status === 'Under Investigation');
   const closed = incidents.filter((i) => i.status === 'Closed');
 
+  const visible = applyFilters(incidents, statusFilter, severityFilter);
+  const isFiltered = statusFilter !== 'all' || severityFilter !== 'all';
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -86,7 +116,7 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
       <Text style={styles.pageTitle}>Incident Reports</Text>
       <Text style={styles.pageSub}>Pull to refresh</Text>
 
-      {/* Summary strip */}
+      {/* Summary strip — always uses unfiltered totals */}
       <View style={styles.strip}>
         <View style={styles.stripItem}>
           <Text style={[styles.stripValue, open.length > 0 && { color: '#b42318' }]}>{open.length}</Text>
@@ -104,15 +134,51 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
         </View>
       </View>
 
+      {/* Status filter */}
+      <Text style={styles.filterLabel}>Status</Text>
+      <View style={styles.chipRow}>
+        {STATUS_CHIPS.map((c) => (
+          <Pressable
+            key={c.key}
+            onPress={() => setStatusFilter(c.key)}
+            style={[styles.chip, statusFilter === c.key && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, statusFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Severity filter */}
+      <Text style={styles.filterLabel}>Severity</Text>
+      <View style={[styles.chipRow, { marginBottom: 16 }]}>
+        {SEVERITY_CHIPS.map((c) => (
+          <Pressable
+            key={c.key}
+            onPress={() => setSeverityFilter(c.key)}
+            style={[styles.chip, severityFilter === c.key && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, severityFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       {incidents.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyIcon}>✓</Text>
           <Text style={styles.emptyTitle}>No incidents reported</Text>
           <Text style={styles.emptySub}>Site is clear</Text>
         </View>
+      ) : visible.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>No incidents match the selected filters</Text>
+        </View>
       ) : null}
 
-      {incidents.map((inc) => (
+      {isFiltered && visible.length > 0 ? (
+        <Text style={styles.resultCount}>{visible.length} of {incidents.length} incident{incidents.length !== 1 ? 's' : ''}</Text>
+      ) : null}
+
+      {visible.map((inc) => (
         <Pressable key={inc.id} onPress={() => setExpanded(expanded === inc.id ? null : inc.id)} style={styles.incidentCard}>
           <View style={styles.incidentHeader}>
             <View style={styles.incidentLeft}>
@@ -121,8 +187,8 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
               <Text style={styles.incidentTime}>{formatDate(inc.reportedAt)}</Text>
             </View>
             <View style={styles.incidentRight}>
-              <View style={[styles.severityBadge, { backgroundColor: SEVERITY_COLORS[inc.severity] + '22', borderColor: SEVERITY_COLORS[inc.severity] }]}>
-                <Text style={[styles.severityText, { color: SEVERITY_COLORS[inc.severity] }]}>{inc.severity}</Text>
+              <View style={[styles.severityBadge, { backgroundColor: (SEVERITY_COLORS[inc.severity] ?? '#8fa3b8') + '22', borderColor: SEVERITY_COLORS[inc.severity] ?? '#8fa3b8' }]}>
+                <Text style={[styles.severityText, { color: SEVERITY_COLORS[inc.severity] ?? '#8fa3b8' }]}>{inc.severity}</Text>
               </View>
               <Text style={styles.expandHint}>{expanded === inc.id ? '▲' : '▼'}</Text>
             </View>
@@ -140,13 +206,13 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
               </View>
 
               <TextInput
-  multiline
-  onChangeText={(text) => setInvestigationNotes((c) => ({ ...c, [inc.id]: text }))}
-  placeholder="Investigation notes or corrective actions..."
-  placeholderTextColor="#8fa3b8"
-  style={styles.notesInput}
-  value={investigationNotes[inc.id] ?? ''}
-/>
+                multiline
+                onChangeText={(text) => setInvestigationNotes((c) => ({ ...c, [inc.id]: text }))}
+                placeholder="Investigation notes or corrective actions..."
+                placeholderTextColor="#8fa3b8"
+                style={styles.notesInput}
+                value={investigationNotes[inc.id] ?? ''}
+              />
 
               <Text style={styles.statusLabel}>Update Status</Text>
               <View style={styles.statusRow}>
@@ -157,7 +223,7 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
                     style={[styles.statusBtn, inc.status === s && styles.statusBtnActive]}
                   >
                     <Text style={[styles.statusBtnText, inc.status === s && styles.statusBtnTextActive]}>
-                      {s}
+                      {s === 'Under Investigation' ? 'Investigating' : s}
                     </Text>
                   </Pressable>
                 ))}
@@ -179,10 +245,18 @@ const styles = StyleSheet.create({
   stripValue: { color: '#17212b', fontSize: 22, fontWeight: '900' },
   stripLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
   stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
+  filterLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+  chip: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1.5, backgroundColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 6 },
+  chipActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
+  chipText: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
+  chipTextActive: { color: '#ffffff' },
+  resultCount: { color: '#8fa3b8', fontSize: 12, fontWeight: '700', marginBottom: 8 },
   emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 32 },
   emptyIcon: { color: '#1f6f5b', fontSize: 28, marginBottom: 8 },
   emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
   emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
+  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
   incidentCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 8, padding: 14 },
   incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
   incidentLeft: { flex: 1 },

@@ -20,10 +20,51 @@ import type { AuthUser } from '../types/auth';
 const API_BASE_URL = 'http://172.20.10.4:8080/api';
 const AUDIT_API_BASE_URL = API_BASE_URL.replace(':8080/api', ':8081/api');
 const REQUEST_TIMEOUT_MS = 30000;
+const REFRESH_THRESHOLD_SECS = 30 * 60;
+
 let authToken: string | null = null;
+let tokenExpiresAt: number | null = null;
+let isRefreshing = false;
+
+function parseTokenExp(token: string): number | null {
+  try {
+    const b64 = token.split('.')[1]?.replace(/-/g, '+').replace(/_/g, '/');
+    if (!b64) return null;
+    const payload = JSON.parse(atob(b64));
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
 
 export function setAuthToken(token: string | null) {
   authToken = token;
+  tokenExpiresAt = token ? parseTokenExp(token) : null;
+}
+
+async function maybeRefresh(): Promise<void> {
+  if (!authToken || !tokenExpiresAt || isRefreshing) return;
+  const secsUntilExpiry = tokenExpiresAt - Math.floor(Date.now() / 1000);
+  if (secsUntilExpiry > REFRESH_THRESHOLD_SECS) return;
+  isRefreshing = true;
+  try {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authToken}` },
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.token) setAuthToken(data.token);
+    }
+  } catch {
+    // silent — let the original request proceed and fail naturally if needed
+  } finally {
+    isRefreshing = false;
+  }
 }
 
 function withAuthHeaders(headers?: HeadersInit): HeadersInit {
@@ -68,6 +109,7 @@ async function fetchWithTimeout(url: string, options?: RequestInit & { skipAuth?
 }
 
 async function request<T>(path: string): Promise<T> {
+  await maybeRefresh();
   try {
     const response = await fetchWithTimeout(`${API_BASE_URL}${path}`);
     if (!response.ok) {
@@ -87,6 +129,7 @@ async function request<T>(path: string): Promise<T> {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
+  await maybeRefresh();
   try {
     const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
       body: JSON.stringify(body),
@@ -112,6 +155,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function patch<T>(path: string, body: unknown): Promise<T> {
+  await maybeRefresh();
   try {
     const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
       body: JSON.stringify(body),
@@ -161,8 +205,10 @@ async function postPublic<T>(path: string, body: unknown): Promise<T> {
     if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
     throw error;
   }
+}
 
-  async function del<T>(path: string): Promise<T> {
+async function del<T>(path: string): Promise<T> {
+  await maybeRefresh();
   try {
     const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
       method: 'DELETE',
@@ -182,9 +228,6 @@ async function postPublic<T>(path: string, body: unknown): Promise<T> {
   }
 }
 
-
-}
-
 export function getDashboard() {
   return request<DashboardData>('/dashboard');
 }
@@ -195,7 +238,7 @@ export function getSites() {
 
 export function registerUser(payload: AuthPayload) {
   setAuthToken(null);
-  return postPublic<AuthSession>('/auth/register', payload);
+  return postPublic<any>('/auth/register', payload);
 }
 
 export function loginUser(payload: AuthPayload) {
@@ -436,6 +479,28 @@ export function getAuditLogs() {
   });
 }
 
+export function searchAuditLogs(params: { action?: string; actorEmail?: string; from?: string; to?: string }) {
+  const q = new URLSearchParams();
+  if (params.action?.trim()) q.set('action', params.action.trim());
+  if (params.actorEmail?.trim()) q.set('actorEmail', params.actorEmail.trim());
+  if (params.from?.trim()) q.set('from', params.from.trim());
+  if (params.to?.trim()) q.set('to', params.to.trim());
+  const qs = q.toString();
+  return fetchWithTimeout(`${AUDIT_API_BASE_URL}/audit-logs/search${qs ? '?' + qs : ''}`)
+    .then((r) => { if (!r.ok) throw new Error('Search failed'); return r.json() as Promise<AuditLog[]>; });
+}
+
+export function exportAuditLogsCsv(params: { action?: string; actorEmail?: string; from?: string; to?: string }) {
+  const q = new URLSearchParams();
+  if (params.action?.trim()) q.set('action', params.action.trim());
+  if (params.actorEmail?.trim()) q.set('actorEmail', params.actorEmail.trim());
+  if (params.from?.trim()) q.set('from', params.from.trim());
+  if (params.to?.trim()) q.set('to', params.to.trim());
+  const qs = q.toString();
+  return fetchWithTimeout(`${AUDIT_API_BASE_URL}/audit-logs/export/csv${qs ? '?' + qs : ''}`)
+    .then((r) => { if (!r.ok) throw new Error('Export failed'); return r.text(); });
+}
+
 export function startDrillOperation(payload: { zone: string; drillType: string; equipmentCode: string }) {
   return post<any>('/drill-operations', payload);
 }
@@ -571,5 +636,17 @@ export function updateEquipmentRegistryStatus(id: number, status: string, notes?
 }
 
 export function deleteNotice(id: number) {
-  return request<any>(`/notices/${id}`);
+  return del<any>(`/notices/${id}`);
+}
+
+export function getPendingWorkers() {
+  return request<any[]>('/admin/workers/pending');
+}
+
+export function approveWorker(email: string) {
+  return post<any>('/admin/workers/approve', { email });
+}
+
+export function rejectWorker(email: string) {
+  return post<any>('/admin/workers/reject', { email });
 }

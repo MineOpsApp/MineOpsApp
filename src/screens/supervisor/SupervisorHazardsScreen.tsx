@@ -9,6 +9,32 @@ import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
 
+type StatusFilter = 'all' | 'open' | 'reviewed' | 'cleared';
+type SeverityFilter = 'all' | 'Critical' | 'High' | 'Medium' | 'Low';
+
+const STATUS_CHIPS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'open', label: 'Open' },
+  { key: 'reviewed', label: 'Reviewed' },
+  { key: 'cleared', label: 'Cleared' },
+];
+
+const SEVERITY_CHIPS: { key: SeverityFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'Critical', label: 'Critical' },
+  { key: 'High', label: 'High' },
+  { key: 'Medium', label: 'Medium' },
+  { key: 'Low', label: 'Low' },
+];
+
+function applyFilters(hazards: HazardReport[], status: StatusFilter, severity: SeverityFilter): HazardReport[] {
+  return hazards.filter((h) => {
+    const statusMatch = status === 'all' || h.status.toUpperCase() === status.toUpperCase();
+    const severityMatch = severity === 'all' || h.severity === severity;
+    return statusMatch && severityMatch;
+  });
+}
+
 export function SupervisorHazardsScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [actionTaken, setActionTaken] = useState('Area isolated and assigned for follow-up');
@@ -16,6 +42,8 @@ export function SupervisorHazardsScreen({ session }: Props) {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
 
   useEffect(() => {
     getSiteHazardReports(0).then((data) => {
@@ -54,6 +82,9 @@ export function SupervisorHazardsScreen({ session }: Props) {
   const reviewed = hazards.filter((h) => h.status.toUpperCase() === 'REVIEWED');
   const cleared = hazards.filter((h) => h.status.toUpperCase() === 'CLEARED');
 
+  const visible = applyFilters(hazards, statusFilter, severityFilter);
+  const isFiltered = statusFilter !== 'all' || severityFilter !== 'all';
+
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.pageHeader}>
@@ -61,6 +92,7 @@ export function SupervisorHazardsScreen({ session }: Props) {
         {open.length > 0 && <View style={styles.urgentBadge}><Text style={styles.urgentBadgeText}>{open.length} open</Text></View>}
       </View>
 
+      {/* Summary strip — always uses unfiltered totals */}
       <View style={styles.strip}>
         <View style={styles.stripItem}>
           <Text style={[styles.stripValue, open.length > 0 && { color: '#b42318' }]}>{open.length}</Text>
@@ -78,6 +110,34 @@ export function SupervisorHazardsScreen({ session }: Props) {
         </View>
       </View>
 
+      {/* Status filter */}
+      <Text style={styles.filterLabel}>Status</Text>
+      <View style={styles.chipRow}>
+        {STATUS_CHIPS.map((c) => (
+          <Pressable
+            key={c.key}
+            onPress={() => setStatusFilter(c.key)}
+            style={[styles.chip, statusFilter === c.key && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, statusFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Severity filter */}
+      <Text style={styles.filterLabel}>Severity</Text>
+      <View style={[styles.chipRow, { marginBottom: 14 }]}>
+        {SEVERITY_CHIPS.map((c) => (
+          <Pressable
+            key={c.key}
+            onPress={() => setSeverityFilter(c.key)}
+            style={[styles.chip, severityFilter === c.key && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, severityFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       <View style={styles.actionCard}>
         <Text style={styles.actionLabel}>Action taken (applied to reviewed/cleared reports)</Text>
         <InputField label="" multiline onChangeText={setActionTaken} value={actionTaken} placeholder="Describe the action taken..." />
@@ -91,9 +151,17 @@ export function SupervisorHazardsScreen({ session }: Props) {
           <Text style={styles.emptyTitle}>No hazard reports</Text>
           <Text style={styles.emptySub}>All clear on site</Text>
         </View>
+      ) : visible.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>No hazards match the selected filters</Text>
+        </View>
       ) : null}
 
-      {hazards.map((h) => (
+      {isFiltered && visible.length > 0 ? (
+        <Text style={styles.resultCount}>{visible.length} of {hazards.length} report{hazards.length !== 1 ? 's' : ''}</Text>
+      ) : null}
+
+      {visible.map((h) => (
         <HazardCard key={h.id} hazard={h} canReview canClear onReview={review} onClear={close} />
       ))}
 
@@ -117,6 +185,13 @@ const styles = StyleSheet.create({
   stripValue: { color: '#17212b', fontSize: 20, fontWeight: '900' },
   stripLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
   stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
+  filterLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+  chip: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1.5, backgroundColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 6 },
+  chipActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
+  chipText: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
+  chipTextActive: { color: '#ffffff' },
+  resultCount: { color: '#8fa3b8', fontSize: 12, fontWeight: '700', marginBottom: 8 },
   actionCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
   actionLabel: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 8 },
   emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 32 },
