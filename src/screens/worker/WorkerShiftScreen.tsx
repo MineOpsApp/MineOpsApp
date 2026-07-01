@@ -48,6 +48,7 @@ export function WorkerShiftScreen({ session }: Props) {
   async function submit() {
     const vol = parseFloat(volume);
     if (!volume || isNaN(vol) || vol <= 0) { Alert.alert('Invalid volume', 'Enter a valid volume greater than 0.'); return; }
+    if (vol > 1000) { Alert.alert('Volume too high', `${vol} ${unit} exceeds the maximum of 1000 per shift. Check your entry and try again.`); return; }
     setSubmitting(true);
     try {
         const log = await submitShiftLog({
@@ -151,9 +152,6 @@ export function WorkerShiftScreen({ session }: Props) {
   value={shiftDate}
   keyboardType="numbers-and-punctuation"
 />
-<Text style={styles.label}>Notes (optional)</Text>
-<TextInput multiline onChangeText={setNotes} placeholder="Any observations for this shift..." style={styles.textArea} value={notes} />
-
       <Text style={styles.label}>Notes (optional)</Text>
       <TextInput multiline onChangeText={setNotes} placeholder="Any observations for this shift..." style={styles.textArea} value={notes} />
 

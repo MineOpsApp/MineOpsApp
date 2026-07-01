@@ -21,6 +21,7 @@ import { SupervisorDrillScreen } from '../screens/supervisor/SupervisorDrillScre
 import { SupervisorGuestScreen } from '../screens/supervisor/SupervisorGuestScreen';
 import { SupervisorIncidentScreen } from '../screens/supervisor/SupervisorIncidentScreen';
 import { SupervisorResetPasswordScreen } from '../screens/supervisor/SupervisorResetPasswordScreen';
+import { SupervisorPendingApprovalsScreen } from '../screens/supervisor/SupervisorPendingApprovalsScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -44,7 +45,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals'>('menu');
 
   const backBtn = (
     <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -62,6 +63,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'incidents') return <View style={{ flex: 1 }}>{backBtn}<SupervisorIncidentScreen session={session} /></View>;
   if (screen === 'reset') return <View style={{ flex: 1 }}>{backBtn}<SupervisorResetPasswordScreen session={session} /></View>;
   if (screen === 'equipment') return <View style={{ flex: 1 }}>{backBtn}<SupervisorEquipmentRegistryScreen session={session} /></View>;
+  if (screen === 'approvals') return <View style={{ flex: 1 }}>{backBtn}<SupervisorPendingApprovalsScreen session={session} /></View>;
   return (
     <MoreScreen
       items={[
@@ -75,6 +77,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '🚨', label: 'Incident Reports', description: 'View and manage site incident reports', onPress: () => setScreen('incidents') },
         { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for locked out worker', onPress: () => setScreen('reset') },
         { icon: '🔧', label: 'Equipment Registry', description: 'Manage site equipment list and status', onPress: () => setScreen('equipment') },
+        { icon: '✅', label: 'Worker Approvals', description: 'Approve or reject new worker registrations', onPress: () => setScreen('approvals') },
       ]}
     />
   );
