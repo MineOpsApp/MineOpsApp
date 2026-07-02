@@ -3,6 +3,7 @@ import type { Site } from '../types/site';
 import type { CreateSosAlertRequest, SosAlert } from '../types/sos';
 import type {
   DangerZone,
+  EmergencyContact,
   EquipmentFault,
   AuditLog,
   HazardReport,
@@ -649,4 +650,25 @@ export function approveWorker(email: string) {
 
 export function rejectWorker(email: string) {
   return post<any>('/admin/workers/reject', { email });
+}
+
+export function getMyEmergencyContacts() {
+  return request<EmergencyContact[]>('/emergency-contacts');
+}
+
+export function saveEmergencyContact(payload: {
+  contactType: 'PRIMARY' | 'BACKUP';
+  name: string;
+  relationship: string;
+  phone: string;
+}) {
+  return post<EmergencyContact>('/emergency-contacts', payload);
+}
+
+export function deleteEmergencyContact(id: number) {
+  return del<void>(`/emergency-contacts/${id}`);
+}
+
+export function getWorkerEmergencyContacts(workerEmail: string) {
+  return request<EmergencyContact[]>(`/emergency-contacts/worker/email/${encodeURIComponent(workerEmail)}`);
 }

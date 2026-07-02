@@ -17,6 +17,7 @@ import { WorkerDrillScreen } from '../screens/worker/WorkerDrillScreen';
 import { SupervisorRosterScreen } from '../screens/supervisor/SupervisorRosterScreen';
 import { WorkerAttendanceScreen } from '../screens/worker/WorkerAttendanceScreen'; 
 import { WorkerIncidentScreen } from '../screens/worker/WorkerIncidentScreen';
+import { WorkerEmergencyContactsScreen } from '../screens/worker/WorkerEmergencyContactsScreen';
 
 
 import type { AuthSession } from '../types/auth';
@@ -42,7 +43,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function WorkerMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts'>('menu');
   
 
   if (screen === 'shift') return (
@@ -82,13 +83,22 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
   );
   
   if (screen === 'incident') return (
-  <View style={{ flex: 1 }}>
-    <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-      <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-    </Pressable>
-    <WorkerIncidentScreen session={session} />
-  </View>
-);
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerIncidentScreen session={session} />
+    </View>
+  );
+
+  if (screen === 'emergencyContacts') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerEmergencyContactsScreen session={session} />
+    </View>
+  );
 
 
 
@@ -100,6 +110,7 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
         { icon: '⛏', label: 'Drill Operations', description: 'Step-by-step drill sign-off', onPress: () => setScreen('drill') },
         { icon: '🕐', label: 'Attendance', description: 'Clock in and out of site', onPress: () => setScreen('attendance') },
         { icon: '🚨', label: 'Report Incident', description: 'Log injuries, near misses, equipment damage', onPress: () => setScreen('incident') },
+        { icon: '📞', label: 'Emergency Contacts', description: 'Add contacts for supervisors to reach in emergencies', onPress: () => setScreen('emergencyContacts') },
       ]}
     />
   );

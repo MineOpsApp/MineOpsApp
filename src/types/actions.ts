@@ -115,6 +115,16 @@ export type WorkerRecord = {
   date?: string;
 };
 
+export type EmergencyContact = {
+  id: number;
+  workerId: number;
+  contactType: 'PRIMARY' | 'BACKUP';
+  name: string;
+  relationship: string;
+  phone: string;
+  createdAt: string;
+};
+
 export type WorkerProfile = {
   fullName: string;
   email: string;
