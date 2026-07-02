@@ -11,6 +11,27 @@ import {
   View,
 } from 'react-native';
 
+function normalizePhone(raw: string): string {
+  return raw.replace(/[\s\-().]/g, '');
+}
+
+type PhoneCheck = { valid: boolean; isForeign: boolean; error?: string };
+
+function validatePhone(raw: string): PhoneCheck {
+  const p = normalizePhone(raw);
+  // Ghana local: 0 + 9 digits
+  if (/^0\d{9}$/.test(p)) return { valid: true, isForeign: false };
+  // Ghana international: +233 + 9 digits
+  if (/^\+233\d{9}$/.test(p)) return { valid: true, isForeign: false };
+  // Foreign international: + country code (not +233) + 7–14 digits
+  if (/^\+(?!233)\d{7,14}$/.test(p)) return { valid: true, isForeign: true };
+  return {
+    valid: false,
+    isForeign: false,
+    error: 'Enter a valid Ghana number (e.g. 0244 123 456 or +233 24 123 456)',
+  };
+}
+
 import { getMyEmergencyContacts, saveEmergencyContact, deleteEmergencyContact } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
@@ -61,12 +82,8 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
     setError('');
   }
 
-  async function handleSave() {
+  async function doSave() {
     if (!editingType) return;
-    if (!form.name.trim()) { setError('Name is required'); return; }
-    if (!form.relationship.trim()) { setError('Relationship is required'); return; }
-    if (!form.phone.trim()) { setError('Phone number is required'); return; }
-
     setSaving(true);
     setError('');
     try {
@@ -83,6 +100,30 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleSave() {
+    if (!editingType) return;
+    if (!form.name.trim()) { setError('Name is required'); return; }
+    if (!form.relationship.trim()) { setError('Relationship is required'); return; }
+    if (!form.phone.trim()) { setError('Phone number is required'); return; }
+
+    const check = validatePhone(form.phone);
+    if (!check.valid) { setError(check.error!); return; }
+
+    if (check.isForeign) {
+      Alert.alert(
+        'Foreign Number Detected',
+        `${normalizePhone(form.phone)} looks like an international number outside Ghana. Add it anyway?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Add Anyway', onPress: doSave },
+        ]
+      );
+      return;
+    }
+
+    doSave();
   }
 
   function handleDelete(contact: EmergencyContact) {
@@ -175,10 +216,11 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
                   style={styles.input}
                   value={form.phone}
                   onChangeText={(t) => setForm((f) => ({ ...f, phone: t }))}
-                  placeholder="e.g. +233 24 000 0000"
+                  placeholder="e.g. 0244 123 456"
                   placeholderTextColor="#8fa3b8"
                   keyboardType="phone-pad"
                 />
+                <Text style={styles.inputHint}>Ghana: 0244 123 456 or +233 24 123 456 · 10 digits max</Text>
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
                 <View style={styles.formActions}>
                   <Pressable onPress={cancelEdit} style={styles.cancelBtn}>
@@ -244,6 +286,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 16 },
   formLabel: { color: '#17212b', fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 10, textTransform: 'uppercase' },
   input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 10 },
+  inputHint: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 4 },
   errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', marginTop: 10 },
   formActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
   cancelBtn: { backgroundColor: '#f4f6f8', borderRadius: 8, flex: 1, paddingVertical: 12, alignItems: 'center' },

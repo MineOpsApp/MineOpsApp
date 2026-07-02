@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getSiteRoster, getWorkerEmergencyContacts } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
@@ -154,8 +154,14 @@ export function SupervisorRosterScreen({ session: _ }: Props) {
                           </View>
                           <View style={styles.contactInfo}>
                             <Text style={styles.contactName}>{c.name}</Text>
-                            <Text style={styles.contactMeta}>{c.relationship} · {c.phone}</Text>
+                            <Text style={styles.contactMeta}>{c.relationship}</Text>
                           </View>
+                          <Pressable
+                            onPress={() => Linking.openURL(`tel:${c.phone.replace(/[\s\-().]/g, '')}`)}
+                            style={styles.callBtn}
+                          >
+                            <Text style={styles.callBtnText}>📞 {c.phone}</Text>
+                          </Pressable>
                         </View>
                       ))
                     )}
@@ -210,4 +216,6 @@ const styles = StyleSheet.create({
   contactInfo: { flex: 1 },
   contactName: { color: '#17212b', fontSize: 13, fontWeight: '800' },
   contactMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginTop: 1 },
+  callBtn: { backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
+  callBtnText: { color: '#15803d', fontSize: 12, fontWeight: '800' },
 });
