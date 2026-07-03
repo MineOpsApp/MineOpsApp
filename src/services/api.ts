@@ -698,13 +698,6 @@ export function getSiteIncidents() {
 }
 
 
-export function getWorkerBlastHistory() {
-  return request<any[]>('/blasts/all');
-}
-
-export function getBlastHistory() {
-  return request<any[]>('/blasts/all');
-}
 
 export function updateIncidentStatus(id: number, status: string, notes?: string) {
   return patch<any>(`/incidents/${id}/status`, { status, notes });

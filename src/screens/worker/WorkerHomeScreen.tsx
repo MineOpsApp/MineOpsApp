@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BlastAlert } from '../../components/BlastAlert';
 import { SosButton } from '../../components/SosButton';
-import { getBlastHistory, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, type LoneWorkerStatus } from '../../services/api';
+import { getAllBlasts, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, type LoneWorkerStatus } from '../../services/api';
 import type { InventoryTransaction } from '../../services/api';
 import type { HazardReport, Notice, ShiftAnnouncement } from '../../types/actions';
 import { formatAgo, formatDateTime } from '../../utils/time';
@@ -38,7 +38,7 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts, onGoToLoneW
     getSiteHazardAlerts().then(setHazards).catch(() => setHazardError(true)).finally(finish);
     getNotices().then(setNotices).catch(() => {}).finally(finish);
     getSiteAnnouncements().then(setAnnouncements).catch(() => {}).finally(finish);
-    getBlastHistory().then(setBlastHistory).catch(() => {});
+    getAllBlasts().then(setBlastHistory).catch(() => {});
     getMyEmergencyContacts().then((c) => setHasContacts(c.length > 0)).catch(() => {});
     getMyInventoryContributions().then(setContributions).catch(() => {});
     getMyCertifications().then((certs) => {
