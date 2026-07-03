@@ -1212,3 +1212,53 @@ export function updatePaySplitConfig(formulaType: string) {
 export function updateMyMomoDetails(momoNumber: string | null, momoNetwork: string | null) {
   return put<UserProfile>('/profile', { momoNumber, momoNetwork });
 }
+
+// ── Guest access codes ────────────────────────────────────────────────────────
+
+export type GuestAccessCode = {
+  id: number;
+  site: string;
+  guestSubRole: string;
+  code: string;
+  sessionHours: number;
+  maxRedemptions: number;
+  redemptionCount: number;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
+export type GuestRosterEntry = {
+  id: number;
+  fullName: string;
+  phone: string;
+  joinedAt: string;
+  inductionCompleted: boolean;
+  sessionExpired: boolean;
+};
+
+export function redeemGuestCode(code: string, fullName: string, phone: string) {
+  return post<{ token: string; refreshToken: string; user: any }>('/guest/redeem', { code, fullName, phone });
+}
+
+export function createGuestCode(payload: {
+  guestSubRole: string;
+  sessionHours: number;
+  maxRedemptions: number;
+  expiresAt: string;
+}) {
+  return post<GuestAccessCode>('/admin/guest-codes', payload);
+}
+
+export function getGuestCodes() {
+  return request<GuestAccessCode[]>('/admin/guest-codes');
+}
+
+export function revokeGuestCode(id: number) {
+  return post<GuestAccessCode>(`/admin/guest-codes/${id}/revoke`, {});
+}
+
+export function getGuestCodeRoster(id: number) {
+  return request<GuestRosterEntry[]>(`/admin/guest-codes/${id}/roster`);
+}

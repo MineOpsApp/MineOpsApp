@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -12,8 +12,9 @@ import {
   View,
 } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
-import { loginUser, registerUser, tryRestoreSession, setAuthToken } from '../services/api';
+import { loginUser, registerUser, tryRestoreSession, setAuthToken, redeemGuestCode } from '../services/api';
 import type { AuthSession } from '../types/auth';
 import type { UserRole } from '../types/role';
 
@@ -31,7 +32,7 @@ type AuthScreenProps = {
 };
 
 export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'guest'>('login');
   const [selectedRole, setSelectedRole] = useState<UserRole>('worker');
   const [selectedSubRole, setSelectedSubRole] = useState<string>('visitor');
   const [selectedSite, setSelectedSite] = useState(SITES[0]);
@@ -44,6 +45,15 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const [pendingApproval, setPendingApproval] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
+
+  // Guest code tab state
+  const [guestCode, setGuestCode]         = useState('');
+  const [guestName, setGuestName]         = useState('');
+  const [guestPhone, setGuestPhone]       = useState('');
+  const [guestError, setGuestError]       = useState('');
+  const [guestSubmitting, setGuestSubmitting] = useState(false);
+  const [scanning, setScanning]           = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   useEffect(() => {
     async function checkBiometric() {
@@ -127,6 +137,61 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
     }
   }
 
+  async function submitGuestCode() {
+    setGuestError('');
+    if (!guestCode.trim()) { setGuestError('Enter a 6-digit code or scan the QR.'); return; }
+    if (!guestName.trim()) { setGuestError('Enter your full name.'); return; }
+    if (!guestPhone.trim()) { setGuestError('Enter your phone number.'); return; }
+    setGuestSubmitting(true);
+    try {
+      const session = await redeemGuestCode(guestCode.trim(), guestName.trim(), guestPhone.trim());
+      onAuthenticated(session);
+    } catch (error: any) {
+      const msg = error?.message ?? '';
+      if (msg.includes('404')) setGuestError('Code not found. Check the PIN and try again.');
+      else if (msg.includes('409')) setGuestError('This code has reached its guest limit.');
+      else if (msg.includes('410')) setGuestError('This code has been revoked or expired.');
+      else setGuestError('Could not join. Check your connection and try again.');
+    } finally {
+      setGuestSubmitting(false);
+    }
+  }
+
+  async function startScan() {
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission();
+      if (!result.granted) {
+        Alert.alert('Camera permission required', 'Allow camera access to scan the QR code.');
+        return;
+      }
+    }
+    setScanning(true);
+  }
+
+  if (scanning) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: '#000' }]}>
+        <CameraView
+          style={{ flex: 1 }}
+          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+          onBarcodeScanned={({ data }) => {
+            setGuestCode(data.trim());
+            setScanning(false);
+          }}
+        />
+        <Pressable
+          onPress={() => setScanning(false)}
+          style={{ position: 'absolute', top: 48, left: 20, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>✕ Cancel</Text>
+        </Pressable>
+        <View style={{ position: 'absolute', bottom: 60, left: 0, right: 0, alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Point camera at the QR code</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (pendingApproval) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -166,7 +231,77 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
             <Pressable onPress={() => setMode('register')} style={[styles.modeBtn, mode === 'register' && styles.modeBtnActive]}>
               <Text style={[styles.modeBtnText, mode === 'register' && styles.modeBtnTextActive]}>Register</Text>
             </Pressable>
+            <Pressable onPress={() => setMode('guest')} style={[styles.modeBtn, mode === 'guest' && styles.modeBtnActive]}>
+              <Text style={[styles.modeBtnText, mode === 'guest' && styles.modeBtnTextActive]}>Guest Code</Text>
+            </Pressable>
           </View>
+
+          {/* Guest code form */}
+          {mode === 'guest' ? (
+            <>
+              <View style={styles.adminNote}>
+                <Text style={styles.adminNoteText}>🎟 Join a site session using a PIN or QR code provided by your supervisor.</Text>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.fieldLabel}>6-Digit Code</Text>
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    value={guestCode}
+                    onChangeText={setGuestCode}
+                    placeholder="e.g. 042817"
+                    placeholderTextColor="#8fa3b8"
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    returnKeyType="next"
+                  />
+                  <Pressable onPress={startScan} style={styles.showPasswordBtn}>
+                    <Text style={{ fontSize: 20 }}>📷</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.fieldLabel}>Your Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={guestName}
+                  onChangeText={setGuestName}
+                  placeholder="As it appears on your ID"
+                  placeholderTextColor="#8fa3b8"
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.fieldLabel}>Phone Number</Text>
+                <TextInput
+                  style={styles.input}
+                  value={guestPhone}
+                  onChangeText={setGuestPhone}
+                  placeholder="+233 XX XXX XXXX"
+                  placeholderTextColor="#8fa3b8"
+                  keyboardType="phone-pad"
+                  returnKeyType="done"
+                  onSubmitEditing={submitGuestCode}
+                />
+              </View>
+
+              {guestError ? <Text style={styles.guestError}>{guestError}</Text> : null}
+
+              <Pressable
+                disabled={guestSubmitting}
+                onPress={submitGuestCode}
+                style={[styles.submitBtn, guestSubmitting && styles.submitBtnDisabled]}
+              >
+                <Text style={styles.submitBtnText}>
+                  {guestSubmitting ? 'Joining…' : 'Join as Guest →'}
+                </Text>
+              </Pressable>
+            </>
+          ) : null}
 
           {/* Register extras */}
           {mode === 'register' ? (
@@ -220,56 +355,56 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
             </>
           ) : null}
 
-          {/* Email */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.fieldLabel}>Email</Text>
-            <TextInput autoCapitalize="none" keyboardType="email-address" onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#8fa3b8" returnKeyType="next" style={styles.input} value={email} />
-          </View>
+          {/* Email / Password — hidden in guest mode */}
+          {mode !== 'guest' ? (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.fieldLabel}>Email</Text>
+                <TextInput autoCapitalize="none" keyboardType="email-address" onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#8fa3b8" returnKeyType="next" style={styles.input} value={email} />
+              </View>
 
-          {/* Password */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.fieldLabel}>Password</Text>
-            <View style={styles.passwordRow}>
-              <TextInput onChangeText={setPassword} placeholder={mode === 'register' ? 'Min. 6 characters' : 'Your password'} placeholderTextColor="#8fa3b8" returnKeyType={mode === 'register' ? 'next' : 'done'} secureTextEntry={!showPassword} style={[styles.input, { flex: 1, marginBottom: 0 }]} value={password} onSubmitEditing={mode === 'login' ? submit : undefined} />
-              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.showPasswordBtn}>
-                 <Text style={styles.showPasswordText}>{showPassword ? 'Hide' : 'Show'}</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.fieldLabel}>Password</Text>
+                <View style={styles.passwordRow}>
+                  <TextInput onChangeText={setPassword} placeholder={mode === 'register' ? 'Min. 6 characters' : 'Your password'} placeholderTextColor="#8fa3b8" returnKeyType={mode === 'register' ? 'next' : 'done'} secureTextEntry={!showPassword} style={[styles.input, { flex: 1, marginBottom: 0 }]} value={password} onSubmitEditing={mode === 'login' ? submit : undefined} />
+                  <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.showPasswordBtn}>
+                    <Text style={styles.showPasswordText}>{showPassword ? 'Hide' : 'Show'}</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {mode === 'register' ? (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.fieldLabel}>Confirm Password</Text>
+                  <TextInput onChangeText={setConfirmPassword} onSubmitEditing={submit} placeholder="Repeat your password" placeholderTextColor="#8fa3b8" returnKeyType="done" secureTextEntry={!showPassword} style={styles.input} value={confirmPassword} />
+                </View>
+              ) : null}
+
+              {mode === 'login' && biometricAvailable && storedEmail ? (
+                <Pressable
+                  onPress={handleBiometricLogin}
+                  disabled={biometricLoading}
+                  style={[styles.biometricBtn, biometricLoading && styles.submitBtnDisabled]}
+                >
+                  <Text style={styles.biometricIcon}>
+                    {Platform.OS === 'ios' ? '🔒' : '🫆'}
+                  </Text>
+                  <Text style={styles.biometricText}>
+                    {biometricLoading ? 'Verifying…' : `Sign in as ${storedEmail}`}
+                  </Text>
+                </Pressable>
+              ) : null}
+
+              <Pressable disabled={isSubmitting} onPress={submit} style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}>
+                <Text style={styles.submitBtnText}>
+                  {isSubmitting ? 'Please wait...' : mode === 'login' ? 'Sign In with Password →' : 'Create Account →'}
+                </Text>
               </Pressable>
-            </View>
-          </View>
 
-          {/* Confirm password */}
-          {mode === 'register' ? (
-            <View style={styles.inputGroup}>
-              <Text style={styles.fieldLabel}>Confirm Password</Text>
-              <TextInput onChangeText={setConfirmPassword} onSubmitEditing={submit} placeholder="Repeat your password" placeholderTextColor="#8fa3b8" returnKeyType="done" secureTextEntry={!showPassword} style={styles.input} value={confirmPassword} />
-            </View>
-          ) : null}
-
-          {/* Biometric login — only on sign-in when stored session exists */}
-          {mode === 'login' && biometricAvailable && storedEmail ? (
-            <Pressable
-              onPress={handleBiometricLogin}
-              disabled={biometricLoading}
-              style={[styles.biometricBtn, biometricLoading && styles.submitBtnDisabled]}
-            >
-              <Text style={styles.biometricIcon}>
-                {Platform.OS === 'ios' ? '🔒' : '🫆'}
-              </Text>
-              <Text style={styles.biometricText}>
-                {biometricLoading ? 'Verifying…' : `Sign in as ${storedEmail}`}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {/* Submit */}
-          <Pressable disabled={isSubmitting} onPress={submit} style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}>
-            <Text style={styles.submitBtnText}>
-              {isSubmitting ? 'Please wait...' : mode === 'login' ? 'Sign In with Password →' : 'Create Account →'}
-            </Text>
-          </Pressable>
-
-          {mode === 'login' ? (
-            <Text style={styles.hint}>Don't have an account? Tap Register above.</Text>
+              {mode === 'login' ? (
+                <Text style={styles.hint}>Don't have an account? Tap Register above.</Text>
+              ) : null}
+            </>
           ) : null}
 
         </ScrollView>
@@ -329,6 +464,7 @@ const styles = StyleSheet.create({
   submitBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
 
   hint: { color: '#4d6475', fontSize: 13, fontWeight: '600', marginTop: 16, textAlign: 'center' },
+  guestError: { color: '#f85149', fontSize: 13, fontWeight: '700', marginBottom: 10 },
   pendingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   pendingIcon: { marginBottom: 20 },
   pendingTitle: { color: '#ffffff', fontSize: 22, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
