@@ -1262,3 +1262,37 @@ export function revokeGuestCode(id: number) {
 export function getGuestCodeRoster(id: number) {
   return request<GuestRosterEntry[]>(`/admin/guest-codes/${id}/roster`);
 }
+
+// ── Site map ──────────────────────────────────────────────────────────────────
+
+export type MapPoint = { x: number; y: number };
+
+export type SiteMapData = {
+  id: number;
+  site: string;
+  imageData: string;
+  uploadedBy: string;
+  uploadedAt: string;
+};
+
+export type ZoneDetail = {
+  zone: import('../types/actions').DangerZone;
+  openHazards: import('../types/actions').HazardReport[];
+  scheduledBlasts: any[];
+};
+
+export function getSiteMap() {
+  return request<SiteMapData>('/site-map');
+}
+
+export function uploadSiteMap(imageData: string) {
+  return post<SiteMapData>('/site-map', { imageData });
+}
+
+export function updateZonePosition(id: number, points: MapPoint[]) {
+  return patch<import('../types/actions').DangerZone>(`/danger-zones/${id}/position`, { points });
+}
+
+export function getZoneDetail(id: number) {
+  return request<ZoneDetail>(`/danger-zones/${id}/detail`);
+}

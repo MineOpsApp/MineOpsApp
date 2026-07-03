@@ -3,8 +3,10 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View }
 
 import { SosButton } from '../../components/SosButton';
 import { BlastAlert } from '../../components/BlastAlert';
-import { getSupervisorDashboard, type SupervisorDashboard } from '../../services/api';
+import { SiteMapView } from '../../components/SiteMapView';
+import { getSupervisorDashboard, getDangerZones, type SupervisorDashboard } from '../../services/api';
 import { formatAgo } from '../../utils/time';
+import type { DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
@@ -15,6 +17,7 @@ export function SupervisorHomeScreen({ session }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [mapZones, setMapZones] = useState<DangerZone[]>([]);
 
   async function load() {
     try {
@@ -26,7 +29,10 @@ export function SupervisorHomeScreen({ session }: Props) {
     }
   }
 
-  useEffect(() => { load().finally(() => setLoading(false)); }, []);
+  useEffect(() => {
+    load().finally(() => setLoading(false));
+    getDangerZones().then(setMapZones).catch(() => {});
+  }, []);
 
   async function refresh() {
     setRefreshing(true);
@@ -63,6 +69,8 @@ export function SupervisorHomeScreen({ session }: Props) {
         )}
 
         <BlastAlert />
+
+        <SiteMapView zones={mapZones} readOnly pollIntervalMs={25000} />
 
         {loading ? (
           <ActivityIndicator color="#1f6f5b" style={{ marginTop: 40 }} />

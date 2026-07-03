@@ -32,6 +32,7 @@ import { SupervisorMessagesScreen } from '../screens/supervisor/SupervisorMessag
 import { SupervisorAnnouncementsScreen } from '../screens/supervisor/SupervisorAnnouncementsScreen';
 import { SupervisorPayRunsScreen } from '../screens/supervisor/SupervisorPayRunsScreen';
 import { SupervisorGuestCodesScreen } from '../screens/supervisor/SupervisorGuestCodesScreen';
+import { SupervisorSiteMapScreen } from '../screens/supervisor/SupervisorSiteMapScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -55,7 +56,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -105,6 +106,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'announcements') return <View style={{ flex: 1 }}>{backBtn}<SupervisorAnnouncementsScreen session={session} /></View>;
   if (screen === 'payRuns') return <View style={{ flex: 1 }}>{backBtn}<SupervisorPayRunsScreen session={session} /></View>;
   if (screen === 'guestCodes') return <View style={{ flex: 1 }}>{backBtn}<SupervisorGuestCodesScreen session={session} /></View>;
+  if (screen === 'siteMap') return <View style={{ flex: 1 }}>{backBtn}<SupervisorSiteMapScreen session={session} /></View>;
   return (
     <MoreScreen
       items={[
@@ -128,6 +130,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '📢', label: 'Announcements', description: 'Broadcast a quick update to all workers on site', onPress: () => setScreen('announcements') },
         { icon: '💰', label: 'Pay Runs', description: 'Generate, approve, and disburse worker pay cycles', onPress: () => setScreen('payRuns') },
         { icon: '🎟', label: 'Guest Codes', description: 'Generate QR / PIN codes for site visitors and inspectors', onPress: () => setScreen('guestCodes') },
+        { icon: '🗺', label: 'Site Map', description: 'Upload the site floor plan for the interactive zone map', onPress: () => setScreen('siteMap') },
       ]}
     />
   );

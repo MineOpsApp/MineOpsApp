@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
+import { SiteMapView } from '../../components/SiteMapView';
 import { completeVisitorInduction, getNotices, getSiteHazardAlerts, getDangerZones } from '../../services/api';
 import type { Notice, HazardReport, DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
@@ -88,6 +89,8 @@ export function GuestHomeScreen({ session, subRole }: Props) {
             <Text style={styles.statLabel}>Notices</Text>
           </View>
         </View>
+        <Text style={styles.sectionTitle}>Site Map</Text>
+        <SiteMapView zones={dangerZones} readOnly pollIntervalMs={25000} />
         <Text style={styles.sectionTitle}>Open Hazards</Text>
         {openHazards.length === 0 ? <View style={styles.clearCard}><Text style={styles.clearText}>✓ No open hazards</Text></View> : null}
         {openHazards.map((h) => (

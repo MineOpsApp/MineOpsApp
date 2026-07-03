@@ -74,6 +74,7 @@ export type DangerZone = {
   riskLevel: string;
   status: string;
   createdAt: string;
+  polygonPoints?: string | null;
 };
 
 export type VisitorInduction = {

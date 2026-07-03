@@ -1,38 +1,223 @@
-import { useEffect, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  Image,
+  LayoutChangeEvent,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Svg, { Circle, Polygon, Text as SvgText } from 'react-native-svg';
 
 import { ActionButton } from '../../components/ActionButton';
-import { createDangerZone, getDangerZones } from '../../services/api';
+import { SiteMapView } from '../../components/SiteMapView';
+import {
+  createDangerZone,
+  getDangerZones,
+  getSiteMap,
+  updateZonePosition,
+  parseApiError,
+  type MapPoint,
+  type SiteMapData,
+} from '../../services/api';
 import type { DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
+type ScreenMode = 'list' | 'map' | 'trace';
 
 const RISK_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
-  High: { color: '#b42318', bg: '#fff5f5', border: '#f5c6c6' },
+  High:   { color: '#b42318', bg: '#fff5f5', border: '#f5c6c6' },
   Medium: { color: '#a15c00', bg: '#fffbeb', border: '#fde68a' },
-  Low: { color: '#1f6f5b', bg: '#f0fdf4', border: '#86efac' },
+  Low:    { color: '#1f6f5b', bg: '#f0fdf4', border: '#86efac' },
+};
+
+const RISK_DOT_COLOR: Record<string, string> = {
+  High: '#ef4444', Medium: '#f59e0b', Low: '#22c55e',
 };
 
 export function SafetyDangerZonesScreen({ session }: Props) {
-  const [zones, setZones] = useState<DangerZone[]>([]);
+  const [mode, setMode]           = useState<ScreenMode>('list');
+  const [zones, setZones]         = useState<DangerZone[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Map view
+  const [mapData, setMapData]     = useState<SiteMapData | null>(null);
+  const [noMap, setNoMap]         = useState(false);
+
+  // Trace mode
+  const [traceZone, setTraceZone] = useState<DangerZone | null>(null);
+  const [vertices, setVertices]   = useState<MapPoint[]>([]);
+  const [imgSize, setImgSize]     = useState({ w: 0, h: 0 });
+  const [saving, setSaving]       = useState(false);
+  const [traceError, setTraceError] = useState('');
+
   function load() { return getDangerZones().then(setZones).catch(() => {}); }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    getSiteMap().then(setMapData).catch((e: any) => {
+      if (e?.message?.includes('404')) setNoMap(true);
+    });
+  }, []);
+
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function create() {
     try {
-      const zone = await createDangerZone({ actorEmail: session.user.email, actorName: session.user.fullName, actorRole: session.user.role, riskLevel: 'High', site: session.user.assignedSite ?? 'Obuasi Mine', zoneName: 'Zone B - Blasting Area' });
-      setZones((c) => [zone, ...c]);
+      const zone = await createDangerZone({
+        actorEmail: session.user.email,
+        actorName: session.user.fullName,
+        actorRole: session.user.role,
+        riskLevel: 'High',
+        site: session.user.assignedSite ?? 'Obuasi Mine',
+        zoneName: 'Zone B - Blasting Area',
+      });
+      setZones(c => [zone, ...c]);
       Alert.alert('Created', `${zone.zoneName} is now active.`);
     } catch { Alert.alert('Failed', 'Could not create danger zone.'); }
   }
 
-  const active = zones.filter((z) => z.status !== 'Cleared');
-  const cleared = zones.filter((z) => z.status === 'Cleared');
+  function startTrace(zone: DangerZone) {
+    if (!mapData) {
+      Alert.alert('No map uploaded', 'A supervisor must upload a site map before zones can be traced.');
+      return;
+    }
+    setTraceZone(zone);
+    try {
+      const existing = zone.polygonPoints ? JSON.parse(zone.polygonPoints) : [];
+      setVertices(existing);
+    } catch {
+      setVertices([]);
+    }
+    setTraceError('');
+    setMode('trace');
+  }
 
+  function onImageLayout(e: LayoutChangeEvent) {
+    const { width, height } = e.nativeEvent.layout;
+    setImgSize({ w: width, h: height });
+  }
+
+  function onImageTap(e: any) {
+    if (!imgSize.w || !imgSize.h) return;
+    const { locationX, locationY } = e.nativeEvent;
+
+    // Tapping near the first vertex (within 20px) closes the shape
+    if (vertices.length >= 3) {
+      const first = vertices[0];
+      const fx = (first.x / 100) * imgSize.w;
+      const fy = (first.y / 100) * imgSize.h;
+      if (Math.hypot(locationX - fx, locationY - fy) < 20) {
+        savePolygon();
+        return;
+      }
+    }
+
+    const xPct = (locationX / imgSize.w) * 100;
+    const yPct = (locationY / imgSize.h) * 100;
+    setVertices(v => [...v, { x: xPct, y: yPct }]);
+  }
+
+  async function savePolygon() {
+    if (!traceZone) return;
+    if (vertices.length < 3) { setTraceError('Place at least 3 points to define a polygon.'); return; }
+    setSaving(true);
+    setTraceError('');
+    try {
+      const updated = await updateZonePosition(traceZone.id, vertices);
+      setZones(zs => zs.map(z => z.id === updated.id ? updated : z));
+      Alert.alert('Saved', `Zone boundary for "${traceZone.zoneName}" saved.`);
+      setMode('list');
+    } catch (e) {
+      setTraceError(parseApiError(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const active  = zones.filter(z => z.status !== 'Cleared');
+  const cleared = zones.filter(z => z.status === 'Cleared');
+
+  // ── TRACE MODE ────────────────────────────────────────────────────────────────
+  if (mode === 'trace' && traceZone && mapData) {
+    const dotColor = RISK_DOT_COLOR[traceZone.riskLevel] ?? '#f59e0b';
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity onPress={() => setMode('list')} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>← Danger Zones</Text>
+        </TouchableOpacity>
+        <Text style={styles.pageTitle}>Trace: {traceZone.zoneName}</Text>
+        <Text style={styles.traceSub}>Tap on the map to place each vertex. Tap the first point (highlighted) to close and save the polygon.</Text>
+
+        <View style={styles.imageWrapper} onTouchEnd={onImageTap}>
+          <Image
+            source={{ uri: `data:image/jpeg;base64,${mapData.imageData}` }}
+            style={styles.traceImage}
+            resizeMode="contain"
+            onLayout={onImageLayout}
+          />
+          {imgSize.w > 0 && vertices.length > 0 && (
+            <Svg style={StyleSheet.absoluteFill} viewBox={`0 0 ${imgSize.w} ${imgSize.h}`}>
+              {vertices.length >= 3 && (
+                <Polygon
+                  points={vertices.map(p => `${(p.x / 100) * imgSize.w},${(p.y / 100) * imgSize.h}`).join(' ')}
+                  fill={dotColor}
+                  fillOpacity={0.25}
+                  stroke={dotColor}
+                  strokeWidth={2}
+                />
+              )}
+              {vertices.map((p, i) => (
+                <Circle
+                  key={i}
+                  cx={(p.x / 100) * imgSize.w}
+                  cy={(p.y / 100) * imgSize.h}
+                  r={i === 0 ? 10 : 6}
+                  fill={i === 0 ? '#fff' : dotColor}
+                  stroke={dotColor}
+                  strokeWidth={2}
+                />
+              ))}
+            </Svg>
+          )}
+        </View>
+
+        <Text style={styles.vertexCount}>{vertices.length} point{vertices.length !== 1 ? 's' : ''} placed{vertices.length >= 3 ? ' — tap first point to close' : ''}</Text>
+
+        {traceError ? <Text style={styles.errorText}>{traceError}</Text> : null}
+
+        <View style={styles.traceActions}>
+          <TouchableOpacity style={styles.secondaryBtn} onPress={() => setVertices(v => v.slice(0, -1))} disabled={vertices.length === 0}>
+            <Text style={styles.secondaryBtnText}>Undo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.secondaryBtn} onPress={() => setVertices([])}>
+            <Text style={styles.secondaryBtnText}>Clear</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.primaryBtn, { flex: 2 }]} onPress={savePolygon} disabled={saving || vertices.length < 3}>
+            <Text style={styles.primaryBtnText}>{saving ? 'Saving…' : 'Save Zone'}</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // ── MAP VIEW ──────────────────────────────────────────────────────────────────
+  if (mode === 'map') {
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity onPress={() => setMode('list')} style={styles.backBtn}>
+          <Text style={styles.backBtnText}>← Danger Zones</Text>
+        </TouchableOpacity>
+        <Text style={styles.pageTitle}>Site Map</Text>
+        <SiteMapView zones={zones} readOnly={false} pollIntervalMs={25000} />
+      </ScrollView>
+    );
+  }
+
+  // ── LIST VIEW ─────────────────────────────────────────────────────────────────
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
@@ -40,7 +225,16 @@ export function SafetyDangerZonesScreen({ session }: Props) {
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Danger Zones</Text>
         {active.length > 0 && <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>{active.length} active</Text></View>}
+        {mapData && (
+          <TouchableOpacity style={styles.mapTabBtn} onPress={() => setMode('map')}>
+            <Text style={styles.mapTabBtnText}>🗺 Map</Text>
+          </TouchableOpacity>
+        )}
       </View>
+
+      {mapData && (
+        <SiteMapView zones={zones} readOnly={false} pollIntervalMs={25000} />
+      )}
 
       <View style={styles.createCard}>
         <Text style={styles.createTitle}>⚠️ Create Danger Zone</Text>
@@ -51,8 +245,9 @@ export function SafetyDangerZonesScreen({ session }: Props) {
       {active.length > 0 ? (
         <>
           <Text style={styles.sectionLabel}>ACTIVE ZONES</Text>
-          {active.map((z) => {
+          {active.map(z => {
             const cfg = RISK_CONFIG[z.riskLevel] ?? RISK_CONFIG['Medium'];
+            const hasPolygon = !!z.polygonPoints;
             return (
               <View key={z.id} style={[styles.zoneCard, { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
                 <View style={styles.zoneTop}>
@@ -62,6 +257,9 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                   </View>
                 </View>
                 <Text style={[styles.zoneMeta, { color: cfg.color }]}>⚠ Active · {z.site}</Text>
+                <TouchableOpacity style={styles.traceBtn} onPress={() => startTrace(z)}>
+                  <Text style={styles.traceBtnText}>{hasPolygon ? '✏ Edit on Map' : '📍 Trace on Map'}</Text>
+                </TouchableOpacity>
               </View>
             );
           })}
@@ -79,7 +277,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
       {cleared.length > 0 ? (
         <>
           <Text style={[styles.sectionLabel, { marginTop: 20 }]}>CLEARED</Text>
-          {cleared.map((z) => (
+          {cleared.map(z => (
             <View key={z.id} style={styles.clearedCard}>
               <Text style={styles.clearedName}>{z.zoneName}</Text>
               <Text style={styles.clearedMeta}>Cleared · {z.site}</Text>
@@ -93,25 +291,51 @@ export function SafetyDangerZonesScreen({ session }: Props) {
 
 const styles = StyleSheet.create({
   container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
-  pageTitle: { color: '#17212b', flex: 1, fontSize: 22, fontWeight: '900' },
-  activeBadge: { backgroundColor: '#a15c00', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+
+  backBtn:     { marginBottom: 12 },
+  backBtnText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
+
+  pageHeader:   { alignItems: 'center', flexDirection: 'row', marginBottom: 16, gap: 8 },
+  pageTitle:    { color: '#17212b', flex: 1, fontSize: 22, fontWeight: '900' },
+  activeBadge:  { backgroundColor: '#a15c00', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   activeBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
+  mapTabBtn:    { backgroundColor: '#1f6f5b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+  mapTabBtnText:{ color: '#fff', fontSize: 12, fontWeight: '800' },
+
   createCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 20, padding: 16 },
-  createTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  createSub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 14 },
+  createTitle:{ color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
+  createSub:  { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 14 },
+
   sectionLabel: { color: '#8fa3b8', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 10 },
+
   zoneCard: { borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
-  zoneTop: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  zoneTop:  { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   zoneName: { color: '#17212b', flex: 1, fontSize: 14, fontWeight: '900', marginRight: 8 },
   riskPill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   riskPillText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
-  zoneMeta: { fontSize: 12, fontWeight: '700' },
+  zoneMeta: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
+
+  traceBtn:     { alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 },
+  traceBtnText: { color: '#17212b', fontSize: 12, fontWeight: '800' },
+
   clearCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 16 },
   clearIcon: { color: '#16a34a', fontSize: 22 },
-  clearTitle: { color: '#15803d', fontSize: 14, fontWeight: '900' },
-  clearSub: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  clearTitle:{ color: '#15803d', fontSize: 14, fontWeight: '900' },
+  clearSub:  { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
+
   clearedCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 8, opacity: 0.6, padding: 12 },
   clearedName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
   clearedMeta: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
+
+  // Trace mode
+  traceSub:      { color: '#5d6875', fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: 16 },
+  imageWrapper:  { borderRadius: 12, overflow: 'hidden', backgroundColor: '#000', marginBottom: 12 },
+  traceImage:    { width: '100%', aspectRatio: 16 / 9 },
+  vertexCount:   { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 8 },
+  errorText:     { color: '#b42318', fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  traceActions:  { flexDirection: 'row', gap: 8, marginTop: 4 },
+  primaryBtn:    { backgroundColor: '#1f6f5b', borderRadius: 10, padding: 13, alignItems: 'center', flex: 1 },
+  primaryBtnText:{ color: '#fff', fontSize: 14, fontWeight: '900' },
+  secondaryBtn:  { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, padding: 13, alignItems: 'center', flex: 1 },
+  secondaryBtnText: { color: '#17212b', fontSize: 14, fontWeight: '800' },
 });

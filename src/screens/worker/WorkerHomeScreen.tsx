@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BlastAlert } from '../../components/BlastAlert';
+import { SiteMapView } from '../../components/SiteMapView';
 import { SosButton } from '../../components/SosButton';
-import { getAllBlasts, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, type LoneWorkerStatus } from '../../services/api';
+import { getAllBlasts, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, getDangerZones, type LoneWorkerStatus } from '../../services/api';
 import type { InventoryTransaction } from '../../services/api';
 import type { HazardReport, Notice, ShiftAnnouncement } from '../../types/actions';
 import { formatAgo, formatDateTime } from '../../utils/time';
@@ -31,6 +32,7 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts, onGoToLoneW
   const [expiringCerts, setExpiringCerts] = useState(0);
   const [loneWorker, setLoneWorker] = useState<LoneWorkerStatus | null>(null);
   const loneWorkerPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [mapZones, setMapZones] = useState<import('../../types/actions').DangerZone[]>([]);
 
   useEffect(() => {
     let done = 0;
@@ -39,6 +41,7 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts, onGoToLoneW
     getNotices().then(setNotices).catch(() => {}).finally(finish);
     getSiteAnnouncements().then(setAnnouncements).catch(() => {}).finally(finish);
     getAllBlasts().then(setBlastHistory).catch(() => {});
+    getDangerZones().then(setMapZones).catch(() => {});
     getMyEmergencyContacts().then((c) => setHasContacts(c.length > 0)).catch(() => {});
     getMyInventoryContributions().then(setContributions).catch(() => {});
     getMyCertifications().then((certs) => {
@@ -138,6 +141,9 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts, onGoToLoneW
         </View>
 
         <BlastAlert />
+
+        {/* Site map */}
+        <SiteMapView zones={mapZones} readOnly pollIntervalMs={25000} />
 
         {/* Shift Announcements */}
         {announcements.length > 0 ? (
