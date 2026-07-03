@@ -1,70 +1,138 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator, Alert, RefreshControl, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
 
 import { approveShiftLog, getSiteShiftLogs, rejectShiftLog } from '../../services/api';
 import type { ShiftLog } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
-type Filter = 'today' | 'week' | 'month' | 'all';
+// Session-persistent filter state — survives tab switches within the session
+type DatePreset = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
+type StatusFilter = '' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'today', label: 'Today' },
-  { key: 'week', label: 'This Week' },
-  { key: 'month', label: 'This Month' },
-  { key: 'all', label: 'All' },
-];
+type FilterState = {
+  datePreset: DatePreset;
+  dateFrom: string;
+  dateTo: string;
+  mineralType: string;
+  workerName: string;
+  status: StatusFilter;
+};
 
-function applyFilter(logs: ShiftLog[], filter: Filter): ShiftLog[] {
-  if (filter === 'all') return logs;
+let sessionFilters: FilterState = {
+  datePreset: 'today',
+  dateFrom: '',
+  dateTo: '',
+  mineralType: '',
+  workerName: '',
+  status: '',
+};
+
+function presetToRange(preset: DatePreset): { dateFrom: string; dateTo: string } {
   const now = new Date();
-  return logs.filter((log) => {
-    const d = new Date(log.submittedAt);
-    if (filter === 'today') {
-      return (
-        d.getFullYear() === now.getFullYear() &&
-        d.getMonth() === now.getMonth() &&
-        d.getDate() === now.getDate()
-      );
-    }
-    if (filter === 'week') {
-      const startOfWeek = new Date(now);
-      const day = now.getDay();
-      startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-      startOfWeek.setHours(0, 0, 0, 0);
-      return d >= startOfWeek;
-    }
-    if (filter === 'month') {
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    }
-    return true;
-  });
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  if (preset === 'today') {
+    const s = fmt(now);
+    return { dateFrom: s, dateTo: s };
+  }
+  if (preset === 'yesterday') {
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    const s = fmt(y);
+    return { dateFrom: s, dateTo: s };
+  }
+  if (preset === 'week') {
+    const start = new Date(now);
+    const day = now.getDay();
+    start.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    return { dateFrom: fmt(start), dateTo: fmt(now) };
+  }
+  if (preset === 'month') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { dateFrom: fmt(start), dateTo: fmt(now) };
+  }
+  return { dateFrom: '', dateTo: '' };
 }
 
-function statusColor(status: string) {
-  if (status === 'APPROVED') return '#15803d';
-  if (status === 'REJECTED') return '#9aa5b1';
-  return '#92400e'; // SUBMITTED
+function buildApiParams(f: FilterState) {
+  const range = f.datePreset !== 'custom' ? presetToRange(f.datePreset) : { dateFrom: f.dateFrom, dateTo: f.dateTo };
+  return {
+    dateFrom: range.dateFrom || undefined,
+    dateTo: range.dateTo || undefined,
+    mineralType: f.mineralType || undefined,
+    workerName: f.workerName || undefined,
+    status: f.status || undefined,
+  };
 }
 
-function statusBg(status: string) {
-  if (status === 'APPROVED') return '#dcfce7';
-  if (status === 'REJECTED') return '#f4f6f8';
-  return '#fef3c7'; // SUBMITTED
+function formatDate(dateStr: string) {
+  try {
+    return new Date(dateStr).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  } catch { return dateStr; }
+}
+
+function statusColor(s: string) {
+  if (s === 'APPROVED') return '#15803d';
+  if (s === 'REJECTED') return '#9aa5b1';
+  return '#92400e';
+}
+function statusBg(s: string) {
+  if (s === 'APPROVED') return '#dcfce7';
+  if (s === 'REJECTED') return '#f4f6f8';
+  return '#fef3c7';
 }
 
 type Props = { session: AuthSession };
 
-export function SupervisorShiftScreen({ session: _ }: Props) {
-  const [logs, setLogs] = useState<ShiftLog[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<Filter>('today');
-  const [actioning, setActioning] = useState<Record<number, boolean>>({});
+const DATE_PRESETS: { key: DatePreset; label: string }[] = [
+  { key: 'today', label: 'Today' },
+  { key: 'yesterday', label: 'Yesterday' },
+  { key: 'week', label: 'This Week' },
+  { key: 'month', label: 'This Month' },
+  { key: 'custom', label: 'Custom' },
+];
 
-  function load() {
-    return getSiteShiftLogs().then(setLogs).catch(() => {});
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: '', label: 'All' },
+  { key: 'SUBMITTED', label: 'Pending' },
+  { key: 'APPROVED', label: 'Approved' },
+  { key: 'REJECTED', label: 'Rejected' },
+];
+
+export function SupervisorShiftScreen({ session: _ }: Props) {
+  const [filters, setFilters] = useState<FilterState>({ ...sessionFilters });
+  const [logs, setLogs] = useState<ShiftLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [actioning, setActioning] = useState<Record<number, boolean>>({});
+  const pendingLoad = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function updateFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      sessionFilters = next;
+      return next;
+    });
   }
 
-  useEffect(() => { load(); }, []);
+  async function load(f: FilterState = filters) {
+    try {
+      const data = await getSiteShiftLogs(buildApiParams(f));
+      setLogs(data);
+    } catch {}
+  }
+
+  // Debounce text-field changes so we don't fire a request on every keystroke
+  useEffect(() => {
+    if (pendingLoad.current) clearTimeout(pendingLoad.current);
+    pendingLoad.current = setTimeout(() => load(filters), 400);
+    return () => { if (pendingLoad.current) clearTimeout(pendingLoad.current); };
+  }, [filters]);
+
+  useEffect(() => { load().finally(() => setLoading(false)); }, []);
 
   async function refresh() {
     setRefreshing(true);
@@ -75,22 +143,20 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
   async function handleApprove(log: ShiftLog) {
     Alert.alert(
       'Approve Shift Log',
-      `Approve ${log.mineralType} ${log.volumeExtracted}${log.unit} from ${log.workerName}?\n\nThis will add to the mineral inventory.`,
+      `Approve ${log.mineralType} ${log.volumeExtracted}${log.unit} from ${log.workerName}?\n\nThis adds to the mineral inventory.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Approve',
-          style: 'default',
           onPress: async () => {
-            setActioning((prev) => ({ ...prev, [log.id]: true }));
+            setActioning((p) => ({ ...p, [log.id]: true }));
             try {
               const updated = await approveShiftLog(log.id);
-              setLogs((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+              setLogs((p) => p.map((l) => (l.id === updated.id ? updated : l)));
             } catch {
-              Alert.alert('Error', 'Could not approve shift log. Try again.');
-            } finally {
-              setActioning((prev) => ({ ...prev, [log.id]: false }));
+              Alert.alert('Error', 'Could not approve. Try again.');
             }
+            setActioning((p) => ({ ...p, [log.id]: false }));
           },
         },
       ]
@@ -104,174 +170,264 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reject',
-          style: 'destructive',
+          text: 'Reject', style: 'destructive',
           onPress: async () => {
-            setActioning((prev) => ({ ...prev, [log.id]: true }));
+            setActioning((p) => ({ ...p, [log.id]: true }));
             try {
               const updated = await rejectShiftLog(log.id);
-              setLogs((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+              setLogs((p) => p.map((l) => (l.id === updated.id ? updated : l)));
             } catch {
-              Alert.alert('Error', 'Could not reject shift log. Try again.');
-            } finally {
-              setActioning((prev) => ({ ...prev, [log.id]: false }));
+              Alert.alert('Error', 'Could not reject. Try again.');
             }
+            setActioning((p) => ({ ...p, [log.id]: false }));
           },
         },
       ]
     );
   }
 
-  function formatDate(dateStr: string) {
-    try {
-      return new Date(dateStr).toLocaleString(undefined, {
-        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-      });
-    } catch { return dateStr; }
-  }
-
-  const filteredLogs = applyFilter(logs, filter);
-
-  const totalByMineral: Record<string, number> = {};
-  filteredLogs.forEach((log) => {
+  // Production summary
+  const approvedTotals: Record<string, number> = {};
+  let pendingCount = 0;
+  let rejectedCount = 0;
+  logs.forEach((log) => {
     if (log.status === 'APPROVED') {
-      totalByMineral[log.mineralType] = (totalByMineral[log.mineralType] ?? 0) + Number(log.volumeExtracted);
-    }
+      const key = `${log.mineralType} (${log.unit})`;
+      approvedTotals[key] = (approvedTotals[key] ?? 0) + Number(log.volumeExtracted);
+    } else if (log.status === 'SUBMITTED') pendingCount++;
+    else if (log.status === 'REJECTED') rejectedCount++;
   });
 
-  const pendingCount = filteredLogs.filter((l) => l.status === 'SUBMITTED').length;
-  const filterLabel = FILTERS.find((f) => f.key === filter)?.label ?? '';
+  const hasActiveFilters = filters.mineralType || filters.workerName || filters.status;
+
+  function clearFilters() {
+    const reset: FilterState = { datePreset: 'today', dateFrom: '', dateTo: '', mineralType: '', workerName: '', status: '' };
+    setFilters(reset);
+    sessionFilters = reset;
+  }
+
+  if (loading) {
+    return <View style={styles.center}><ActivityIndicator size="large" color="#1f6f5b" /></View>;
+  }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-    >
-      <Text style={styles.title}>Shift Logs</Text>
-      <Text style={styles.subtitle}>Pull down to refresh</Text>
+    <View style={{ flex: 1, backgroundColor: '#f4f6f8' }}>
+      {/* Filter Panel */}
+      <View style={styles.filterPanel}>
+        {/* Date presets */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {DATE_PRESETS.map((p) => (
+              <TouchableOpacity
+                key={p.key}
+                style={[styles.chip, filters.datePreset === p.key && styles.chipActive]}
+                onPress={() => updateFilter('datePreset', p.key)}
+              >
+                <Text style={[styles.chipText, filters.datePreset === p.key && styles.chipTextActive]}>
+                  {p.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
 
-      <View style={styles.filterRow}>
-        {FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[styles.filterBtn, filter === f.key && styles.filterBtnActive]}
-            onPress={() => setFilter(f.key)}
-          >
-            <Text style={[styles.filterBtnText, filter === f.key && styles.filterBtnTextActive]}>
-              {f.label}
-            </Text>
+        {/* Custom date range */}
+        {filters.datePreset === 'custom' ? (
+          <View style={styles.dateRangeRow}>
+            <TextInput
+              style={[styles.dateInput, { flex: 1 }]}
+              placeholder="From (YYYY-MM-DD)"
+              placeholderTextColor="#9aa5b1"
+              value={filters.dateFrom}
+              onChangeText={(v) => updateFilter('dateFrom', v)}
+              keyboardType="numbers-and-punctuation"
+            />
+            <Text style={styles.dateArrow}>→</Text>
+            <TextInput
+              style={[styles.dateInput, { flex: 1 }]}
+              placeholder="To (YYYY-MM-DD)"
+              placeholderTextColor="#9aa5b1"
+              value={filters.dateTo}
+              onChangeText={(v) => updateFilter('dateTo', v)}
+              keyboardType="numbers-and-punctuation"
+            />
+          </View>
+        ) : null}
+
+        {/* Status filter */}
+        <View style={styles.statusRow}>
+          {STATUS_FILTERS.map((s) => (
+            <TouchableOpacity
+              key={s.key}
+              style={[styles.statusChip, filters.status === s.key && styles.statusChipActive]}
+              onPress={() => updateFilter('status', s.key)}
+            >
+              <Text style={[styles.statusChipText, filters.status === s.key && styles.statusChipTextActive]}>
+                {s.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Text filters */}
+        <View style={styles.textFilterRow}>
+          <TextInput
+            style={[styles.textFilter, { flex: 1 }]}
+            placeholder="⛏ Mineral type..."
+            placeholderTextColor="#9aa5b1"
+            value={filters.mineralType}
+            onChangeText={(v) => updateFilter('mineralType', v)}
+          />
+          <TextInput
+            style={[styles.textFilter, { flex: 1 }]}
+            placeholder="👷 Worker name..."
+            placeholderTextColor="#9aa5b1"
+            value={filters.workerName}
+            onChangeText={(v) => updateFilter('workerName', v)}
+          />
+        </View>
+
+        {hasActiveFilters ? (
+          <TouchableOpacity onPress={clearFilters} style={styles.clearBtn}>
+            <Text style={styles.clearBtnText}>✕ Clear filters</Text>
           </TouchableOpacity>
-        ))}
+        ) : null}
       </View>
 
-      {pendingCount > 0 ? (
-        <View style={styles.pendingBanner}>
-          <Text style={styles.pendingBannerText}>
-            ⏳ {pendingCount} log{pendingCount !== 1 ? 's' : ''} awaiting review
-          </Text>
-        </View>
-      ) : null}
-
-      {Object.keys(totalByMineral).length > 0 ? (
-        <>
-          <Text style={styles.sectionTitle}>Approved Production</Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+      >
+        {/* Production summary */}
+        {Object.keys(approvedTotals).length > 0 ? (
           <View style={styles.summaryCard}>
-            {Object.entries(totalByMineral).map(([mineral, total]) => (
-              <View key={mineral} style={styles.summaryRow}>
-                <Text style={styles.summaryMineral}>{mineral}</Text>
+            <Text style={styles.summaryTitle}>Approved Production</Text>
+            {Object.entries(approvedTotals).map(([key, total]) => (
+              <View key={key} style={styles.summaryRow}>
+                <Text style={styles.summaryMineral}>{key}</Text>
                 <Text style={styles.summaryTotal}>{total.toFixed(2)}</Text>
               </View>
             ))}
+            {(pendingCount > 0 || rejectedCount > 0) ? (
+              <Text style={styles.summaryFootnote}>
+                {pendingCount > 0 ? `${pendingCount} pending` : ''}
+                {pendingCount > 0 && rejectedCount > 0 ? ' · ' : ''}
+                {rejectedCount > 0 ? `${rejectedCount} rejected` : ''}
+              </Text>
+            ) : null}
           </View>
-        </>
-      ) : null}
+        ) : null}
 
-      <Text style={styles.sectionTitle}>
-        {filterLabel} · {filteredLogs.length} log{filteredLogs.length !== 1 ? 's' : ''}
-      </Text>
-      {filteredLogs.length === 0 ? (
-        <View style={styles.card}><Text style={styles.meta}>No shift logs for this period</Text></View>
-      ) : null}
-      {filteredLogs.map((log) => (
-        <View key={log.id} style={styles.logCard}>
-          <View style={styles.logHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.logMineral}>{log.mineralType}</Text>
-              <Text style={styles.logWorker}>{log.workerName}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end', gap: 4 }}>
-              <Text style={styles.logVolume}>{log.volumeExtracted}{log.unit}</Text>
-              <View style={[styles.statusBadge, { backgroundColor: statusBg(log.status) }]}>
-                <Text style={[styles.statusText, { color: statusColor(log.status) }]}>
-                  {log.status}
-                </Text>
+        {/* Pending banner */}
+        {pendingCount > 0 && filters.status !== 'APPROVED' && filters.status !== 'REJECTED' ? (
+          <View style={styles.pendingBanner}>
+            <Text style={styles.pendingBannerText}>
+              ⏳ {pendingCount} log{pendingCount !== 1 ? 's' : ''} awaiting approval
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Result count */}
+        <Text style={styles.resultCount}>
+          {logs.length} log{logs.length !== 1 ? 's' : ''} · newest first
+        </Text>
+
+        {logs.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No shift logs match your filters.</Text>
+          </View>
+        ) : null}
+
+        {logs.map((log) => (
+          <View key={log.id} style={styles.logCard}>
+            <View style={styles.logHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.logMineral}>{log.mineralType}</Text>
+                <Text style={styles.logWorker}>{log.workerName}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                <Text style={styles.logVolume}>{log.volumeExtracted} {log.unit}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: statusBg(log.status) }]}>
+                  <Text style={[styles.statusBadgeText, { color: statusColor(log.status) }]}>
+                    {log.status}
+                  </Text>
+                </View>
               </View>
             </View>
+
+            <Text style={styles.logMeta}>{log.shiftType} shift · {log.zone}</Text>
+            <Text style={styles.logMeta}>{log.equipmentName} ({log.equipmentCode})</Text>
+            {log.notes ? <Text style={styles.logNotes}>{log.notes}</Text> : null}
+            <Text style={styles.logTime}>{formatDate(log.submittedAt)}</Text>
+
+            {log.status === 'APPROVED' && log.approvedBy ? (
+              <Text style={styles.approvedBy}>✅ Approved by {log.approvedBy}</Text>
+            ) : null}
+            {log.status === 'REJECTED' && log.rejectedBy ? (
+              <Text style={styles.rejectedBy}>✗ Rejected by {log.rejectedBy}</Text>
+            ) : null}
+
+            {log.status === 'SUBMITTED' ? (
+              <View style={styles.actionRow}>
+                {actioning[log.id] ? (
+                  <ActivityIndicator size="small" color="#1f6f5b" />
+                ) : (
+                  <>
+                    <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(log)}>
+                      <Text style={styles.approveBtnText}>✓ Approve</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(log)}>
+                      <Text style={styles.rejectBtnText}>✗ Reject</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            ) : null}
           </View>
-          <Text style={styles.logMeta}>{log.shiftType} shift · {log.zone}</Text>
-          <Text style={styles.logMeta}>{log.equipmentName} ({log.equipmentCode})</Text>
-          {log.notes ? <Text style={styles.logNotes}>{log.notes}</Text> : null}
-          <Text style={styles.logTime}>{formatDate(log.submittedAt)}</Text>
-
-          {log.status === 'APPROVED' && log.approvedBy ? (
-            <Text style={styles.approvedBy}>✅ Approved by {log.approvedBy}</Text>
-          ) : null}
-          {log.status === 'REJECTED' && log.rejectedBy ? (
-            <Text style={styles.rejectedBy}>✗ Rejected by {log.rejectedBy}</Text>
-          ) : null}
-
-          {log.status === 'SUBMITTED' ? (
-            <View style={styles.actionRow}>
-              {actioning[log.id] ? (
-                <ActivityIndicator size="small" color="#1f6f5b" />
-              ) : (
-                <>
-                  <TouchableOpacity
-                    style={styles.approveBtn}
-                    onPress={() => handleApprove(log)}
-                  >
-                    <Text style={styles.approveBtnText}>✓ Approve</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rejectBtn}
-                    onPress={() => handleReject(log)}
-                  >
-                    <Text style={styles.rejectBtnText}>✗ Reject</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          ) : null}
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 2 },
-  subtitle: { color: '#9aa5b1', fontSize: 12, fontWeight: '600', marginBottom: 12 },
-  filterRow: { flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' },
-  filterBtn: { borderRadius: 20, borderWidth: 1.5, borderColor: '#dde3ea', paddingHorizontal: 14, paddingVertical: 6, backgroundColor: '#fff' },
-  filterBtnActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  filterBtnText: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  filterBtnTextActive: { color: '#fff' },
-  pendingBanner: { backgroundColor: '#fef3c7', borderColor: '#f59e0b', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 10 },
-  pendingBannerText: { color: '#92400e', fontSize: 13, fontWeight: '700' },
-  sectionTitle: { color: '#17212b', fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 8 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
+  filterPanel: { backgroundColor: '#fff', borderBottomColor: '#dde3ea', borderBottomWidth: 1, padding: 12, gap: 0 },
+  chip: { borderRadius: 20, borderWidth: 1.5, borderColor: '#dde3ea', paddingHorizontal: 14, paddingVertical: 6 },
+  chipActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
+  chipText: { color: '#5d6875', fontSize: 12, fontWeight: '700' },
+  chipTextActive: { color: '#fff' },
+  dateRangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  dateInput: { backgroundColor: '#f4f6f8', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', color: '#17212b', fontSize: 13, paddingHorizontal: 10, paddingVertical: 8 },
+  dateArrow: { color: '#9aa5b1', fontSize: 16, fontWeight: '700' },
+  statusRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  statusChip: { borderRadius: 20, borderWidth: 1.5, borderColor: '#dde3ea', paddingHorizontal: 12, paddingVertical: 5 },
+  statusChipActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
+  statusChipText: { color: '#5d6875', fontSize: 12, fontWeight: '700' },
+  statusChipTextActive: { color: '#fff' },
+  textFilterRow: { flexDirection: 'row', gap: 8 },
+  textFilter: { backgroundColor: '#f4f6f8', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', color: '#17212b', fontSize: 13, paddingHorizontal: 10, paddingVertical: 8 },
+  clearBtn: { alignSelf: 'flex-start', marginTop: 6 },
+  clearBtnText: { color: '#b42318', fontSize: 12, fontWeight: '700' },
+  container: { padding: 14, paddingBottom: 40 },
   summaryCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomColor: '#f4f6f8', borderBottomWidth: 1 },
-  summaryMineral: { color: '#17212b', fontSize: 14, fontWeight: '800' },
+  summaryTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 8 },
+  summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomColor: '#f4f6f8', borderBottomWidth: 1 },
+  summaryMineral: { color: '#17212b', fontSize: 13, fontWeight: '800' },
   summaryTotal: { color: '#1f6f5b', fontSize: 14, fontWeight: '900' },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+  summaryFootnote: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 8 },
+  pendingBanner: { backgroundColor: '#fef3c7', borderColor: '#f59e0b', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 10 },
+  pendingBannerText: { color: '#92400e', fontSize: 13, fontWeight: '700' },
+  resultCount: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginBottom: 8 },
+  emptyCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, padding: 16, alignItems: 'center' },
+  emptyText: { color: '#9aa5b1', fontSize: 13, fontWeight: '600' },
   logCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
   logHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   logMineral: { color: '#17212b', fontSize: 15, fontWeight: '900' },
   logWorker: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginTop: 2 },
   logVolume: { color: '#1f6f5b', fontSize: 16, fontWeight: '900' },
   statusBadge: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
-  statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  statusBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   logMeta: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 1 },
   logNotes: { color: '#17212b', fontSize: 13, fontWeight: '600', marginTop: 4 },
   logTime: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 4 },
@@ -282,5 +438,4 @@ const styles = StyleSheet.create({
   approveBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
   rejectBtn: { flex: 1, backgroundColor: '#fff', borderColor: '#b42318', borderWidth: 1.5, borderRadius: 6, paddingVertical: 8, alignItems: 'center' },
   rejectBtnText: { color: '#b42318', fontSize: 13, fontWeight: '800' },
-  meta: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
 });

@@ -374,8 +374,16 @@ export function getMyShiftLogs() {
   return request<any[]>('/shift-logs/mine');
 }
 
-export function getSiteShiftLogs() {
-  return request<{ content: ShiftLog[] }>('/shift-logs').then((page) => page.content);
+export function getSiteShiftLogs(params?: {
+  dateFrom?: string;
+  dateTo?: string;
+  mineralType?: string;
+  workerName?: string;
+  status?: string;
+}) {
+  const entries = Object.entries(params ?? {}).filter(([, v]) => v != null && v !== '') as [string, string][];
+  const qs = entries.length ? '?' + new URLSearchParams(entries).toString() : '';
+  return request<ShiftLog[]>(`/shift-logs${qs}`);
 }
 
 export function closeHazardReport(id: number, payload: {
