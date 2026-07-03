@@ -29,6 +29,7 @@ import { SupervisorMineralInventoryScreen } from '../screens/supervisor/Supervis
 import { SupervisorCertificationsScreen } from '../screens/supervisor/SupervisorCertificationsScreen';
 import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerProfileViewScreen } from '../screens/supervisor/WorkerProfileViewScreen';
+import { SupervisorMessagesScreen } from '../screens/supervisor/SupervisorMessagesScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -52,7 +53,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -94,6 +95,12 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
       <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
     </View>
   );
+  if (screen === 'messages') return (
+    <View style={{ flex: 1 }}>
+      {backBtn}
+      <SupervisorMessagesScreen session={session} />
+    </View>
+  );
   return (
     <MoreScreen
       items={[
@@ -114,6 +121,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '⛏', label: 'Mineral Inventory', description: 'Live stock totals and transaction history from approved shift logs', onPress: () => setScreen('mineralInventory') },
         { icon: '🎓', label: 'Certifications', description: 'Track worker certifications, expiry dates, and renewal history', onPress: () => setScreen('certifications') },
         { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
+        { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
       ]}
     />
   );

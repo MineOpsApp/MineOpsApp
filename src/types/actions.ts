@@ -46,6 +46,18 @@ export type SupervisorMessage = {
   createdAt: string;
 };
 
+export type WorkerMessage = {
+  id: number;
+  senderEmail: string;
+  senderName: string;
+  site: string;
+  content: string;
+  reply?: string | null;
+  repliedAt?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+};
+
 export type DangerZone = {
   id: number;
   site: string;

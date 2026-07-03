@@ -11,6 +11,7 @@ import { MarketScreen } from '../screens/supervisor/MarketScreen';
 import { SupervisorWorkerContactsScreen } from '../screens/supervisor/SupervisorWorkerContactsScreen';
 import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerProfileViewScreen } from '../screens/supervisor/WorkerProfileViewScreen';
+import { SupervisorMessagesScreen } from '../screens/supervisor/SupervisorMessagesScreen';
 import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
@@ -38,7 +39,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SafetyMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'market' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'market' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile' | 'messages'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -67,6 +68,7 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
       <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
     </View>
   );
+  if (screen === 'messages') return <View style={{ flex: 1 }}>{backBtn}<SupervisorMessagesScreen session={session} /></View>;
 
   return (
     <MoreScreen
@@ -75,6 +77,7 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
         { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
         { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts and profiles for all site personnel', onPress: () => setScreen('workerContacts') },
         { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
+        { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
       ]}
     />
   );

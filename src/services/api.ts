@@ -14,6 +14,7 @@ import type {
   SupervisorMessage,
   VisitorInduction,
   WorkerEquipment,
+  WorkerMessage,
   WorkerProfile,
 } from '../types/actions';
 
@@ -1066,4 +1067,25 @@ export function updateMyProfile(payload: { photo?: string | null; bio?: string |
 
 export function getWorkerProfileByEmail(email: string) {
   return request<UserProfile>(`/profile/${encodeURIComponent(email)}`);
+}
+
+// Worker-to-supervisor messaging
+export function sendWorkerMessage(content: string) {
+  return post<WorkerMessage>('/worker-messages', { content });
+}
+
+export function getMyWorkerMessages() {
+  return request<WorkerMessage[]>('/worker-messages/mine');
+}
+
+export function getSiteWorkerMessages() {
+  return request<WorkerMessage[]>('/worker-messages/site');
+}
+
+export function replyToWorkerMessage(id: number, reply: string) {
+  return post<WorkerMessage>(`/worker-messages/${id}/reply`, { reply });
+}
+
+export function markWorkerMessageRead(id: number) {
+  return post<WorkerMessage>(`/worker-messages/${id}/read`, {});
 }

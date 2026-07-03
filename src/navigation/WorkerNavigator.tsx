@@ -19,6 +19,7 @@ import { WorkerEmergencyContactsScreen } from '../screens/worker/WorkerEmergency
 import { WorkerSafetyChecklistScreen } from '../screens/worker/WorkerSafetyChecklistScreen';
 import { WorkerCertificationsScreen } from '../screens/worker/WorkerCertificationsScreen';
 import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
+import { WorkerMessagesScreen } from '../screens/worker/WorkerMessagesScreen';
 
 import type { AuthSession } from '../types/auth';
 
@@ -40,7 +41,7 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
-type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile';
+type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -144,6 +145,15 @@ function WorkerMoreStack({
     </View>
   );
 
+  if (screen === 'messages') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerMessagesScreen session={session} />
+    </View>
+  );
+
   return (
     <MoreScreen
       items={[
@@ -156,6 +166,7 @@ function WorkerMoreStack({
         { icon: '✅', label: 'Safety Checklist', description: 'Complete your shift safety check before starting work', onPress: () => setScreen('checklist') },
         { icon: '🎓', label: 'My Certifications', description: 'View your certifications, expiry dates, and renewal history', onPress: () => setScreen('certifications') },
         { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
+        { icon: '💬', label: 'Message Supervisor', description: 'Send a quick message to your site supervisor', onPress: () => setScreen('messages') },
       ]}
     />
   );
