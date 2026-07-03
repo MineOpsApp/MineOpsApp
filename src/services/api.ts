@@ -1,3 +1,5 @@
+import * as SecureStore from 'expo-secure-store';
+
 import type { DashboardData } from '../types/dashboard';
 import type { Site } from '../types/site';
 import type { CreateSosAlertRequest, SosAlert } from '../types/sos';
@@ -21,11 +23,20 @@ import type { AuthUser } from '../types/auth';
 const API_BASE_URL = 'http://172.20.10.4:8080/api';
 const AUDIT_API_BASE_URL = API_BASE_URL.replace(':8080/api', ':8081/api');
 const REQUEST_TIMEOUT_MS = 30000;
-const REFRESH_THRESHOLD_SECS = 30 * 60;
+const REFRESH_THRESHOLD_SECS = 5 * 60; // refresh access token when < 5 min left
+
+const SECURE_REFRESH_KEY = 'mineops_refresh_token';
+const SECURE_EMAIL_KEY = 'mineops_session_email';
 
 let authToken: string | null = null;
 let tokenExpiresAt: number | null = null;
+let storedRefreshToken: string | null = null;
 let isRefreshing = false;
+let sessionExpiredListener: (() => void) | null = null;
+
+export function onSessionExpired(listener: () => void) {
+  sessionExpiredListener = listener;
+}
 
 function parseTokenExp(token: string): number | null {
   try {
@@ -54,9 +65,62 @@ export function parseApiError(err: unknown): string {
   return msg || 'Something went wrong. Try again.';
 }
 
-export function setAuthToken(token: string | null) {
+export function setAuthToken(token: string | null, refreshToken?: string | null) {
   authToken = token;
   tokenExpiresAt = token ? parseTokenExp(token) : null;
+  if (refreshToken !== undefined) {
+    storedRefreshToken = refreshToken;
+  }
+}
+
+async function persistRefreshToken(rawToken: string, email: string) {
+  await SecureStore.setItemAsync(SECURE_REFRESH_KEY, rawToken);
+  await SecureStore.setItemAsync(SECURE_EMAIL_KEY, email);
+}
+
+async function clearPersistedTokens() {
+  await SecureStore.deleteItemAsync(SECURE_REFRESH_KEY);
+  await SecureStore.deleteItemAsync(SECURE_EMAIL_KEY);
+}
+
+export async function getStoredEmail(): Promise<string | null> {
+  return SecureStore.getItemAsync(SECURE_EMAIL_KEY);
+}
+
+async function doTokenRefresh(): Promise<boolean> {
+  const rt = storedRefreshToken ?? await SecureStore.getItemAsync(SECURE_REFRESH_KEY);
+  if (!rt) return false;
+  try {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: rt }),
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    if (!res.ok) {
+      await clearPersistedTokens();
+      storedRefreshToken = null;
+      return false;
+    }
+    const data = await res.json();
+    if (data.error || !data.token || !data.refreshToken) {
+      await clearPersistedTokens();
+      storedRefreshToken = null;
+      return false;
+    }
+    authToken = data.token;
+    tokenExpiresAt = parseTokenExp(data.token);
+    storedRefreshToken = data.refreshToken;
+    if (data.user?.email) {
+      await persistRefreshToken(data.refreshToken, data.user.email);
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function maybeRefresh(): Promise<void> {
@@ -65,23 +129,53 @@ async function maybeRefresh(): Promise<void> {
   if (secsUntilExpiry > REFRESH_THRESHOLD_SECS) return;
   isRefreshing = true;
   try {
+    await doTokenRefresh();
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+export async function tryRestoreSession(): Promise<AuthSession | null> {
+  const rt = await SecureStore.getItemAsync(SECURE_REFRESH_KEY);
+  if (!rt) return null;
+  try {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${authToken}` },
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: rt }),
       signal: controller.signal,
     });
     clearTimeout(id);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.token) setAuthToken(data.token);
+    if (!res.ok) { await clearPersistedTokens(); return null; }
+    const data = await res.json();
+    if (data.error || !data.token || !data.refreshToken || !data.user) {
+      await clearPersistedTokens();
+      return null;
     }
+    await persistRefreshToken(data.refreshToken, data.user.email);
+    return { token: data.token, refreshToken: data.refreshToken, user: data.user };
   } catch {
-    // silent — let the original request proceed and fail naturally if needed
-  } finally {
-    isRefreshing = false;
+    return null;
   }
+}
+
+export async function logout(refreshToken?: string) {
+  const rt = refreshToken ?? storedRefreshToken ?? await SecureStore.getItemAsync(SECURE_REFRESH_KEY);
+  try {
+    if (rt) {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: rt }),
+      });
+    }
+  } catch { /* best effort */ }
+  authToken = null;
+  tokenExpiresAt = null;
+  storedRefreshToken = null;
+  await clearPersistedTokens();
 }
 
 function withAuthHeaders(headers?: HeadersInit): HeadersInit {
@@ -125,22 +219,42 @@ async function fetchWithTimeout(url: string, options?: RequestInit & { skipAuth?
   }
 }
 
+async function handleResponse<T>(response: Response, retry: () => Promise<Response>): Promise<T> {
+  if (response.status === 401) {
+    if (isRefreshing) {
+      // another refresh in flight — just fail this one
+      sessionExpiredListener?.();
+      throw new Error('Session expired. Please sign in again.');
+    }
+    isRefreshing = true;
+    const refreshed = await doTokenRefresh().finally(() => { isRefreshing = false; });
+    if (refreshed) {
+      const retryRes = await retry();
+      if (!retryRes.ok) {
+        const text = await retryRes.text();
+        throw new Error(`${retryRes.status}: ${text}`);
+      }
+      return retryRes.json() as Promise<T>;
+    }
+    sessionExpiredListener?.();
+    throw new Error('Session expired. Please sign in again.');
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`${response.status}: ${text}`);
+  }
+  return response.json() as Promise<T>;
+}
+
 async function request<T>(path: string): Promise<T> {
   await maybeRefresh();
   try {
-    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`);
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`${response.status}: ${text}`);
-    }
-    return response.json() as Promise<T>;
+    const doFetch = () => fetchWithTimeout(`${API_BASE_URL}${path}`);
+    const response = await doFetch();
+    return handleResponse<T>(response, doFetch);
   } catch (error: any) {
-    if (error?.name === 'AbortError') {
-      throw new Error('Request timed out. Check your connection.');
-    }
-    if (error?.message?.includes('Network request failed')) {
-      throw new Error('Cannot reach server. Check your connection.');
-    }
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
     throw error;
   }
 }
@@ -148,25 +262,12 @@ async function request<T>(path: string): Promise<T> {
 async function post<T>(path: string, body: unknown): Promise<T> {
   await maybeRefresh();
   try {
-    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`${response.status}: ${text}`);
-    }
-    return response.json() as Promise<T>;
+    const opts = { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }, method: 'POST' } as const;
+    const doFetch = () => fetchWithTimeout(`${API_BASE_URL}${path}`, opts);
+    return handleResponse<T>(await doFetch(), doFetch);
   } catch (error: any) {
-    if (error?.name === 'AbortError') {
-      throw new Error('Request timed out. Check your connection.');
-    }
-    if (error?.message?.includes('Network request failed')) {
-      throw new Error('Cannot reach server. Check your connection.');
-    }
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
     throw error;
   }
 }
@@ -174,26 +275,12 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 async function patch<T>(path: string, body: unknown): Promise<T> {
   await maybeRefresh();
   try {
-    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      method: 'PATCH',
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`${response.status}: ${text}`);
-    }
-    return response.json() as Promise<T>;
-  } 
-catch (error: any) {
-    if (error?.name === 'AbortError') {
-      throw new Error('Request timed out. Check your connection.');
-    }
-    if (error?.message?.includes('Network request failed')) {
-      throw new Error('Cannot reach server. Check your connection.');
-    }
+    const opts = { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' }, method: 'PATCH' } as const;
+    const doFetch = () => fetchWithTimeout(`${API_BASE_URL}${path}`, opts);
+    return handleResponse<T>(await doFetch(), doFetch);
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
     throw error;
   }
 }
@@ -227,17 +314,9 @@ async function postPublic<T>(path: string, body: unknown): Promise<T> {
 async function del<T>(path: string): Promise<T> {
   await maybeRefresh();
   try {
-    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) {
-      const statusCode = response.status;
-      let text = '';
-      try { text = await response.text(); } catch {}
-      throw new Error(`${statusCode}: ${text}`);
-    }
-    return response.json() as Promise<T>;
+    const opts = { method: 'DELETE', headers: { 'Content-Type': 'application/json' } } as const;
+    const doFetch = () => fetchWithTimeout(`${API_BASE_URL}${path}`, opts);
+    return handleResponse<T>(await doFetch(), doFetch);
   } catch (error: any) {
     if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
     if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
@@ -248,18 +327,9 @@ async function del<T>(path: string): Promise<T> {
 async function put<T>(path: string, body: unknown): Promise<T> {
   await maybeRefresh();
   try {
-    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const statusCode = response.status;
-      let text = '';
-      try { text = await response.text(); } catch {}
-      throw new Error(`${statusCode}: ${text}`);
-    }
-    return response.json() as Promise<T>;
+    const opts = { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } as const;
+    const doFetch = () => fetchWithTimeout(`${API_BASE_URL}${path}`, opts);
+    return handleResponse<T>(await doFetch(), doFetch);
   } catch (error: any) {
     if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
     if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
@@ -280,9 +350,14 @@ export function registerUser(payload: AuthPayload) {
   return postPublic<any>('/auth/register', payload);
 }
 
-export function loginUser(payload: AuthPayload) {
+export async function loginUser(payload: AuthPayload): Promise<AuthSession> {
   setAuthToken(null);
-  return postPublic<AuthSession>('/auth/login', payload);
+  const session = await postPublic<AuthSession>('/auth/login', payload);
+  if (session.refreshToken && session.user?.email) {
+    storedRefreshToken = session.refreshToken;
+    await persistRefreshToken(session.refreshToken, session.user.email);
+  }
+  return session;
 }
 
 export function renewGuestSession(email: string, hours: number) {

@@ -33,7 +33,11 @@
           "photosPermission": "MineOps needs access to your photos to set your profile picture.",
           "cameraPermission": "MineOps needs access to your camera to take a profile picture."
         }
-      ]
+      ],
+      "expo-secure-store",
+      ["expo-local-authentication", {
+        "faceIDPermission": "MineOps uses Face ID to securely sign you in."
+      }]
     ],
     "extra": {
       "eas": {

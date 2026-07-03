@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,8 +11,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
 
-import { loginUser, registerUser } from '../services/api';
+import { loginUser, registerUser, tryRestoreSession, setAuthToken } from '../services/api';
 import type { AuthSession } from '../types/auth';
 import type { UserRole } from '../types/role';
 
@@ -25,10 +26,11 @@ const WORKER_ROLES = [
 const SITES = ['Obuasi Mine', 'Tarkwa Mine', 'Bogoso Mine', 'Prestea Mine'];
 
 type AuthScreenProps = {
+  storedEmail: string | null;
   onAuthenticated: (session: AuthSession) => void;
 };
 
-export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
+export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [selectedRole, setSelectedRole] = useState<UserRole>('worker');
   const [selectedSubRole, setSelectedSubRole] = useState<string>('visitor');
@@ -40,6 +42,44 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pendingApproval, setPendingApproval] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+
+  useEffect(() => {
+    async function checkBiometric() {
+      if (!storedEmail) return;
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      setBiometricAvailable(hasHardware && isEnrolled);
+    }
+    checkBiometric();
+  }, [storedEmail]);
+
+  async function handleBiometricLogin() {
+    setBiometricLoading(true);
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: `Sign in as ${storedEmail}`,
+        fallbackLabel: 'Use Password',
+        cancelLabel: 'Cancel',
+        disableDeviceFallback: false,
+      });
+      if (!result.success) return;
+
+      const session = await tryRestoreSession();
+      if (!session) {
+        setBiometricAvailable(false);
+        Alert.alert('Session expired', 'Your session has expired. Please sign in with your password.');
+        return;
+      }
+      setAuthToken(session.token, session.refreshToken);
+      onAuthenticated(session);
+    } catch {
+      Alert.alert('Biometric failed', 'Could not authenticate. Please try again or use your password.');
+    } finally {
+      setBiometricLoading(false);
+    }
+  }
 
   async function submit() {
   if (isSubmitting) return;
@@ -205,10 +245,26 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
             </View>
           ) : null}
 
+          {/* Biometric login — only on sign-in when stored session exists */}
+          {mode === 'login' && biometricAvailable && storedEmail ? (
+            <Pressable
+              onPress={handleBiometricLogin}
+              disabled={biometricLoading}
+              style={[styles.biometricBtn, biometricLoading && styles.submitBtnDisabled]}
+            >
+              <Text style={styles.biometricIcon}>
+                {Platform.OS === 'ios' ? '🔒' : '🫆'}
+              </Text>
+              <Text style={styles.biometricText}>
+                {biometricLoading ? 'Verifying…' : `Sign in as ${storedEmail}`}
+              </Text>
+            </Pressable>
+          ) : null}
+
           {/* Submit */}
           <Pressable disabled={isSubmitting} onPress={submit} style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}>
             <Text style={styles.submitBtnText}>
-              {isSubmitting ? 'Please wait...' : mode === 'login' ? 'Sign In →' : 'Create Account →'}
+              {isSubmitting ? 'Please wait...' : mode === 'login' ? 'Sign In with Password →' : 'Create Account →'}
             </Text>
           </Pressable>
 
@@ -265,6 +321,9 @@ const styles = StyleSheet.create({
   showPasswordBtn: { backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderWidth: 1, height: 48, alignItems: 'center', justifyContent: 'center', width: 48 },
   showPasswordText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
 
+  biometricBtn: { alignItems: 'center', backgroundColor: '#161b22', borderColor: '#1f6f5b', borderRadius: 10, borderWidth: 1.5, flexDirection: 'row', gap: 10, justifyContent: 'center', marginBottom: 12, marginTop: 8, minHeight: 52, paddingHorizontal: 20 },
+  biometricIcon: { fontSize: 22 },
+  biometricText: { color: '#3fb950', fontSize: 14, fontWeight: '800' },
   submitBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 10, marginTop: 8, minHeight: 52, justifyContent: 'center' },
   submitBtnDisabled: { opacity: 0.6 },
   submitBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
