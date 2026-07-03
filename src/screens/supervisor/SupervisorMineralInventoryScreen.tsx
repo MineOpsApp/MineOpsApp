@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
-import { getSiteInventory, getSiteInventoryHistory } from '../../services/api';
+import { getSiteInventory, getSiteInventoryHistory, getSites, updateInventoryVisibility } from '../../services/api';
 import type { InventoryTransaction, MineralInventory } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
@@ -9,7 +9,7 @@ type Tab = 'summary' | 'history';
 
 type Props = { session: AuthSession };
 
-export function SupervisorMineralInventoryScreen({ session: _ }: Props) {
+export function SupervisorMineralInventoryScreen({ session }: Props) {
   const [tab, setTab] = useState<Tab>('summary');
   const [inventory, setInventory] = useState<MineralInventory[]>([]);
   const [history, setHistory] = useState<InventoryTransaction[]>([]);
@@ -18,6 +18,8 @@ export function SupervisorMineralInventoryScreen({ session: _ }: Props) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [visibilityOn, setVisibilityOn] = useState(false);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
 
   async function loadInventory() {
     try {
@@ -38,7 +40,23 @@ export function SupervisorMineralInventoryScreen({ session: _ }: Props) {
 
   useEffect(() => {
     Promise.all([loadInventory(), loadHistory(0, true)]).finally(() => setLoading(false));
+    getSites().then((sites) => {
+      const mine = sites.find((s) => s.name?.toLowerCase() === session.user.assignedSite?.toLowerCase());
+      if (mine) setVisibilityOn(mine.inventoryVisibleToGuests ?? false);
+    }).catch(() => {});
   }, []);
+
+  async function toggleVisibility(value: boolean) {
+    setTogglingVisibility(true);
+    try {
+      const updated = await updateInventoryVisibility(value);
+      setVisibilityOn(updated.inventoryVisibleToGuests ?? value);
+    } catch {
+      // revert optimistic UI if call fails
+    } finally {
+      setTogglingVisibility(false);
+    }
+  }
 
   async function refresh() {
     setRefreshing(true);
@@ -115,6 +133,22 @@ export function SupervisorMineralInventoryScreen({ session: _ }: Props) {
           contentContainerStyle={styles.container}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         >
+          <View style={styles.visibilityCard}>
+            <View style={styles.visibilityRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.visibilityLabel}>Share inventory with investor guests</Text>
+                <Text style={styles.visibilityHint}>Investor guests will see current stock levels</Text>
+              </View>
+              <Switch
+                value={visibilityOn}
+                onValueChange={toggleVisibility}
+                disabled={togglingVisibility}
+                trackColor={{ false: '#dde3ea', true: '#1f6f5b' }}
+                thumbColor="#fff"
+              />
+            </View>
+          </View>
+
           <View style={styles.stripRow}>
             <View style={styles.stripCard}>
               <Text style={styles.stripValue}>{inventory.length}</Text>
@@ -246,4 +280,8 @@ const styles = StyleSheet.create({
   txTime: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 3 },
   loadMoreBtn: { alignItems: 'center', padding: 14, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', marginTop: 4 },
   loadMoreText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
+  visibilityCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, marginBottom: 14, padding: 14 },
+  visibilityRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  visibilityLabel: { color: '#17212b', fontSize: 14, fontWeight: '800', marginBottom: 2 },
+  visibilityHint: { color: '#9aa5b1', fontSize: 12, fontWeight: '600' },
 });

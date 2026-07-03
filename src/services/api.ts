@@ -1296,3 +1296,13 @@ export function updateZonePosition(id: number, points: MapPoint[]) {
 export function getZoneDetail(id: number) {
   return request<ZoneDetail>(`/danger-zones/${id}/detail`);
 }
+
+// ── Buyer visibility ──────────────────────────────────────────────────────────
+
+export function getPublicInventory() {
+  return request<MineralInventory[]>('/inventory/public');
+}
+
+export function updateInventoryVisibility(visible: boolean) {
+  return patch<Site>('/sites/visibility', { visible });
+}
