@@ -18,6 +18,7 @@ import { WorkerIncidentScreen } from '../screens/worker/WorkerIncidentScreen';
 import { WorkerEmergencyContactsScreen } from '../screens/worker/WorkerEmergencyContactsScreen';
 import { WorkerSafetyChecklistScreen } from '../screens/worker/WorkerSafetyChecklistScreen';
 import { WorkerCertificationsScreen } from '../screens/worker/WorkerCertificationsScreen';
+import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 
 import type { AuthSession } from '../types/auth';
 
@@ -39,7 +40,7 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
-type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications';
+type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -134,6 +135,15 @@ function WorkerMoreStack({
     </View>
   );
 
+  if (screen === 'profile') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerProfileScreen session={session} />
+    </View>
+  );
+
   return (
     <MoreScreen
       items={[
@@ -145,6 +155,7 @@ function WorkerMoreStack({
         { icon: '📞', label: 'Emergency Contacts', description: 'Add contacts for supervisors to reach in emergencies', onPress: () => setScreen('emergencyContacts') },
         { icon: '✅', label: 'Safety Checklist', description: 'Complete your shift safety check before starting work', onPress: () => setScreen('checklist') },
         { icon: '🎓', label: 'My Certifications', description: 'View your certifications, expiry dates, and renewal history', onPress: () => setScreen('certifications') },
+        { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
       ]}
     />
   );

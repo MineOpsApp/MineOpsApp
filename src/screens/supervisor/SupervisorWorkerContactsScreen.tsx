@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { getWorkerContactDirectory, getWorkerEmergencyContacts } from '../../services/api';
-import type { WorkerDirectoryEntry } from '../../services/api';
+import { getWorkerContactDirectory, getWorkerEmergencyContacts, getWorkerProfileByEmail } from '../../services/api';
+import type { UserProfile, WorkerDirectoryEntry } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -22,6 +22,7 @@ export function SupervisorWorkerContactsScreen({ session: _ }: Props) {
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
   const [contactsCache, setContactsCache] = useState<Record<string, EmergencyContact[]>>({});
   const [loadingContacts, setLoadingContacts] = useState<string | null>(null);
+  const [profilesCache, setProfilesCache] = useState<Record<string, UserProfile>>({});
 
   function load() {
     return getWorkerContactDirectory().then(setWorkers).catch(() => {});
@@ -38,13 +39,23 @@ export function SupervisorWorkerContactsScreen({ session: _ }: Props) {
   async function toggleContacts(worker: WorkerDirectoryEntry) {
     if (expandedEmail === worker.email) { setExpandedEmail(null); return; }
     setExpandedEmail(worker.email);
-    if (contactsCache[worker.email] !== undefined) return;
+    const needsContacts = contactsCache[worker.email] === undefined;
+    const needsProfile = profilesCache[worker.email] === undefined;
+    if (!needsContacts && !needsProfile) return;
     setLoadingContacts(worker.email);
     try {
-      const contacts = await getWorkerEmergencyContacts(worker.email);
-      setContactsCache((prev) => ({ ...prev, [worker.email]: contacts }));
-    } catch {
-      setContactsCache((prev) => ({ ...prev, [worker.email]: [] }));
+      const [contacts, profile] = await Promise.allSettled([
+        needsContacts ? getWorkerEmergencyContacts(worker.email) : Promise.resolve(contactsCache[worker.email]),
+        needsProfile ? getWorkerProfileByEmail(worker.email) : Promise.resolve(profilesCache[worker.email]),
+      ]);
+      if (contacts.status === 'fulfilled') {
+        setContactsCache((prev) => ({ ...prev, [worker.email]: contacts.value }));
+      } else {
+        setContactsCache((prev) => ({ ...prev, [worker.email]: [] }));
+      }
+      if (profile.status === 'fulfilled' && profile.value) {
+        setProfilesCache((prev) => ({ ...prev, [worker.email]: profile.value as UserProfile }));
+      }
     } finally {
       setLoadingContacts(null);
     }
@@ -119,6 +130,7 @@ export function SupervisorWorkerContactsScreen({ session: _ }: Props) {
       {filtered.map((w) => {
         const isExpanded = expandedEmail === w.email;
         const contacts = contactsCache[w.email];
+        const profile = profilesCache[w.email];
         const isLoading = loadingContacts === w.email;
         const hasContacts = w.contactCount > 0;
 
@@ -127,7 +139,11 @@ export function SupervisorWorkerContactsScreen({ session: _ }: Props) {
             <Pressable onPress={() => toggleContacts(w)} style={styles.workerCard}>
               <View style={styles.workerLeft}>
                 <View style={[styles.workerAvatar, !hasContacts && styles.workerAvatarWarning]}>
-                  <Text style={styles.workerAvatarText}>{w.fullName.charAt(0).toUpperCase()}</Text>
+                  {profile?.profilePhoto ? (
+                    <Image source={{ uri: profile.profilePhoto }} style={styles.workerAvatarImg} />
+                  ) : (
+                    <Text style={styles.workerAvatarText}>{w.fullName.charAt(0).toUpperCase()}</Text>
+                  )}
                 </View>
                 <View>
                   <Text style={styles.workerName}>{w.fullName}</Text>
@@ -150,6 +166,20 @@ export function SupervisorWorkerContactsScreen({ session: _ }: Props) {
 
             {isExpanded && (
               <View style={styles.contactsPanel}>
+                {profile?.bio ? (
+                  <View style={styles.bioRow}>
+                    <Text style={styles.bioText}>{profile.bio}</Text>
+                  </View>
+                ) : null}
+                {profile && (
+                  <View style={styles.profileStatsRow}>
+                    <Text style={styles.profileStat}>{profile.shiftLogCount} shifts</Text>
+                    <Text style={styles.profileStatDot}>·</Text>
+                    <Text style={styles.profileStat}>{profile.certificationCount} certs</Text>
+                    <Text style={styles.profileStatDot}>·</Text>
+                    <Text style={styles.profileStat}>ID: WRK-{String(profile.id).padStart(6, '0')}</Text>
+                  </View>
+                )}
                 <Text style={styles.contactsPanelTitle}>📞 Emergency Contacts</Text>
                 {isLoading ? (
                   <ActivityIndicator size="small" color="#1f6f5b" style={{ marginVertical: 8 }} />
@@ -203,9 +233,15 @@ const styles = StyleSheet.create({
   workerCardWrap: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 8, overflow: 'hidden' },
   workerCard: { alignItems: 'center', flexDirection: 'row', padding: 12 },
   workerLeft: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
-  workerAvatar: { alignItems: 'center', backgroundColor: '#17212b', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
+  workerAvatar: { alignItems: 'center', backgroundColor: '#17212b', borderRadius: 18, height: 36, justifyContent: 'center', overflow: 'hidden', width: 36 },
   workerAvatarWarning: { backgroundColor: '#b45309' },
   workerAvatarText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
+  workerAvatarImg: { height: 36, width: 36 },
+  bioRow: { backgroundColor: '#f8fafc', borderRadius: 8, marginBottom: 10, padding: 10 },
+  bioText: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 18 },
+  profileStatsRow: { alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 12 },
+  profileStat: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
+  profileStatDot: { color: '#9aa5b1', fontSize: 11 },
   workerName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
   workerRole: { color: '#8fa3b8', fontSize: 11, fontWeight: '700' },
   workerRight: { marginRight: 6 },

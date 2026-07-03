@@ -38,6 +38,22 @@ function parseTokenExp(token: string): number | null {
   }
 }
 
+// Extracts a user-readable message from api error strings like "400: {"message":"..."}"
+export function parseApiError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err ?? '');
+  try {
+    const jsonStart = msg.indexOf('{');
+    if (jsonStart >= 0) {
+      const parsed = JSON.parse(msg.slice(jsonStart));
+      if (parsed.message) return parsed.message;
+      if (parsed.detail) return parsed.detail;
+    }
+  } catch {}
+  const colonIdx = msg.indexOf(': ');
+  if (colonIdx >= 0) return msg.slice(colonIdx + 2);
+  return msg || 'Something went wrong. Try again.';
+}
+
 export function setAuthToken(token: string | null) {
   authToken = token;
   tokenExpiresAt = token ? parseTokenExp(token) : null;
@@ -833,11 +849,11 @@ export type ShiftLog = {
 
 // Shift log approval
 export function approveShiftLog(id: number) {
-  return request<ShiftLog>(`/shift-logs/${id}/approve`, { method: 'PATCH' });
+  return patch<ShiftLog>(`/shift-logs/${id}/approve`, {});
 }
 
 export function rejectShiftLog(id: number) {
-  return request<ShiftLog>(`/shift-logs/${id}/reject`, { method: 'PATCH' });
+  return patch<ShiftLog>(`/shift-logs/${id}/reject`, {});
 }
 
 // Mineral inventory
@@ -947,4 +963,32 @@ export function updateCertification(id: number, payload: CertificationPayload) {
 
 export function deleteCertification(id: number) {
   return del<void>(`/certifications/${id}`);
+}
+
+// User profiles with photo ID
+export type UserProfile = {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+  assignedSite: string;
+  profilePhoto: string | null;
+  bio: string | null;
+  createdAt: string;
+  active: boolean | null;
+  shiftLogCount: number;
+  certificationCount: number;
+  emergencyContactCount: number;
+};
+
+export function getMyProfile() {
+  return request<UserProfile>('/profile');
+}
+
+export function updateMyProfile(payload: { photo?: string | null; bio?: string | null }) {
+  return put<UserProfile>('/profile', payload);
+}
+
+export function getWorkerProfileByEmail(email: string) {
+  return request<UserProfile>(`/profile/${encodeURIComponent(email)}`);
 }

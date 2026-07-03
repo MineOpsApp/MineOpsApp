@@ -26,6 +26,15 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MineOps needs access to your photos to set your profile picture.",
+          "cameraPermission": "MineOps needs access to your camera to take a profile picture."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "5befeaf7-e38a-419e-8e5a-5cccd607e115"
