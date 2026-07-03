@@ -3,9 +3,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BlastAlert } from '../../components/BlastAlert';
 import { SosButton } from '../../components/SosButton';
-import { getBlastHistory, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteHazardAlerts } from '../../services/api';
+import { getBlastHistory, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts } from '../../services/api';
 import type { InventoryTransaction } from '../../services/api';
-import type { HazardReport, Notice } from '../../types/actions';
+import type { HazardReport, Notice, ShiftAnnouncement } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession; onGoToEmergencyContacts?: () => void };
@@ -20,6 +20,7 @@ const SEVERITY_COLOR: Record<string, string> = {
 export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [announcements, setAnnouncements] = useState<ShiftAnnouncement[]>([]);
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
   const [blastHistory, setBlastHistory] = useState<any[]>([]);
@@ -29,8 +30,8 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
   const [expiringCerts, setExpiringCerts] = useState(0);
 
   useEffect(() => {
-    Promise.all([getSiteHazardAlerts(), getNotices()])
-      .then(([h, n]) => { setHazards(h); setNotices(n); })
+    Promise.all([getSiteHazardAlerts(), getNotices(), getSiteAnnouncements()])
+      .then(([h, n, a]) => { setHazards(h); setNotices(n); setAnnouncements(a); })
       .catch(() => setConnectionError(true))
       .finally(() => setLoading(false));
     getBlastHistory().then(setBlastHistory).catch(() => {});
@@ -48,6 +49,17 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
   function formatDate(dateStr: string) {
     try { return new Date(dateStr).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
     catch { return dateStr; }
+  }
+
+  function formatAgo(iso: string): string {
+    try {
+      const diff = Date.now() - new Date(iso).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'Just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      return `${hrs}h ago`;
+    } catch { return ''; }
   }
 
   return (
@@ -111,6 +123,22 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
         </View>
 
         <BlastAlert />
+
+        {/* Shift Announcements */}
+        {announcements.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Announcements</Text>
+            {announcements.map((a) => (
+              <View key={a.id} style={styles.announcementCard}>
+                <Text style={styles.announcementIcon}>📢</Text>
+                <View style={styles.announcementBody}>
+                  <Text style={styles.announcementContent}>{a.content}</Text>
+                  <Text style={styles.announcementMeta}>{a.createdByName} · {formatAgo(a.createdAt)}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         {/* Alerts */}
         <View style={styles.section}>
@@ -276,4 +304,9 @@ const styles = StyleSheet.create({
   contribVol: { color: '#15803d', fontSize: 14, fontWeight: '900' },
   contribUnit: { color: '#5d6875', fontSize: 12, fontWeight: '700' },
   contribSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 4 },
+  announcementCard: { alignItems: 'flex-start', backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
+  announcementIcon: { fontSize: 16, marginTop: 1 },
+  announcementBody: { flex: 1 },
+  announcementContent: { color: '#17212b', fontSize: 14, fontWeight: '600', lineHeight: 19, marginBottom: 3 },
+  announcementMeta: { color: '#a16207', fontSize: 11, fontWeight: '600' },
 });

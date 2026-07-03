@@ -11,6 +11,7 @@ import type {
   HazardReport,
   MaintenanceRequest,
   Notice,
+  ShiftAnnouncement,
   SupervisorMessage,
   VisitorInduction,
   WorkerEquipment,
@@ -1088,4 +1089,13 @@ export function replyToWorkerMessage(id: number, reply: string) {
 
 export function markWorkerMessageRead(id: number) {
   return post<WorkerMessage>(`/worker-messages/${id}/read`, {});
+}
+
+// Shift announcements
+export function getSiteAnnouncements() {
+  return request<ShiftAnnouncement[]>('/announcements');
+}
+
+export function postAnnouncement(content: string) {
+  return post<ShiftAnnouncement>('/announcements', { content });
 }

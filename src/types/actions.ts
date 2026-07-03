@@ -46,6 +46,15 @@ export type SupervisorMessage = {
   createdAt: string;
 };
 
+export type ShiftAnnouncement = {
+  id: number;
+  site: string;
+  content: string;
+  createdByName: string;
+  createdByEmail: string;
+  createdAt: string;
+};
+
 export type WorkerMessage = {
   id: number;
   senderEmail: string;
