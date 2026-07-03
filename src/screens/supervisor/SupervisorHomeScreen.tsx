@@ -1,160 +1,228 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { SosButton } from '../../components/SosButton';
-import { ActionButton } from '../../components/ActionButton';
-import { getSiteCertifications, getSiteHazardAlerts, getNotices, getWorkerContactDirectory } from '../../services/api';
-import type { HazardReport, Notice } from '../../types/actions';
+import { BlastAlert } from '../../components/BlastAlert';
+import { getSupervisorDashboard, type SupervisorDashboard } from '../../services/api';
+import { formatAgo } from '../../utils/time';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
+type Dashboard = SupervisorDashboard;
 
 export function SupervisorHomeScreen({ session }: Props) {
-  const [hazards, setHazards] = useState<HazardReport[]>([]);
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [connectionError, setConnectionError] = useState(false);
-  const [totalWorkers, setTotalWorkers] = useState(0);
-  const [coveredWorkers, setCoveredWorkers] = useState(0);
-  const [certExpired, setCertExpired] = useState(0);
-  const [certExpiring, setCertExpiring] = useState(0);
+  const [dash, setDash] = useState<Dashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getSiteHazardAlerts().then(setHazards).catch(() => setConnectionError(true));
-    getNotices().then(setNotices).catch(() => setConnectionError(true));
-    getWorkerContactDirectory()
-      .then((dir) => {
-        setTotalWorkers(dir.length);
-        setCoveredWorkers(dir.filter((w) => w.contactCount > 0).length);
-      })
-      .catch(() => {});
-    getSiteCertifications().then((certs) => {
-      setCertExpired(certs.filter((c) => c.status === 'EXPIRED').length);
-      setCertExpiring(certs.filter((c) => c.status === 'EXPIRING_SOON').length);
-    }).catch(() => {});
-  }, []);
+  async function load() {
+    try {
+      const data = await getSupervisorDashboard();
+      setDash(data);
+      setError(false);
+    } catch {
+      setError(true);
+    }
+  }
 
+  useEffect(() => { load().finally(() => setLoading(false)); }, []);
+
+  async function refresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+      >
         {/* Hero */}
         <View style={styles.hero}>
           <View>
-            <Text style={styles.greeting}>Operations Overview</Text>
-            <Text style={styles.site}>{session.user.assignedSite ?? 'Obuasi Mine'}</Text>
+            <Text style={styles.greeting}>{greeting}, {session.user.fullName.split(' ')[0]}</Text>
+            <Text style={styles.site}>{session.user.assignedSite ?? 'Mine Site'}</Text>
           </View>
-          <View style={styles.statusBadge}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusText}>Live</Text>
+          <View style={styles.liveBadge}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>Live</Text>
           </View>
         </View>
-        {connectionError ? (
+
+        {error && (
           <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+            <Text style={styles.errorText}>⚠ Cannot reach server — pull to retry</Text>
           </View>
+        )}
+
+        <BlastAlert />
+
+        {loading ? (
+          <ActivityIndicator color="#1f6f5b" style={{ marginTop: 40 }} />
+        ) : dash ? (
+          <>
+            {/* Primary stats strip */}
+            <View style={styles.strip}>
+              <View style={styles.stripItem}>
+                <Text style={[styles.stripValue, dash.workersOnSite > 0 && { color: '#1f6f5b' }]}>
+                  {dash.workersOnSite}
+                </Text>
+                <Text style={styles.stripLabel}>On Site</Text>
+              </View>
+              <View style={styles.stripDivider} />
+              <View style={styles.stripItem}>
+                <Text style={[styles.stripValue, dash.hazardCount > 0 && { color: '#b42318' }]}>
+                  {dash.hazardCount}
+                </Text>
+                <Text style={styles.stripLabel}>Hazards</Text>
+              </View>
+              <View style={styles.stripDivider} />
+              <View style={styles.stripItem}>
+                <Text style={[styles.stripValue, dash.pendingShiftLogs > 0 && { color: '#d29922' }]}>
+                  {dash.pendingShiftLogs}
+                </Text>
+                <Text style={styles.stripLabel}>Pending Logs</Text>
+              </View>
+              <View style={styles.stripDivider} />
+              <View style={styles.stripItem}>
+                <Text style={[styles.stripValue, dash.unreadMessages > 0 && { color: '#1f6f5b' }]}>
+                  {dash.unreadMessages}
+                </Text>
+                <Text style={styles.stripLabel}>New Messages</Text>
+              </View>
+            </View>
+
+            {/* Alert banners */}
+            {(dash.certExpired > 0 || dash.certExpiringSoon > 0) && (
+              <View style={[styles.alertBanner,
+                dash.certExpired > 0 ? styles.alertBannerRed : styles.alertBannerYellow]}>
+                <Text style={styles.alertBannerText}>
+                  🎓 {dash.certExpired > 0
+                    ? `${dash.certExpired} certification${dash.certExpired !== 1 ? 's' : ''} expired`
+                    : `${dash.certExpiringSoon} certification${dash.certExpiringSoon !== 1 ? 's' : ''} expiring within 30 days`}
+                  {' · More → Certifications'}
+                </Text>
+              </View>
+            )}
+
+            {/* Action cards */}
+            <View style={styles.cardGrid}>
+              {dash.pendingShiftLogs > 0 && (
+                <View style={[styles.actionCard, styles.actionCardYellow]}>
+                  <Text style={styles.actionCardIcon}>📋</Text>
+                  <Text style={styles.actionCardValue}>{dash.pendingShiftLogs}</Text>
+                  <Text style={styles.actionCardLabel}>Shift logs awaiting your approval</Text>
+                  <Text style={styles.actionCardHint}>More → Shift Logs</Text>
+                </View>
+              )}
+              {dash.unreadMessages > 0 && (
+                <View style={[styles.actionCard, styles.actionCardGreen]}>
+                  <Text style={styles.actionCardIcon}>💬</Text>
+                  <Text style={styles.actionCardValue}>{dash.unreadMessages}</Text>
+                  <Text style={styles.actionCardLabel}>Unread message{dash.unreadMessages !== 1 ? 's' : ''} from workers</Text>
+                  <Text style={styles.actionCardHint}>More → Worker Messages</Text>
+                </View>
+              )}
+              {dash.hazardCount > 0 && (
+                <View style={[styles.actionCard, styles.actionCardRed]}>
+                  <Text style={styles.actionCardIcon}>⚠</Text>
+                  <Text style={styles.actionCardValue}>{dash.hazardCount}</Text>
+                  <Text style={styles.actionCardLabel}>Active hazard{dash.hazardCount !== 1 ? 's' : ''} on site</Text>
+                  <Text style={styles.actionCardHint}>Hazards tab</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Lone workers */}
+            {dash.activeLoneWorkers.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Lone Workers Active</Text>
+                {dash.activeLoneWorkers.map((w) => {
+                  const overdue = new Date(w.deadline).getTime() < Date.now();
+                  return (
+                    <View key={w.id} style={[styles.loneWorkerCard, overdue && styles.loneWorkerCardRed]}>
+                      <Text style={styles.loneWorkerIcon}>{overdue ? '⚠' : '🛡'}</Text>
+                      <View style={styles.loneWorkerBody}>
+                        <Text style={styles.loneWorkerName}>{w.workerName}</Text>
+                        <Text style={styles.loneWorkerMeta}>
+                          {overdue
+                            ? 'OVERDUE — missed check-in'
+                            : `Next check-in by ${new Date(w.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                          {' · '}{w.intervalMinutes}min interval
+                        </Text>
+                      </View>
+                      {overdue && <Text style={styles.loneWorkerAlert}>ALERT</Text>}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* Announcements */}
+            {dash.announcements.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Recent Announcements</Text>
+                {dash.announcements.map((a) => (
+                  <View key={a.id} style={styles.announcementCard}>
+                    <Text style={styles.announcementIcon}>📢</Text>
+                    <View style={styles.announcementBody}>
+                      <Text style={styles.announcementContent}>{a.content}</Text>
+                      <Text style={styles.announcementMeta}>{a.createdByName} · {formatAgo(a.createdAt)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Site summary */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Site Summary</Text>
+              <View style={styles.summaryCard}>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Workers on site</Text>
+                  <Text style={[styles.summaryValue, { color: '#1f6f5b' }]}>{dash.workersOnSite}</Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Active notices</Text>
+                  <Text style={styles.summaryValue}>{dash.noticeCount}</Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Shift logs pending approval</Text>
+                  <Text style={[styles.summaryValue, dash.pendingShiftLogs > 0 && { color: '#d29922' }]}>
+                    {dash.pendingShiftLogs}
+                  </Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Unread worker messages</Text>
+                  <Text style={[styles.summaryValue, dash.unreadMessages > 0 && { color: '#1f6f5b' }]}>
+                    {dash.unreadMessages}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* All clear state */}
+            {dash.pendingShiftLogs === 0 && dash.unreadMessages === 0 && dash.hazardCount === 0 && (
+              <View style={styles.allClearCard}>
+                <Text style={styles.allClearIcon}>✓</Text>
+                <View>
+                  <Text style={styles.allClearTitle}>All clear</Text>
+                  <Text style={styles.allClearSub}>No pending actions · {dash.workersOnSite} worker{dash.workersOnSite !== 1 ? 's' : ''} on site</Text>
+                </View>
+              </View>
+            )}
+          </>
         ) : null}
-
-        {/* Stats */}
-        <View style={styles.strip}>
-          <View style={styles.stripItem}>
-            <Text style={[styles.stripValue, hazards.length > 0 && { color: '#b42318' }]}>{hazards.length}</Text>
-            <Text style={styles.stripLabel}>Active Alerts</Text>
-          </View>
-          <View style={styles.stripDivider} />
-          <View style={styles.stripItem}>
-            <Text style={styles.stripValue}>{notices.length}</Text>
-            <Text style={styles.stripLabel}>Notices</Text>
-          </View>
-          <View style={styles.stripDivider} />
-          <View style={styles.stripItem}>
-            <Text style={[styles.stripValue, { color: '#1f6f5b' }]}>Active</Text>
-            <Text style={styles.stripLabel}>Site</Text>
-          </View>
-        </View>
-
-        {/* Emergency Contact Coverage */}
-        {totalWorkers > 0 ? (() => {
-          const pct = Math.round((coveredWorkers / totalWorkers) * 100);
-          const isGood = pct >= 80;
-          const isMid = pct >= 50 && pct < 80;
-          const color = isGood ? '#15803d' : isMid ? '#92400e' : '#b42318';
-          const bg = isGood ? '#f0fdf4' : isMid ? '#fffbeb' : '#fff5f5';
-          const border = isGood ? '#86efac' : isMid ? '#fcd34d' : '#fca5a5';
-          return (
-            <View style={[styles.coverageCard, { backgroundColor: bg, borderColor: border }]}>
-              <Text style={[styles.coverageValue, { color }]}>{coveredWorkers}/{totalWorkers}</Text>
-              <View style={styles.coverageBody}>
-                <Text style={[styles.coverageTitle, { color }]}>Emergency Contacts Coverage</Text>
-                <Text style={[styles.coverageSub, { color }]}>{pct}% of personnel have contacts on file</Text>
-              </View>
-              <Text style={styles.coverageIcon}>📞</Text>
-            </View>
-          );
-        })() : null}
-
-        {/* Certification Alerts */}
-        {(certExpired > 0 || certExpiring > 0) ? (
-          <View style={[styles.coverageCard, {
-            backgroundColor: certExpired > 0 ? '#fff5f5' : '#fffbeb',
-            borderColor: certExpired > 0 ? '#fca5a5' : '#fcd34d',
-            marginTop: 16,
-          }]}>
-            <Text style={{ fontSize: 22 }}>🎓</Text>
-            <View style={styles.coverageBody}>
-              <Text style={[styles.coverageTitle, { color: certExpired > 0 ? '#b42318' : '#92400e' }]}>
-                Certification Alerts
-              </Text>
-              <Text style={[styles.coverageSub, { color: certExpired > 0 ? '#b42318' : '#92400e' }]}>
-                {certExpired > 0 ? `${certExpired} expired` : ''}
-                {certExpired > 0 && certExpiring > 0 ? ' · ' : ''}
-                {certExpiring > 0 ? `${certExpiring} expiring within 30 days` : ''}
-              </Text>
-            </View>
-          </View>
-        ) : null}
-
-        {/* Alerts */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Hazards</Text>
-            {hazards.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{hazards.length}</Text></View>}
-          </View>
-          {hazards.length === 0 ? (
-            <View style={styles.clearCard}>
-              <Text style={styles.clearIcon}>✓</Text>
-              <View>
-                <Text style={styles.clearTitle}>All Clear</Text>
-                <Text style={styles.clearSub}>No active hazards</Text>
-              </View>
-            </View>
-          ) : hazards.map((h) => (
-            <View key={h.id} style={styles.alertCard}>
-              <View style={[styles.alertBar, { backgroundColor: h.severity === 'Critical' ? '#7f1d1d' : h.severity === 'High' ? '#b42318' : '#a15c00' }]} />
-              <View style={styles.alertBody}>
-                <Text style={styles.alertType}>{h.hazardType}</Text>
-                <Text style={styles.alertMeta}>{h.location} · {h.reportedByName}</Text>
-              </View>
-              <Text style={styles.alertStatus}>{h.status}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Notices */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Notices</Text>
-          {notices.slice(0, 3).map((n) => (
-            <View key={n.id} style={styles.noticeCard}>
-              <View style={styles.noticeAccent} />
-              <View style={styles.noticeBody}>
-                <Text style={styles.noticeTitle}>{n.title}</Text>
-                <Text style={styles.noticeMeta}>{n.message}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-
       </ScrollView>
       <SosButton role={session.user.role} user={session.user} />
     </View>
@@ -164,48 +232,63 @@ export function SupervisorHomeScreen({ session }: Props) {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: '#f0f2f5' },
   container: { paddingBottom: 110 },
-  hero: { alignItems: 'center', backgroundColor: '#17212b', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
-  greeting: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
-  site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  statusBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
-  statusDot: { backgroundColor: '#4ade80', borderRadius: 4, height: 7, width: 7 },
-  statusText: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
-  strip: { backgroundColor: '#ffffff', borderBottomColor: '#e5e9ef', borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 12 },
-  stripItem: { alignItems: 'center', flex: 1 },
-  stripValue: { color: '#17212b', fontSize: 18, fontWeight: '900' },
-  stripLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginTop: 1, textTransform: 'uppercase' },
-  stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
-  section: { paddingHorizontal: 20, paddingTop: 20 },
-  sectionHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 10 },
-  sectionTitle: { color: '#17212b', flex: 1, fontSize: 15, fontWeight: '900' },
-  badge: { backgroundColor: '#b42318', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: '900' },
-  clearCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 14 },
-  clearIcon: { color: '#16a34a', fontSize: 22 },
-  clearTitle: { color: '#15803d', fontSize: 14, fontWeight: '900' },
-  clearSub: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 1 },
-  alertCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: 8, overflow: 'hidden' },
-  alertBar: { alignSelf: 'stretch', width: 4 },
-  alertBody: { flex: 1, paddingHorizontal: 12, paddingVertical: 10 },
-  alertType: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 2 },
-  alertMeta: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
-  alertStatus: { color: '#5d6875', fontSize: 11, fontWeight: '800', marginRight: 12, textTransform: 'uppercase' },
-  noticeCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: 8, overflow: 'hidden' },
-  noticeAccent: { backgroundColor: '#1f6f5b', width: 3 },
-  noticeBody: { flex: 1, padding: 12 },
-  noticeTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 3 },
-  noticeMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 17 },
-  guestLabel: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 10 },
-  input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 10, minHeight: 42, paddingHorizontal: 12 },
-  hoursRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
- 
-  coverageCard: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 20, marginBottom: 0, padding: 14 },
-  coverageValue: { fontSize: 22, fontWeight: '900' },
-  coverageBody: { flex: 1 },
-  coverageTitle: { fontSize: 13, fontWeight: '900', marginBottom: 2 },
-  coverageSub: { fontSize: 12, fontWeight: '600' },
-  coverageIcon: { fontSize: 22 },
-  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
-  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-});
 
+  hero: { alignItems: 'center', backgroundColor: '#17212b', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
+  greeting: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  liveBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
+  liveDot: { backgroundColor: '#4ade80', borderRadius: 4, height: 7, width: 7 },
+  liveText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: 16, padding: 12 },
+  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+
+  strip: { backgroundColor: '#fff', borderBottomColor: '#e5e9ef', borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 14 },
+  stripItem: { alignItems: 'center', flex: 1 },
+  stripValue: { color: '#17212b', fontSize: 20, fontWeight: '900' },
+  stripLabel: { color: '#8fa3b8', fontSize: 9, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+  stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
+
+  alertBanner: { borderRadius: 8, borderWidth: 1, margin: 16, marginBottom: 0, padding: 12 },
+  alertBannerRed: { backgroundColor: '#fff5f5', borderColor: '#fca5a5' },
+  alertBannerYellow: { backgroundColor: '#fffbeb', borderColor: '#fcd34d' },
+  alertBannerText: { color: '#92400e', fontSize: 12, fontWeight: '700', textAlign: 'center' },
+
+  cardGrid: { gap: 10, padding: 16 },
+  actionCard: { borderRadius: 12, borderWidth: 1, padding: 16 },
+  actionCardYellow: { backgroundColor: '#fffbeb', borderColor: '#fcd34d' },
+  actionCardGreen: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
+  actionCardRed: { backgroundColor: '#fff5f5', borderColor: '#fca5a5' },
+  actionCardIcon: { fontSize: 22, marginBottom: 4 },
+  actionCardValue: { color: '#17212b', fontSize: 28, fontWeight: '900', marginBottom: 2 },
+  actionCardLabel: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
+  actionCardHint: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 4 },
+
+  section: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
+  sectionTitle: { color: '#17212b', fontSize: 14, fontWeight: '900', letterSpacing: -0.2, marginBottom: 10 },
+
+  loneWorkerCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
+  loneWorkerCardRed: { backgroundColor: '#fff5f5', borderColor: '#fca5a5' },
+  loneWorkerIcon: { fontSize: 18 },
+  loneWorkerBody: { flex: 1 },
+  loneWorkerName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
+  loneWorkerMeta: { color: '#5d6875', fontSize: 11, fontWeight: '600' },
+  loneWorkerAlert: { color: '#b42318', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+
+  announcementCard: { alignItems: 'flex-start', backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
+  announcementIcon: { fontSize: 15, marginTop: 1 },
+  announcementBody: { flex: 1 },
+  announcementContent: { color: '#17212b', fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: 3 },
+  announcementMeta: { color: '#a16207', fontSize: 11, fontWeight: '600' },
+
+  summaryCard: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1 },
+  summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  summaryDivider: { backgroundColor: '#f0f2f5', height: 1, marginHorizontal: 16 },
+  summaryLabel: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
+  summaryValue: { color: '#17212b', fontSize: 15, fontWeight: '900' },
+
+  allClearCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 16, padding: 16 },
+  allClearIcon: { color: '#16a34a', fontSize: 24 },
+  allClearTitle: { color: '#15803d', fontSize: 15, fontWeight: '900' },
+  allClearSub: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
+});

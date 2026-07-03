@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BlastAlert } from '../../components/BlastAlert';
 import { SosButton } from '../../components/SosButton';
-import { getBlastHistory, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts } from '../../services/api';
+import { getBlastHistory, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, type LoneWorkerStatus } from '../../services/api';
 import type { InventoryTransaction } from '../../services/api';
 import type { HazardReport, Notice, ShiftAnnouncement } from '../../types/actions';
+import { formatAgo, formatDateTime } from '../../utils/time';
 import type { AuthSession } from '../../types/auth';
 
-type Props = { session: AuthSession; onGoToEmergencyContacts?: () => void };
+type Props = { session: AuthSession; onGoToEmergencyContacts?: () => void; onGoToLoneWorker?: () => void };
 
 const SEVERITY_COLOR: Record<string, string> = {
   Critical: '#7f1d1d',
@@ -17,23 +18,26 @@ const SEVERITY_COLOR: Record<string, string> = {
   Low: '#1f6f5b',
 };
 
-export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
+export function WorkerHomeScreen({ session, onGoToEmergencyContacts, onGoToLoneWorker }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [announcements, setAnnouncements] = useState<ShiftAnnouncement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [connectionError, setConnectionError] = useState(false);
+  const [loadingCore, setLoadingCore] = useState(true);
+  const [hazardError, setHazardError] = useState(false);
   const [blastHistory, setBlastHistory] = useState<any[]>([]);
   const [hasContacts, setHasContacts] = useState(true);
   const [contributions, setContributions] = useState<InventoryTransaction[]>([]);
   const [expiredCerts, setExpiredCerts] = useState(0);
   const [expiringCerts, setExpiringCerts] = useState(0);
+  const [loneWorker, setLoneWorker] = useState<LoneWorkerStatus | null>(null);
+  const loneWorkerPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    Promise.all([getSiteHazardAlerts(), getNotices(), getSiteAnnouncements()])
-      .then(([h, n, a]) => { setHazards(h); setNotices(n); setAnnouncements(a); })
-      .catch(() => setConnectionError(true))
-      .finally(() => setLoading(false));
+    let done = 0;
+    const finish = () => { if (++done === 3) setLoadingCore(false); };
+    getSiteHazardAlerts().then(setHazards).catch(() => setHazardError(true)).finally(finish);
+    getNotices().then(setNotices).catch(() => {}).finally(finish);
+    getSiteAnnouncements().then(setAnnouncements).catch(() => {}).finally(finish);
     getBlastHistory().then(setBlastHistory).catch(() => {});
     getMyEmergencyContacts().then((c) => setHasContacts(c.length > 0)).catch(() => {});
     getMyInventoryContributions().then(setContributions).catch(() => {});
@@ -41,26 +45,16 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
       setExpiredCerts(certs.filter((c) => c.status === 'EXPIRED').length);
       setExpiringCerts(certs.filter((c) => c.status === 'EXPIRING_SOON').length);
     }).catch(() => {});
+    // poll lone worker status every 30s
+    const pollLW = () => getLoneWorkerStatus().then(setLoneWorker).catch(() => {});
+    pollLW();
+    loneWorkerPollRef.current = setInterval(pollLW, 30000);
+    return () => { if (loneWorkerPollRef.current) clearInterval(loneWorkerPollRef.current); };
   }, []);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  function formatDate(dateStr: string) {
-    try { return new Date(dateStr).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    catch { return dateStr; }
-  }
-
-  function formatAgo(iso: string): string {
-    try {
-      const diff = Date.now() - new Date(iso).getTime();
-      const mins = Math.floor(diff / 60000);
-      if (mins < 1) return 'Just now';
-      if (mins < 60) return `${mins}m ago`;
-      const hrs = Math.floor(mins / 60);
-      return `${hrs}h ago`;
-    } catch { return ''; }
-  }
 
   return (
     <View style={styles.flex}>
@@ -78,7 +72,28 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
           </View>
         </View>
 
-        {connectionError ? (
+        {loneWorker?.active && (
+          <Pressable
+            style={[
+              styles.loneWorkerBanner,
+              loneWorker.deadline && new Date(loneWorker.deadline).getTime() < Date.now()
+                ? styles.loneWorkerBannerRed : styles.loneWorkerBannerGreen,
+            ]}
+            onPress={onGoToLoneWorker}
+          >
+            <Text style={styles.loneWorkerBannerIcon}>🛡</Text>
+            <View style={styles.loneWorkerBannerBody}>
+              <Text style={styles.loneWorkerBannerTitle}>Lone Worker Active</Text>
+              <Text style={styles.loneWorkerBannerSub}>
+                {loneWorker.deadline && new Date(loneWorker.deadline).getTime() < Date.now()
+                  ? 'OVERDUE — tap to check in now'
+                  : `Next check-in due ${new Date(loneWorker.deadline ?? '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · Tap to check in`}
+              </Text>
+            </View>
+          </Pressable>
+        )}
+
+        {hazardError ? (
           <View style={styles.errorBanner}>
             <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
           </View>
@@ -94,7 +109,7 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
           </View>
         ) : null}
 
-        {!hasContacts && !loading ? (
+        {!hasContacts && !loadingCore ? (
           <Pressable style={styles.contactsWarning} onPress={onGoToEmergencyContacts}>
             <Text style={styles.contactsWarningIcon}>📞</Text>
             <View style={styles.contactsWarningBody}>
@@ -151,7 +166,7 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
             )}
           </View>
 
-          {loading ? (
+          {loadingCore ? (
             <View style={styles.emptyCard}><Text style={styles.emptyText}>Loading...</Text></View>
           ) : hazards.length === 0 ? (
             <View style={styles.clearCard}>
@@ -180,7 +195,7 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
         {/* Notices */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notices</Text>
-          {!loading && notices.length === 0 ? (
+          {!loadingCore && notices.length === 0 ? (
             <View style={styles.emptyCard}><Text style={styles.emptyText}>No notices posted</Text></View>
           ) : null}
           {notices.slice(0, 3).map((n) => (
@@ -225,7 +240,7 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
             <View key={b.id} style={styles.blastCard}>
               <View style={styles.blastLeft}>
                 <Text style={styles.blastZone}>💥 {b.zone}</Text>
-                <Text style={styles.blastTime}>{formatDate(b.blastTime)}</Text>
+                <Text style={styles.blastTime}>{formatDateTime(b.blastTime)}</Text>
               </View>
               <View style={[styles.blastStatus,
                 b.status === 'EXECUTED' ? styles.statusExecuted :
@@ -280,6 +295,13 @@ const styles = StyleSheet.create({
   noticeBody: { flex: 1, padding: 12 },
   noticeTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 3 },
   noticeMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 17 },
+  loneWorkerBanner: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 16, marginBottom: 0, padding: 14 },
+  loneWorkerBannerGreen: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
+  loneWorkerBannerRed: { backgroundColor: '#fff5f5', borderColor: '#fca5a5' },
+  loneWorkerBannerIcon: { fontSize: 22 },
+  loneWorkerBannerBody: { flex: 1 },
+  loneWorkerBannerTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 2 },
+  loneWorkerBannerSub: { color: '#5d6875', fontSize: 12, fontWeight: '600' },
   errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
   errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
   contactsWarning: { alignItems: 'center', backgroundColor: '#fffbeb', borderColor: '#fcd34d', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 20, marginBottom: 0, padding: 14 },

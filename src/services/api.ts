@@ -1091,6 +1091,23 @@ export function markWorkerMessageRead(id: number) {
   return post<WorkerMessage>(`/worker-messages/${id}/read`, {});
 }
 
+// Supervisor dashboard
+export type SupervisorDashboard = {
+  hazardCount: number;
+  noticeCount: number;
+  workersOnSite: number;
+  pendingShiftLogs: number;
+  unreadMessages: number;
+  certExpired: number;
+  certExpiringSoon: number;
+  announcements: { id: number; content: string; createdByName: string; createdAt: string }[];
+  activeLoneWorkers: { id: number; workerName: string; intervalMinutes: number; lastCheckedInAt: string; deadline: string; alerted: boolean }[];
+};
+
+export function getSupervisorDashboard() {
+  return request<SupervisorDashboard>('/supervisor/dashboard');
+}
+
 // Shift announcements
 export function getSiteAnnouncements() {
   return request<ShiftAnnouncement[]>('/announcements');
@@ -1098,4 +1115,36 @@ export function getSiteAnnouncements() {
 
 export function postAnnouncement(content: string) {
   return post<ShiftAnnouncement>('/announcements', { content });
+}
+
+// Lone worker
+export type LoneWorkerStatus = {
+  active: boolean;
+  id?: number;
+  workerName?: string;
+  intervalMinutes?: number;
+  startedAt?: string;
+  lastCheckedInAt?: string;
+  deadline?: string;
+  alerted?: boolean;
+};
+
+export function getLoneWorkerStatus() {
+  return request<LoneWorkerStatus>('/lone-worker/status');
+}
+
+export function startLoneWorker(intervalMinutes: number) {
+  return post<LoneWorkerStatus>('/lone-worker/start', { intervalMinutes });
+}
+
+export function checkInLoneWorker() {
+  return post<LoneWorkerStatus>('/lone-worker/checkin', {});
+}
+
+export function stopLoneWorker() {
+  return post<LoneWorkerStatus>('/lone-worker/stop', {});
+}
+
+export function getSiteLoneWorkers() {
+  return request<LoneWorkerStatus[]>('/lone-worker/site');
 }

@@ -21,26 +21,9 @@ import {
 } from '../../services/api';
 import type { WorkerMessage } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { formatAgo } from '../../utils/time';
 
 type Props = { session: AuthSession };
-
-function formatTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHrs = Math.floor(diffMins / 60);
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    const diffDays = Math.floor(diffHrs / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  } catch {
-    return '';
-  }
-}
 
 export function SupervisorMessagesScreen({ session: _ }: Props) {
   const [messages, setMessages] = useState<WorkerMessage[]>([]);
@@ -152,7 +135,7 @@ export function SupervisorMessagesScreen({ session: _ }: Props) {
                     <Text style={styles.msgPreview} numberOfLines={isExpanded ? undefined : 2}>
                       {msg.content}
                     </Text>
-                    <Text style={styles.msgTime}>{formatTime(msg.createdAt)}</Text>
+                    <Text style={styles.msgTime}>{formatAgo(msg.createdAt)}</Text>
                   </View>
                   <Text style={styles.chevron}>{isExpanded ? '▲' : '▼'}</Text>
                 </Pressable>
@@ -166,7 +149,7 @@ export function SupervisorMessagesScreen({ session: _ }: Props) {
                         <Text style={styles.repliedLabel}>Your reply</Text>
                         <Text style={styles.repliedText}>{msg.reply}</Text>
                         {msg.repliedAt && (
-                          <Text style={styles.repliedTime}>{formatTime(msg.repliedAt)}</Text>
+                          <Text style={styles.repliedTime}>{formatAgo(msg.repliedAt)}</Text>
                         )}
                       </View>
                     ) : (

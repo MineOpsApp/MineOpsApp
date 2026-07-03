@@ -16,24 +16,9 @@ import {
 import { getMyWorkerMessages, parseApiError, sendWorkerMessage } from '../../services/api';
 import type { WorkerMessage } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { formatAgo } from '../../utils/time';
 
 type Props = { session: AuthSession };
-
-function formatTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHrs = Math.floor(diffMins / 60);
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  } catch {
-    return '';
-  }
-}
 
 export function WorkerMessagesScreen({ session }: Props) {
   const [messages, setMessages] = useState<WorkerMessage[]>([]);
@@ -145,7 +130,7 @@ export function WorkerMessagesScreen({ session }: Props) {
               <View key={m.id} style={styles.msgCard}>
                 <View style={styles.msgBubble}>
                   <Text style={styles.msgText}>{m.content}</Text>
-                  <Text style={styles.msgTime}>{formatTime(m.createdAt)}</Text>
+                  <Text style={styles.msgTime}>{formatAgo(m.createdAt)}</Text>
                 </View>
 
                 {m.reply ? (
@@ -153,7 +138,7 @@ export function WorkerMessagesScreen({ session }: Props) {
                     <Text style={styles.replyLabel}>Supervisor replied</Text>
                     <Text style={styles.replyText}>{m.reply}</Text>
                     {m.repliedAt && (
-                      <Text style={styles.replyTime}>{formatTime(m.repliedAt)}</Text>
+                      <Text style={styles.replyTime}>{formatAgo(m.repliedAt)}</Text>
                     )}
                   </View>
                 ) : (

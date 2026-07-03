@@ -16,23 +16,9 @@ import {
 import { getSiteAnnouncements, parseApiError, postAnnouncement } from '../../services/api';
 import type { ShiftAnnouncement } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { formatAgo } from '../../utils/time';
 
 type Props = { session: AuthSession };
-
-function formatTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHrs = Math.floor(diffMins / 60);
-    return `${diffHrs}h ago`;
-  } catch {
-    return '';
-  }
-}
 
 export function SupervisorAnnouncementsScreen({ session }: Props) {
   const [announcements, setAnnouncements] = useState<ShiftAnnouncement[]>([]);
@@ -143,7 +129,7 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
                   <Text style={styles.announcementIcon}>📢</Text>
                   <View style={styles.announcementMeta}>
                     <Text style={styles.announcementBy}>{a.createdByName}</Text>
-                    <Text style={styles.announcementTime}>{formatTime(a.createdAt)}</Text>
+                    <Text style={styles.announcementTime}>{formatAgo(a.createdAt)}</Text>
                   </View>
                 </View>
                 <Text style={styles.announcementContent}>{a.content}</Text>
