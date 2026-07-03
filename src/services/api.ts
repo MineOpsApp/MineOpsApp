@@ -1024,6 +1024,8 @@ export type UserProfile = {
   shiftLogCount: number;
   certificationCount: number;
   emergencyContactCount: number;
+  momoNumber: string | null;
+  momoNetwork: string | null;
 };
 
 export function getMyProfile() {
@@ -1115,4 +1117,92 @@ export function stopLoneWorker() {
 
 export function getSiteLoneWorkers() {
   return request<LoneWorkerStatus[]>('/lone-worker/site');
+}
+
+// Worker pay
+export type WorkerPayRecord = {
+  id: number;
+  payCycleId: number;
+  workerEmail: string;
+  workerName: string;
+  hoursWorked: number | null;
+  grossShare: number;
+  insuranceDeduction: number;
+  netPay: number;
+  momoNumber: string | null;
+  momoNetwork: string | null;
+  disbursementStatus: string; // PENDING | SENT | FAILED
+  momoTransactionRef: string | null;
+  failureReason: string | null;
+  disbursedAt: string | null;
+};
+
+export type PayCycle = {
+  id: number;
+  site: string;
+  payDate: string;
+  mineralType: string;
+  unit: string;
+  totalVolume: number;
+  pricePerUnit: number;
+  grossTotal: number;
+  formulaType: string;
+  status: string; // DRAFT | MANAGER_APPROVED | DISBURSED | FAILED
+  createdBy: string;
+  createdAt: string;
+  managerApprovedBy: string | null;
+  managerApprovedAt: string | null;
+  supervisorApprovedBy: string | null;
+  supervisorApprovedAt: string | null;
+};
+
+export type PayCycleDetail = { cycle: PayCycle; records: WorkerPayRecord[] };
+
+export type PaySplitConfig = {
+  id: number | null;
+  site: string;
+  formulaType: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+};
+
+export function previewPayCycle(payload: {
+  payDate: string;
+  mineralType: string;
+  unit: string;
+  pricePerUnit: number;
+}) {
+  return post<PayCycleDetail>('/pay/preview', payload);
+}
+
+export function approvePayCycleManager(id: number) {
+  return post<PayCycleDetail>(`/pay/${id}/approve-manager`, {});
+}
+
+export function approvePayCycleSupervisor(id: number) {
+  return post<PayCycleDetail>(`/pay/${id}/approve-supervisor`, {});
+}
+
+export function getMyPayHistory() {
+  return request<WorkerPayRecord[]>('/pay/mine');
+}
+
+export function getSitePayCycles() {
+  return request<PayCycle[]>('/pay/site');
+}
+
+export function getPayCycle(id: number) {
+  return request<PayCycleDetail>(`/pay/${id}`);
+}
+
+export function getPaySplitConfig() {
+  return request<PaySplitConfig>('/pay/split-config');
+}
+
+export function updatePaySplitConfig(formulaType: string) {
+  return put<PaySplitConfig>('/pay/split-config', { formulaType });
+}
+
+export function updateMyMomoDetails(momoNumber: string | null, momoNetwork: string | null) {
+  return put<UserProfile>('/profile', { momoNumber, momoNetwork });
 }

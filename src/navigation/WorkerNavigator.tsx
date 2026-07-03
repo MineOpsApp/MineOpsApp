@@ -21,6 +21,7 @@ import { WorkerCertificationsScreen } from '../screens/worker/WorkerCertificatio
 import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerMessagesScreen } from '../screens/worker/WorkerMessagesScreen';
 import { WorkerLoneWorkerScreen } from '../screens/worker/WorkerLoneWorkerScreen';
+import { WorkerPayScreen } from '../screens/worker/WorkerPayScreen';
 
 import type { AuthSession } from '../types/auth';
 
@@ -42,7 +43,7 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
-type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker';
+type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker' | 'pay';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -164,6 +165,15 @@ function WorkerMoreStack({
     </View>
   );
 
+  if (screen === 'pay') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerPayScreen session={session} />
+    </View>
+  );
+
   return (
     <MoreScreen
       items={[
@@ -178,6 +188,7 @@ function WorkerMoreStack({
         { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
         { icon: '💬', label: 'Message Supervisor', description: 'Send a quick message to your site supervisor', onPress: () => setScreen('messages') },
         { icon: '🛡', label: 'Lone Worker', description: 'Enable check-in timer when working alone or underground', onPress: () => setScreen('loneWorker') },
+        { icon: '💰', label: 'My Pay', description: 'View pay history and manage your MoMo disbursement details', onPress: () => setScreen('pay') },
       ]}
     />
   );
