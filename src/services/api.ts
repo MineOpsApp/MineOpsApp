@@ -375,7 +375,7 @@ export function getMyShiftLogs() {
 }
 
 export function getSiteShiftLogs() {
-  return request<{ content: any[] }>('/shift-logs').then((page) => page.content);
+  return request<{ content: ShiftLog[] }>('/shift-logs').then((page) => page.content);
 }
 
 export function closeHazardReport(id: number, payload: {
@@ -799,4 +799,144 @@ export function updateFirstAidKit(id: number, payload: FirstAidKitPayload) {
 
 export function deleteFirstAidKit(id: number) {
   return del<void>(`/first-aid-kits/${id}`);
+}
+
+export type ShiftLog = {
+  id: number;
+  workerEmail: string;
+  workerName: string;
+  site: string;
+  zone: string;
+  shiftType: string;
+  mineralType: string;
+  volumeExtracted: number;
+  unit: string;
+  equipmentCode: string;
+  equipmentName: string;
+  notes: string;
+  status: string;
+  shiftDate: string;
+  submittedAt: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  rejectedBy: string | null;
+  rejectedAt: string | null;
+};
+
+// Shift log approval
+export function approveShiftLog(id: number) {
+  return request<ShiftLog>(`/shift-logs/${id}/approve`, { method: 'PATCH' });
+}
+
+export function rejectShiftLog(id: number) {
+  return request<ShiftLog>(`/shift-logs/${id}/reject`, { method: 'PATCH' });
+}
+
+// Mineral inventory
+export type MineralInventory = {
+  id: number;
+  site: string;
+  mineralType: string;
+  unit: string;
+  totalVolume: number;
+  lastUpdatedAt: string;
+  lastShiftLogId: number | null;
+  lastWorkerName: string | null;
+  lastZone: string | null;
+};
+
+export type InventoryTransaction = {
+  id: number;
+  site: string;
+  mineralType: string;
+  unit: string;
+  volumeAdded: number;
+  shiftLogId: number;
+  workerName: string;
+  workerEmail: string;
+  zone: string;
+  approvedBy: string;
+  createdAt: string;
+};
+
+export function getSiteInventory() {
+  return request<MineralInventory[]>('/inventory');
+}
+
+export function getSiteInventoryHistory(page = 0, size = 20) {
+  return request<{ content: InventoryTransaction[]; totalElements: number }>(
+    `/inventory/history?page=${page}&size=${size}`
+  );
+}
+
+export function getMyInventoryContributions() {
+  return request<InventoryTransaction[]>('/inventory/my-contributions');
+}
+
+// Certifications
+export type Certification = {
+  id: number;
+  workerId: number;
+  workerName: string;
+  workerEmail: string;
+  site: string;
+  certificationName: string;
+  issuingAuthority: string;
+  issueDate: string;
+  expiryDate: string;
+  status: string; // VALID | EXPIRING_SOON | EXPIRED
+  daysUntilExpiry: number;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+};
+
+export type CertificationHistory = {
+  id: number;
+  certificationId: number;
+  previousExpiry: string | null;
+  newExpiry: string;
+  previousAuthority: string | null;
+  newAuthority: string | null;
+  renewedBy: string;
+  renewedAt: string;
+  notes: string | null;
+};
+
+export type CertificationPayload = {
+  workerId?: number;
+  certificationName: string;
+  issuingAuthority: string;
+  issueDate: string;
+  expiryDate: string;
+  notes?: string;
+};
+
+export function getSiteCertifications(status?: string, type?: string) {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  if (type) params.append('type', type);
+  const qs = params.toString();
+  return request<Certification[]>(`/certifications${qs ? '?' + qs : ''}`);
+}
+
+export function getMyCertifications() {
+  return request<Certification[]>('/certifications/mine');
+}
+
+export function getCertificationHistory(id: number) {
+  return request<CertificationHistory[]>(`/certifications/${id}/history`);
+}
+
+export function addCertification(payload: CertificationPayload) {
+  return post<Certification>('/certifications', payload);
+}
+
+export function updateCertification(id: number, payload: CertificationPayload) {
+  return put<Certification>(`/certifications/${id}`, payload);
+}
+
+export function deleteCertification(id: number) {
+  return del<void>(`/certifications/${id}`);
 }

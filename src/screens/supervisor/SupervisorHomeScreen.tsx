@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nati
 
 import { SosButton } from '../../components/SosButton';
 import { ActionButton } from '../../components/ActionButton';
-import { getSiteHazardAlerts, getNotices, getWorkerContactDirectory } from '../../services/api';
+import { getSiteCertifications, getSiteHazardAlerts, getNotices, getWorkerContactDirectory } from '../../services/api';
 import type { HazardReport, Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -15,6 +15,8 @@ export function SupervisorHomeScreen({ session }: Props) {
   const [connectionError, setConnectionError] = useState(false);
   const [totalWorkers, setTotalWorkers] = useState(0);
   const [coveredWorkers, setCoveredWorkers] = useState(0);
+  const [certExpired, setCertExpired] = useState(0);
+  const [certExpiring, setCertExpiring] = useState(0);
 
   useEffect(() => {
     getSiteHazardAlerts().then(setHazards).catch(() => setConnectionError(true));
@@ -25,6 +27,10 @@ export function SupervisorHomeScreen({ session }: Props) {
         setCoveredWorkers(dir.filter((w) => w.contactCount > 0).length);
       })
       .catch(() => {});
+    getSiteCertifications().then((certs) => {
+      setCertExpired(certs.filter((c) => c.status === 'EXPIRED').length);
+      setCertExpiring(certs.filter((c) => c.status === 'EXPIRING_SOON').length);
+    }).catch(() => {});
   }, []);
 
 
@@ -86,6 +92,27 @@ export function SupervisorHomeScreen({ session }: Props) {
             </View>
           );
         })() : null}
+
+        {/* Certification Alerts */}
+        {(certExpired > 0 || certExpiring > 0) ? (
+          <View style={[styles.coverageCard, {
+            backgroundColor: certExpired > 0 ? '#fff5f5' : '#fffbeb',
+            borderColor: certExpired > 0 ? '#fca5a5' : '#fcd34d',
+            marginTop: 16,
+          }]}>
+            <Text style={{ fontSize: 22 }}>🎓</Text>
+            <View style={styles.coverageBody}>
+              <Text style={[styles.coverageTitle, { color: certExpired > 0 ? '#b42318' : '#92400e' }]}>
+                Certification Alerts
+              </Text>
+              <Text style={[styles.coverageSub, { color: certExpired > 0 ? '#b42318' : '#92400e' }]}>
+                {certExpired > 0 ? `${certExpired} expired` : ''}
+                {certExpired > 0 && certExpiring > 0 ? ' · ' : ''}
+                {certExpiring > 0 ? `${certExpiring} expiring within 30 days` : ''}
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         {/* Alerts */}
         <View style={styles.section}>

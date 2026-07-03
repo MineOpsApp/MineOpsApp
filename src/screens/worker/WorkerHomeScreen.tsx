@@ -3,7 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BlastAlert } from '../../components/BlastAlert';
 import { SosButton } from '../../components/SosButton';
-import { getBlastHistory, getMyEmergencyContacts, getNotices, getSiteHazardAlerts } from '../../services/api';
+import { getBlastHistory, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteHazardAlerts } from '../../services/api';
+import type { InventoryTransaction } from '../../services/api';
 import type { HazardReport, Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -23,6 +24,9 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
   const [connectionError, setConnectionError] = useState(false);
   const [blastHistory, setBlastHistory] = useState<any[]>([]);
   const [hasContacts, setHasContacts] = useState(true);
+  const [contributions, setContributions] = useState<InventoryTransaction[]>([]);
+  const [expiredCerts, setExpiredCerts] = useState(0);
+  const [expiringCerts, setExpiringCerts] = useState(0);
 
   useEffect(() => {
     Promise.all([getSiteHazardAlerts(), getNotices()])
@@ -31,6 +35,11 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
       .finally(() => setLoading(false));
     getBlastHistory().then(setBlastHistory).catch(() => {});
     getMyEmergencyContacts().then((c) => setHasContacts(c.length > 0)).catch(() => {});
+    getMyInventoryContributions().then(setContributions).catch(() => {});
+    getMyCertifications().then((certs) => {
+      setExpiredCerts(certs.filter((c) => c.status === 'EXPIRED').length);
+      setExpiringCerts(certs.filter((c) => c.status === 'EXPIRING_SOON').length);
+    }).catch(() => {});
   }, []);
 
   const hour = new Date().getHours();
@@ -60,6 +69,16 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
         {connectionError ? (
           <View style={styles.errorBanner}>
             <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+          </View>
+        ) : null}
+
+        {expiredCerts > 0 ? (
+          <View style={styles.certExpiredBanner}>
+            <Text style={styles.certBannerText}>🎓 {expiredCerts} certification{expiredCerts !== 1 ? 's' : ''} expired — visit More → My Certifications</Text>
+          </View>
+        ) : expiringCerts > 0 ? (
+          <View style={styles.certExpiringBanner}>
+            <Text style={styles.certBannerText}>🎓 {expiringCerts} certification{expiringCerts !== 1 ? 's' : ''} expiring within 30 days</Text>
           </View>
         ) : null}
 
@@ -147,6 +166,28 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
           ))}
         </View>
 
+        {/* My Contributions */}
+        {contributions.length > 0 ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>My Approved Contributions</Text>
+            {(() => {
+              const totals: Record<string, { volume: number; unit: string }> = {};
+              contributions.forEach((tx) => {
+                const key = tx.mineralType;
+                if (!totals[key]) totals[key] = { volume: 0, unit: tx.unit };
+                totals[key].volume += Number(tx.volumeAdded);
+              });
+              return Object.entries(totals).map(([mineral, { volume, unit }]) => (
+                <View key={mineral} style={styles.contribCard}>
+                  <Text style={styles.contribMineral}>{mineral}</Text>
+                  <Text style={styles.contribVol}>{volume.toFixed(2)} <Text style={styles.contribUnit}>{unit}</Text></Text>
+                </View>
+              ));
+            })()}
+            <Text style={styles.contribSub}>{contributions.length} approved log{contributions.length !== 1 ? 's' : ''} total</Text>
+          </View>
+        ) : null}
+
         {/* Blast History */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Blast History</Text>
@@ -218,6 +259,9 @@ const styles = StyleSheet.create({
   contactsWarningBody: { flex: 1 },
   contactsWarningTitle: { color: '#92400e', fontSize: 13, fontWeight: '900', marginBottom: 2 },
   contactsWarningSub: { color: '#b45309', fontSize: 12, fontWeight: '600', lineHeight: 17 },
+  certExpiredBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
+  certExpiringBanner: { backgroundColor: '#fffbeb', borderColor: '#fcd34d', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
+  certBannerText: { color: '#92400e', fontSize: 12, fontWeight: '700', textAlign: 'center' },
   blastCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: 12 },
   blastLeft: {},
   blastZone: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
@@ -227,4 +271,9 @@ const styles = StyleSheet.create({
   statusCancelled: { backgroundColor: '#f4f6f8' },
   statusScheduled: { backgroundColor: '#fff5f5' },
   blastStatusText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
+  contribCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', borderRadius: 8, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, paddingHorizontal: 14, paddingVertical: 10 },
+  contribMineral: { color: '#17212b', fontSize: 13, fontWeight: '800' },
+  contribVol: { color: '#15803d', fontSize: 14, fontWeight: '900' },
+  contribUnit: { color: '#5d6875', fontSize: 12, fontWeight: '700' },
+  contribSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 4 },
 });
