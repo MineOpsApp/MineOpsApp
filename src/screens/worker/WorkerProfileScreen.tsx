@@ -25,9 +25,10 @@ function formatDate(iso: string) {
 }
 
 function roleLabel(role: string) {
-  if (role === 'ROLE_WORKER') return 'Worker';
-  if (role === 'ROLE_SUPERVISOR') return 'Supervisor';
-  if (role === 'ROLE_SAFETY_OFFICER') return 'Safety Officer';
+  if (role === 'worker') return 'Worker';
+  if (role === 'supervisor') return 'Supervisor';
+  if (role === 'safetyOfficer') return 'Safety Officer';
+  if (role === 'guest') return 'Guest';
   return role;
 }
 

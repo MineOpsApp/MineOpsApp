@@ -7,7 +7,6 @@ import { SafetyHazardsScreen } from '../screens/safety/SafetyHazardsScreen';
 import { SafetyDangerZonesScreen } from '../screens/safety/SafetyDangerZonesScreen';
 import { SafetyNoticesScreen } from '../screens/safety/SafetyNoticesScreen';
 import { SafetyAuditScreen } from '../screens/safety/SafetyAuditScreen';
-import { MarketScreen } from '../screens/supervisor/MarketScreen';
 import { SupervisorWorkerContactsScreen } from '../screens/supervisor/SupervisorWorkerContactsScreen';
 import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerProfileViewScreen } from '../screens/supervisor/WorkerProfileViewScreen';
@@ -39,7 +38,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SafetyMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'market' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile' | 'messages'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile' | 'messages'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -48,7 +47,6 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
     </Pressable>
   );
 
-  if (screen === 'market') return <View style={{ flex: 1 }}>{backBtn}<MarketScreen session={session} /></View>;
   if (screen === 'audit') return <View style={{ flex: 1 }}>{backBtn}<SafetyAuditScreen session={session} /></View>;
   if (screen === 'profile') return <View style={{ flex: 1 }}>{backBtn}<WorkerProfileScreen session={session} /></View>;
   if (screen === 'workerContacts') return (
@@ -73,7 +71,6 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
   return (
     <MoreScreen
       items={[
-        { icon: '📈', label: 'Market Prices', description: 'Live commodity prices', onPress: () => setScreen('market') },
         { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
         { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts and profiles for all site personnel', onPress: () => setScreen('workerContacts') },
         { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },

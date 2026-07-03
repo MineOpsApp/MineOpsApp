@@ -339,8 +339,30 @@ async function put<T>(path: string, body: unknown): Promise<T> {
   }
 }
 
-export function getDashboard() {
-  return request<DashboardData>('/dashboard');
+async function auditRequest<T>(path: string): Promise<T> {
+  await maybeRefresh();
+  try {
+    const doFetch = () => fetchWithTimeout(`${AUDIT_API_BASE_URL}${path}`);
+    return handleResponse<T>(await doFetch(), doFetch);
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
+    throw error;
+  }
+}
+
+async function auditRequestText(path: string): Promise<string> {
+  await maybeRefresh();
+  try {
+    const doFetch = () => fetchWithTimeout(`${AUDIT_API_BASE_URL}${path}`);
+    const res = await doFetch();
+    if (!res.ok) throw new Error(`Audit request failed: ${res.status}`);
+    return res.text();
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
+    throw error;
+  }
 }
 
 export function getSites() {
@@ -369,9 +391,6 @@ export function renewGuestSession(email: string, hours: number) {
   );
 }
 
-export function getMarketPrices() {
-  return request<any[]>('/market/prices');
-}
 
 export function createSosAlert(alert: CreateSosAlertRequest) {
   return post<SosAlert>('/sos', alert);
@@ -421,19 +440,7 @@ export function reviewHazardReport(id: number, payload: {
   actorEmail: string;
   actionTaken: string;
 }) {
-  return fetchWithTimeout(`${API_BASE_URL}/hazards/${id}/review`, {
-    body: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    method: 'PATCH',
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error('Backend request failed');
-    }
-
-    return response.json() as Promise<HazardReport>;
-  });
+  return patch<HazardReport>(`/hazards/${id}/review`, payload);
 }
   export function logEquipmentShift(payload: {
   equipmentCode: string;
@@ -485,19 +492,7 @@ export function closeHazardReport(id: number, payload: {
   actorEmail: string;
   actionTaken: string;
 }) {
-  return fetchWithTimeout(`${API_BASE_URL}/hazards/${id}/close`, {
-    body: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    method: 'PATCH',
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error('Backend request failed');
-    }
-
-    return response.json() as Promise<HazardReport>;
-  });
+  return patch<HazardReport>(`/hazards/${id}/close`, payload);
 }
 
 export function createSupervisorMessage(message: {
@@ -560,19 +555,7 @@ export function getWorkerProfile(email: string) {
 }
 
 export function updateWorkerEquipmentStatus(equipmentId: number, status: string, actorName: string) {
-  return fetchWithTimeout(`${API_BASE_URL}/workers/equipment/status`, {
-    body: JSON.stringify({ actorName, equipmentId: String(equipmentId), status }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    method: 'PATCH',
-  }).then((response) => {
-    if (!response.ok) {
-      throw new Error('Backend request failed');
-    }
-
-    return response.json() as Promise<WorkerEquipment>;
-  });
+  return patch<WorkerEquipment>('/workers/equipment/status', { actorName, equipmentId: String(equipmentId), status });
 }
 
 export function reportEquipmentFault(payload: {
@@ -594,13 +577,7 @@ export function requestEquipmentMaintenance(payload: {
 }
 
 export function getAuditLogs() {
-  return fetchWithTimeout(`${AUDIT_API_BASE_URL}/audit-logs`).then((response) => {
-    if (!response.ok) {
-      throw new Error('Backend request failed');
-    }
-
-    return response.json() as Promise<AuditLog[]>;
-  });
+  return auditRequest<AuditLog[]>('/audit-logs');
 }
 
 export function searchAuditLogs(params: { action?: string; actorEmail?: string; from?: string; to?: string }) {
@@ -610,8 +587,7 @@ export function searchAuditLogs(params: { action?: string; actorEmail?: string; 
   if (params.from?.trim()) q.set('from', params.from.trim());
   if (params.to?.trim()) q.set('to', params.to.trim());
   const qs = q.toString();
-  return fetchWithTimeout(`${AUDIT_API_BASE_URL}/audit-logs/search${qs ? '?' + qs : ''}`)
-    .then((r) => { if (!r.ok) throw new Error('Search failed'); return r.json() as Promise<AuditLog[]>; });
+  return auditRequest<AuditLog[]>(`/audit-logs/search${qs ? '?' + qs : ''}`);
 }
 
 export function exportAuditLogsCsv(params: { action?: string; actorEmail?: string; from?: string; to?: string }) {
@@ -621,8 +597,7 @@ export function exportAuditLogsCsv(params: { action?: string; actorEmail?: strin
   if (params.from?.trim()) q.set('from', params.from.trim());
   if (params.to?.trim()) q.set('to', params.to.trim());
   const qs = q.toString();
-  return fetchWithTimeout(`${AUDIT_API_BASE_URL}/audit-logs/export/csv${qs ? '?' + qs : ''}`)
-    .then((r) => { if (!r.ok) throw new Error('Export failed'); return r.text(); });
+  return auditRequestText(`/audit-logs/export/csv${qs ? '?' + qs : ''}`);
 }
 
 export function startDrillOperation(payload: { zone: string; drillType: string; equipmentCode: string }) {
@@ -728,7 +703,7 @@ export function getWorkerBlastHistory() {
 }
 
 export function getBlastHistory() {
-  return request<any[]>('/blasts/history');
+  return request<any[]>('/blasts/all');
 }
 
 export function updateIncidentStatus(id: number, status: string, notes?: string) {
