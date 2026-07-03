@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nati
 
 import { SosButton } from '../../components/SosButton';
 import { ActionButton } from '../../components/ActionButton';
-import { getSiteHazardAlerts, getNotices } from '../../services/api';
+import { getSiteHazardAlerts, getNotices, getWorkerContactDirectory } from '../../services/api';
 import type { HazardReport, Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -13,10 +13,18 @@ export function SupervisorHomeScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [connectionError, setConnectionError] = useState(false);
+  const [totalWorkers, setTotalWorkers] = useState(0);
+  const [coveredWorkers, setCoveredWorkers] = useState(0);
 
   useEffect(() => {
     getSiteHazardAlerts().then(setHazards).catch(() => setConnectionError(true));
     getNotices().then(setNotices).catch(() => setConnectionError(true));
+    getWorkerContactDirectory()
+      .then((dir) => {
+        setTotalWorkers(dir.length);
+        setCoveredWorkers(dir.filter((w) => w.contactCount > 0).length);
+      })
+      .catch(() => {});
   }, []);
 
 
@@ -58,6 +66,26 @@ export function SupervisorHomeScreen({ session }: Props) {
             <Text style={styles.stripLabel}>Site</Text>
           </View>
         </View>
+
+        {/* Emergency Contact Coverage */}
+        {totalWorkers > 0 ? (() => {
+          const pct = Math.round((coveredWorkers / totalWorkers) * 100);
+          const isGood = pct >= 80;
+          const isMid = pct >= 50 && pct < 80;
+          const color = isGood ? '#15803d' : isMid ? '#92400e' : '#b42318';
+          const bg = isGood ? '#f0fdf4' : isMid ? '#fffbeb' : '#fff5f5';
+          const border = isGood ? '#86efac' : isMid ? '#fcd34d' : '#fca5a5';
+          return (
+            <View style={[styles.coverageCard, { backgroundColor: bg, borderColor: border }]}>
+              <Text style={[styles.coverageValue, { color }]}>{coveredWorkers}/{totalWorkers}</Text>
+              <View style={styles.coverageBody}>
+                <Text style={[styles.coverageTitle, { color }]}>Emergency Contacts Coverage</Text>
+                <Text style={[styles.coverageSub, { color }]}>{pct}% of personnel have contacts on file</Text>
+              </View>
+              <Text style={styles.coverageIcon}>📞</Text>
+            </View>
+          );
+        })() : null}
 
         {/* Alerts */}
         <View style={styles.section}>
@@ -144,7 +172,13 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 10, minHeight: 42, paddingHorizontal: 12 },
   hoursRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
  
+  coverageCard: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 20, marginBottom: 0, padding: 14 },
+  coverageValue: { fontSize: 22, fontWeight: '900' },
+  coverageBody: { flex: 1 },
+  coverageTitle: { fontSize: 13, fontWeight: '900', marginBottom: 2 },
+  coverageSub: { fontSize: 12, fontWeight: '600' },
+  coverageIcon: { fontSize: 22 },
   errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
-errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 });
 

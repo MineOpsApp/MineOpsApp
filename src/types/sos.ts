@@ -6,6 +6,8 @@ export type SosAlert = {
   site: string;
   message: string;
   status: string;
+  actorName: string | null;
+  actorEmail: string | null;
   createdAt: string;
 };
 

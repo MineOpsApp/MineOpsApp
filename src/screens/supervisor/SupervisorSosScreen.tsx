@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { getSosAlerts } from '../../services/api';
+import { getSosAlerts, getWorkerEmergencyContacts } from '../../services/api';
+import type { EmergencyContact } from '../../types/actions';
 import type { SosAlert } from '../../types/sos';
 import type { AuthSession } from '../../types/auth';
 
@@ -10,20 +11,45 @@ type Props = { session: AuthSession };
 export function SupervisorSosScreen({ session: _ }: Props) {
   const [alerts, setAlerts] = useState<SosAlert[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [contactsCache, setContactsCache] = useState<Record<string, EmergencyContact[]>>({});
+  const [loadingContacts, setLoadingContacts] = useState<string | null>(null);
 
   function load() { return getSosAlerts().then(setAlerts).catch(() => {}); }
   useEffect(() => { load(); }, []);
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
+  async function toggleContacts(alert: SosAlert) {
+    if (expandedId === alert.id) { setExpandedId(null); return; }
+    setExpandedId(alert.id);
+    const email = alert.actorEmail;
+    if (!email || contactsCache[email] !== undefined) return;
+    setLoadingContacts(email);
+    try {
+      const contacts = await getWorkerEmergencyContacts(email);
+      setContactsCache((prev) => ({ ...prev, [email]: contacts }));
+    } catch {
+      setContactsCache((prev) => ({ ...prev, [email]: [] }));
+    } finally {
+      setLoadingContacts(null);
+    }
+  }
+
   const active = alerts.filter((a) => a.status.toLowerCase() !== 'resolved');
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#b42318" />}>
-
+    <ScrollView
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#b42318" />}
+    >
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>SOS Alerts</Text>
-        {active.length > 0 && <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>🚨 {active.length} active</Text></View>}
+        {active.length > 0 && (
+          <View style={styles.activeBadge}>
+            <Text style={styles.activeBadgeText}>🚨 {active.length} active</Text>
+          </View>
+        )}
       </View>
 
       {active.length === 0 ? (
@@ -36,26 +62,73 @@ export function SupervisorSosScreen({ session: _ }: Props) {
         </View>
       ) : null}
 
-      {alerts.map((a) => (
-        <View key={a.id} style={[styles.alertCard, a.status.toLowerCase() === 'resolved' && styles.alertCardDone]}>
-          <View style={styles.alertTop}>
-            <View style={styles.alertIconWrap}>
-              <Text style={styles.alertIcon}>🚨</Text>
-            </View>
-            <View style={styles.alertBody}>
-              <Text style={styles.alertSite}>{a.site}</Text>
-              <Text style={styles.alertMessage}>{a.message}</Text>
-            </View>
-            <View style={[styles.statusPill, a.status.toLowerCase() === 'resolved' ? styles.statusPillDone : styles.statusPillActive]}>
-              <Text style={styles.statusPillText}>{a.status}</Text>
-            </View>
+      {alerts.map((a) => {
+        const isExpanded = expandedId === a.id;
+        const contacts = a.actorEmail ? contactsCache[a.actorEmail] : undefined;
+        const isLoading = a.actorEmail ? loadingContacts === a.actorEmail : false;
+        const isDone = a.status.toLowerCase() === 'resolved';
+
+        return (
+          <View key={a.id} style={[styles.alertCard, isDone && styles.alertCardDone]}>
+            <Pressable onPress={() => toggleContacts(a)} style={styles.alertPressable}>
+              <View style={styles.alertTop}>
+                <View style={styles.alertIconWrap}>
+                  <Text style={styles.alertIcon}>🚨</Text>
+                </View>
+                <View style={styles.alertBody}>
+                  <Text style={styles.alertName}>{a.actorName ?? 'Unknown worker'}</Text>
+                  <Text style={styles.alertSite}>{a.site}</Text>
+                  <Text style={styles.alertMessage}>{a.message}</Text>
+                </View>
+                <View style={styles.alertRight}>
+                  <View style={[styles.statusPill, isDone ? styles.statusPillDone : styles.statusPillActive]}>
+                    <Text style={styles.statusPillText}>{a.status}</Text>
+                  </View>
+                  <Text style={[styles.chevron, isExpanded && styles.chevronOpen]}>›</Text>
+                </View>
+              </View>
+              <Text style={styles.alertMeta}>
+                {a.actorEmail ?? a.role} · Alert #{a.id}
+                {a.actorEmail ? ' · Tap for contacts' : ''}
+              </Text>
+            </Pressable>
+
+            {isExpanded && a.actorEmail ? (
+              <View style={styles.contactsPanel}>
+                <Text style={styles.contactsPanelTitle}>📞 Emergency Contacts</Text>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#b42318" style={{ marginVertical: 8 }} />
+                ) : !contacts || contacts.length === 0 ? (
+                  <Text style={styles.noContactsText}>No emergency contacts on file for this worker</Text>
+                ) : (
+                  contacts.map((c) => (
+                    <View key={c.id} style={styles.contactRow}>
+                      <View style={[styles.contactTypePill, isDone && styles.contactTypePillDone]}>
+                        <Text style={styles.contactTypeText}>{c.contactType}</Text>
+                      </View>
+                      <View style={styles.contactInfo}>
+                        <Text style={styles.contactName}>{c.name}</Text>
+                        <Text style={styles.contactMeta}>{c.relationship}</Text>
+                      </View>
+                      <Pressable
+                        onPress={() => Linking.openURL(`tel:${c.phone.replace(/[\s\-().]/g, '')}`)}
+                        style={styles.callBtn}
+                      >
+                        <Text style={styles.callBtnText}>📞 {c.phone}</Text>
+                      </Pressable>
+                    </View>
+                  ))
+                )}
+              </View>
+            ) : null}
           </View>
-          <Text style={styles.alertMeta}>Triggered by {a.role} · Alert #{a.id}</Text>
-        </View>
-      ))}
+        );
+      })}
 
       {alerts.length === 0 ? (
-        <View style={styles.emptyCard}><Text style={styles.emptyText}>No SOS alerts on record</Text></View>
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>No SOS alerts on record</Text>
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -71,19 +144,36 @@ const styles = StyleSheet.create({
   clearIcon: { color: '#16a34a', fontSize: 24 },
   clearTitle: { color: '#15803d', fontSize: 14, fontWeight: '900' },
   clearSub: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  alertCard: { backgroundColor: '#ffffff', borderColor: '#f5c6c6', borderLeftColor: '#b42318', borderLeftWidth: 4, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
+  alertCard: { backgroundColor: '#ffffff', borderColor: '#f5c6c6', borderLeftColor: '#b42318', borderLeftWidth: 4, borderRadius: 12, borderWidth: 1, marginBottom: 10, overflow: 'hidden' },
   alertCardDone: { borderColor: '#e5e9ef', borderLeftColor: '#8fa3b8', opacity: 0.7 },
+  alertPressable: { padding: 14 },
   alertTop: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 8 },
-  alertIconWrap: { backgroundColor: '#fff5f5', borderRadius: 20, height: 36, width: 36, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  alertIconWrap: { alignItems: 'center', backgroundColor: '#fff5f5', borderRadius: 20, height: 36, justifyContent: 'center', marginRight: 10, width: 36 },
   alertIcon: { fontSize: 18 },
   alertBody: { flex: 1 },
-  alertSite: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 2 },
-  alertMessage: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
+  alertName: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 2 },
+  alertSite: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 2 },
+  alertMessage: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
+  alertRight: { alignItems: 'flex-end', gap: 4 },
   statusPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   statusPillActive: { backgroundColor: '#fff5f5' },
   statusPillDone: { backgroundColor: '#f4f6f8' },
   statusPillText: { color: '#5d6875', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+  chevron: { color: '#8fa3b8', fontSize: 20, transform: [{ rotate: '0deg' }] },
+  chevronOpen: { transform: [{ rotate: '90deg' }] },
   alertMeta: { color: '#8fa3b8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  contactsPanel: { backgroundColor: '#fff8f8', borderTopColor: '#f5c6c6', borderTopWidth: 1, padding: 14 },
+  contactsPanelTitle: { color: '#7f1d1d', fontSize: 12, fontWeight: '900', marginBottom: 10, textTransform: 'uppercase' },
+  noContactsText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
+  contactRow: { alignItems: 'center', flexDirection: 'row', gap: 10, marginBottom: 8 },
+  contactTypePill: { backgroundColor: '#b42318', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  contactTypePillDone: { backgroundColor: '#8fa3b8' },
+  contactTypeText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
+  contactInfo: { flex: 1 },
+  contactName: { color: '#17212b', fontSize: 13, fontWeight: '800' },
+  contactMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginTop: 1 },
+  callBtn: { backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
+  callBtnText: { color: '#15803d', fontSize: 12, fontWeight: '800' },
   emptyCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 20 },
   emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
 });

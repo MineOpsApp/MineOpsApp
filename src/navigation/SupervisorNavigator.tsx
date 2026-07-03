@@ -22,6 +22,9 @@ import { SupervisorGuestScreen } from '../screens/supervisor/SupervisorGuestScre
 import { SupervisorIncidentScreen } from '../screens/supervisor/SupervisorIncidentScreen';
 import { SupervisorResetPasswordScreen } from '../screens/supervisor/SupervisorResetPasswordScreen';
 import { SupervisorPendingApprovalsScreen } from '../screens/supervisor/SupervisorPendingApprovalsScreen';
+import { SupervisorWorkerContactsScreen } from '../screens/supervisor/SupervisorWorkerContactsScreen';
+import { SupervisorSafetyChecklistScreen } from '../screens/supervisor/SupervisorSafetyChecklistScreen';
+import { SupervisorFirstAidKitScreen } from '../screens/supervisor/SupervisorFirstAidKitScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -45,7 +48,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid'>('menu');
 
   const backBtn = (
     <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -64,6 +67,9 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'reset') return <View style={{ flex: 1 }}>{backBtn}<SupervisorResetPasswordScreen session={session} /></View>;
   if (screen === 'equipment') return <View style={{ flex: 1 }}>{backBtn}<SupervisorEquipmentRegistryScreen session={session} /></View>;
   if (screen === 'approvals') return <View style={{ flex: 1 }}>{backBtn}<SupervisorPendingApprovalsScreen session={session} /></View>;
+  if (screen === 'workerContacts') return <View style={{ flex: 1 }}>{backBtn}<SupervisorWorkerContactsScreen session={session} /></View>;
+  if (screen === 'checklist') return <View style={{ flex: 1 }}>{backBtn}<SupervisorSafetyChecklistScreen session={session} /></View>;
+  if (screen === 'firstAid') return <View style={{ flex: 1 }}>{backBtn}<SupervisorFirstAidKitScreen session={session} /></View>;
   return (
     <MoreScreen
       items={[
@@ -78,6 +84,9 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for locked out worker', onPress: () => setScreen('reset') },
         { icon: '🔧', label: 'Equipment Registry', description: 'Manage site equipment list and status', onPress: () => setScreen('equipment') },
         { icon: '✅', label: 'Worker Approvals', description: 'Approve or reject new worker registrations', onPress: () => setScreen('approvals') },
+        { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts for all site personnel', onPress: () => setScreen('workerContacts') },
+        { icon: '✅', label: 'Safety Checklists', description: "Today's shift checklist — who has and hasn't submitted", onPress: () => setScreen('checklist') },
+        { icon: '🩺', label: 'First Aid Kits', description: 'Per-zone kit inventory and weekly check status', onPress: () => setScreen('firstAid') },
       ]}
     />
   );

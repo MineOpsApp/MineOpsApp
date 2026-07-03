@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BlastAlert } from '../../components/BlastAlert';
 import { SosButton } from '../../components/SosButton';
-import { getBlastHistory, getNotices, getSiteHazardAlerts } from '../../services/api';
+import { getBlastHistory, getMyEmergencyContacts, getNotices, getSiteHazardAlerts } from '../../services/api';
 import type { HazardReport, Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
-type Props = { session: AuthSession };
+type Props = { session: AuthSession; onGoToEmergencyContacts?: () => void };
 
 const SEVERITY_COLOR: Record<string, string> = {
   Critical: '#7f1d1d',
@@ -16,12 +16,13 @@ const SEVERITY_COLOR: Record<string, string> = {
   Low: '#1f6f5b',
 };
 
-export function WorkerHomeScreen({ session }: Props) {
+export function WorkerHomeScreen({ session, onGoToEmergencyContacts }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
   const [blastHistory, setBlastHistory] = useState<any[]>([]);
+  const [hasContacts, setHasContacts] = useState(true);
 
   useEffect(() => {
     Promise.all([getSiteHazardAlerts(), getNotices()])
@@ -29,6 +30,7 @@ export function WorkerHomeScreen({ session }: Props) {
       .catch(() => setConnectionError(true))
       .finally(() => setLoading(false));
     getBlastHistory().then(setBlastHistory).catch(() => {});
+    getMyEmergencyContacts().then((c) => setHasContacts(c.length > 0)).catch(() => {});
   }, []);
 
   const hour = new Date().getHours();
@@ -59,6 +61,16 @@ export function WorkerHomeScreen({ session }: Props) {
           <View style={styles.errorBanner}>
             <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
           </View>
+        ) : null}
+
+        {!hasContacts && !loading ? (
+          <Pressable style={styles.contactsWarning} onPress={onGoToEmergencyContacts}>
+            <Text style={styles.contactsWarningIcon}>📞</Text>
+            <View style={styles.contactsWarningBody}>
+              <Text style={styles.contactsWarningTitle}>No emergency contacts set</Text>
+              <Text style={styles.contactsWarningSub}>Add contacts so supervisors can reach someone if you're in danger {onGoToEmergencyContacts ? '→ Tap to add' : '→ More · Emergency Contacts'}</Text>
+            </View>
+          </Pressable>
         ) : null}
 
         {/* Status strip */}
@@ -201,6 +213,11 @@ const styles = StyleSheet.create({
   noticeMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 17 },
   errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
   errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  contactsWarning: { alignItems: 'center', backgroundColor: '#fffbeb', borderColor: '#fcd34d', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 20, marginBottom: 0, padding: 14 },
+  contactsWarningIcon: { fontSize: 24 },
+  contactsWarningBody: { flex: 1 },
+  contactsWarningTitle: { color: '#92400e', fontSize: 13, fontWeight: '900', marginBottom: 2 },
+  contactsWarningSub: { color: '#b45309', fontSize: 12, fontWeight: '600', lineHeight: 17 },
   blastCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: 12 },
   blastLeft: {},
   blastZone: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },

@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, Text, View } from 'react-native';
-
 
 import { WorkerHomeScreen } from '../screens/worker/WorkerHomeScreen';
 import { WorkerHazardsScreen } from '../screens/worker/WorkerHazardsScreen';
@@ -14,11 +13,10 @@ import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import { WorkerDrillScreen } from '../screens/worker/WorkerDrillScreen';
-import { SupervisorRosterScreen } from '../screens/supervisor/SupervisorRosterScreen';
-import { WorkerAttendanceScreen } from '../screens/worker/WorkerAttendanceScreen'; 
+import { WorkerAttendanceScreen } from '../screens/worker/WorkerAttendanceScreen';
 import { WorkerIncidentScreen } from '../screens/worker/WorkerIncidentScreen';
 import { WorkerEmergencyContactsScreen } from '../screens/worker/WorkerEmergencyContactsScreen';
-
+import { WorkerSafetyChecklistScreen } from '../screens/worker/WorkerSafetyChecklistScreen';
 
 import type { AuthSession } from '../types/auth';
 
@@ -40,11 +38,28 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
+type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist';
+
 type Props = { session: AuthSession; onLogout: () => void };
 
-function WorkerMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts'>('menu');
-  
+function WorkerMoreStack({
+  session,
+  pendingRef,
+  onRegisterSetter,
+}: {
+  session: AuthSession;
+  pendingRef: React.MutableRefObject<MoreSubScreen | null>;
+  onRegisterSetter: (setter: (s: MoreSubScreen) => void) => void;
+}) {
+  const [screen, setScreen] = useState<MoreSubScreen>(() => {
+    const pending = pendingRef.current;
+    pendingRef.current = null;
+    return pending ?? 'menu';
+  });
+
+  useEffect(() => {
+    onRegisterSetter(setScreen);
+  }, [onRegisterSetter]);
 
   if (screen === 'shift') return (
     <View style={{ flex: 1 }}>
@@ -81,7 +96,7 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
       <WorkerAttendanceScreen session={session} />
     </View>
   );
-  
+
   if (screen === 'incident') return (
     <View style={{ flex: 1 }}>
       <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -100,7 +115,14 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
     </View>
   );
 
-
+  if (screen === 'checklist') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <WorkerSafetyChecklistScreen session={session} />
+    </View>
+  );
 
   return (
     <MoreScreen
@@ -111,15 +133,17 @@ function WorkerMoreStack({ session }: { session: AuthSession }) {
         { icon: '🕐', label: 'Attendance', description: 'Clock in and out of site', onPress: () => setScreen('attendance') },
         { icon: '🚨', label: 'Report Incident', description: 'Log injuries, near misses, equipment damage', onPress: () => setScreen('incident') },
         { icon: '📞', label: 'Emergency Contacts', description: 'Add contacts for supervisors to reach in emergencies', onPress: () => setScreen('emergencyContacts') },
+        { icon: '✅', label: 'Safety Checklist', description: 'Complete your shift safety check before starting work', onPress: () => setScreen('checklist') },
       ]}
     />
   );
 }
 
-
 export function WorkerNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
+  const moreSetterRef = useRef<((s: MoreSubScreen) => void) | null>(null);
+  const pendingMoreScreenRef = useRef<MoreSubScreen | null>(null);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -138,11 +162,33 @@ export function WorkerNavigator({ session, onLogout }: Props) {
           ),
         })}
       >
-        <Tab.Screen name="Home" children={() => <WorkerHomeScreen session={session} />} />
+        <Tab.Screen name="Home">
+          {({ navigation }) => (
+            <WorkerHomeScreen
+              session={session}
+              onGoToEmergencyContacts={() => {
+                if (moreSetterRef.current) {
+                  moreSetterRef.current('emergencyContacts');
+                } else {
+                  pendingMoreScreenRef.current = 'emergencyContacts';
+                }
+                navigation.navigate('More');
+              }}
+            />
+          )}
+        </Tab.Screen>
         <Tab.Screen name="Hazards" children={() => <WorkerHazardsScreen session={session} />} />
         <Tab.Screen name="Equipment" children={() => <WorkerEquipmentScreen session={session} />} />
         <Tab.Screen name="Notices" children={() => <WorkerNoticesScreen session={session} />} />
-        <Tab.Screen name="More" children={() => <WorkerMoreStack session={session} />} />
+        <Tab.Screen name="More">
+          {() => (
+            <WorkerMoreStack
+              session={session}
+              pendingRef={pendingMoreScreenRef}
+              onRegisterSetter={(setter) => { moreSetterRef.current = setter; }}
+            />
+          )}
+        </Tab.Screen>
       </Tab.Navigator>
     </View>
   );

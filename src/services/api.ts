@@ -229,6 +229,28 @@ async function del<T>(path: string): Promise<T> {
   }
 }
 
+async function put<T>(path: string, body: unknown): Promise<T> {
+  await maybeRefresh();
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const statusCode = response.status;
+      let text = '';
+      try { text = await response.text(); } catch {}
+      throw new Error(`${statusCode}: ${text}`);
+    }
+    return response.json() as Promise<T>;
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
+    throw error;
+  }
+}
+
 export function getDashboard() {
   return request<DashboardData>('/dashboard');
 }
@@ -671,4 +693,110 @@ export function deleteEmergencyContact(id: number) {
 
 export function getWorkerEmergencyContacts(workerEmail: string) {
   return request<EmergencyContact[]>(`/emergency-contacts/worker/email/${encodeURIComponent(workerEmail)}`);
+}
+
+export type WorkerDirectoryEntry = {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+  contactCount: number;
+};
+
+export function getWorkerContactDirectory() {
+  return request<WorkerDirectoryEntry[]>('/emergency-contacts/directory');
+}
+
+export type SafetyChecklist = {
+  id: number;
+  workerId: number;
+  workerName: string;
+  workerEmail: string;
+  site: string;
+  shiftDate: string;
+  ppeHelmet: boolean;
+  ppeBoots: boolean;
+  ppeGloves: boolean;
+  ppeVest: boolean;
+  equipmentChecked: boolean;
+  communicationDevice: boolean;
+  emergencyExitsClear: boolean;
+  hazardousMaterialsSecured: boolean;
+  allCleared: boolean;
+  submittedAt: string;
+};
+
+export type ChecklistPayload = {
+  ppeHelmet: boolean;
+  ppeBoots: boolean;
+  ppeGloves: boolean;
+  ppeVest: boolean;
+  equipmentChecked: boolean;
+  communicationDevice: boolean;
+  emergencyExitsClear: boolean;
+  hazardousMaterialsSecured: boolean;
+};
+
+export type PendingWorker = { workerName: string; workerEmail: string; zone: string };
+
+export type SiteTodayChecklist = {
+  date: string;
+  submitted: SafetyChecklist[];
+  pending: PendingWorker[];
+};
+
+export function submitSafetyChecklist(payload: ChecklistPayload) {
+  return post<SafetyChecklist>('/safety-checklist', payload);
+}
+
+export function getMyChecklistToday() {
+  return request<SafetyChecklist | null>('/safety-checklist/my/today');
+}
+
+export function getSiteChecklistToday() {
+  return request<SiteTodayChecklist>('/safety-checklist/site/today');
+}
+
+export type FirstAidKit = {
+  id: number;
+  site: string;
+  zone: string;
+  location: string;
+  hasBandages: boolean;
+  hasGloves: boolean;
+  hasAntiseptic: boolean;
+  hasOxygen: boolean;
+  hasStretcher: boolean;
+  fullyStocked: boolean;
+  notes: string | null;
+  lastCheckedBy: string | null;
+  lastCheckedAt: string | null;
+  createdAt: string;
+};
+
+export type FirstAidKitPayload = {
+  zone: string;
+  location: string;
+  hasBandages: boolean;
+  hasGloves: boolean;
+  hasAntiseptic: boolean;
+  hasOxygen: boolean;
+  hasStretcher: boolean;
+  notes: string;
+};
+
+export function getFirstAidKits() {
+  return request<FirstAidKit[]>('/first-aid-kits');
+}
+
+export function upsertFirstAidKit(payload: FirstAidKitPayload) {
+  return post<FirstAidKit>('/first-aid-kits', payload);
+}
+
+export function updateFirstAidKit(id: number, payload: FirstAidKitPayload) {
+  return put<FirstAidKit>(`/first-aid-kits/${id}`, payload);
+}
+
+export function deleteFirstAidKit(id: number) {
+  return del<void>(`/first-aid-kits/${id}`);
 }
