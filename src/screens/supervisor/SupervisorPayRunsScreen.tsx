@@ -13,6 +13,7 @@ import {
 import {
   approvePayCycleManager,
   approvePayCycleSupervisor,
+  getMarketPrices,
   getPayCycle,
   getPaySplitConfig,
   getSitePayCycles,
@@ -57,6 +58,14 @@ function fmtDate(d: string) {
   catch { return d; }
 }
 
+function defaultPeriodDates(): { periodStart: string; periodEnd: string } {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(end.getDate() - 6);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  return { periodStart: fmt(start), periodEnd: fmt(end) };
+}
+
 export function SupervisorPayRunsScreen({ session }: Props) {
   const [view, setView] = useState<ScreenView>('list');
   const [cycles, setCycles] = useState<PayCycle[]>([]);
@@ -68,10 +77,13 @@ export function SupervisorPayRunsScreen({ session }: Props) {
   const [error, setError] = useState('');
 
   // Generate form state
-  const [payDate, setPayDate] = useState('');
+  const defaults = defaultPeriodDates();
+  const [periodStart, setPeriodStart] = useState(defaults.periodStart);
+  const [periodEnd, setPeriodEnd] = useState(defaults.periodEnd);
   const [mineralType, setMineralType] = useState('');
   const [unit, setUnit] = useState('');
   const [pricePerUnit, setPricePerUnit] = useState('');
+  const [priceFromMarket, setPriceFromMarket] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
 
@@ -92,6 +104,39 @@ export function SupervisorPayRunsScreen({ session }: Props) {
 
   useEffect(() => { loadList(); }, [loadList]);
 
+  // Fetch market prices whenever the generate view opens
+  useEffect(() => {
+    if (view !== 'generate') return;
+    getMarketPrices().then(prices => {
+      if (!mineralType) return;
+      const match = prices.find(
+        p => p.name?.toLowerCase() === mineralType.toLowerCase()
+      );
+      if (match?.price) {
+        setPricePerUnit(String(match.price));
+        setPriceFromMarket(true);
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
+  // Re-match when mineralType changes while on generate view
+  useEffect(() => {
+    if (view !== 'generate' || !mineralType) return;
+    getMarketPrices().then(prices => {
+      const match = prices.find(
+        p => p.name?.toLowerCase() === mineralType.toLowerCase()
+      );
+      if (match?.price) {
+        setPricePerUnit(String(match.price));
+        setPriceFromMarket(true);
+      } else {
+        setPriceFromMarket(false);
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mineralType]);
+
   const onRefresh = () => { setRefreshing(true); loadList(); };
 
   const openDetail = async (id: number) => {
@@ -110,8 +155,12 @@ export function SupervisorPayRunsScreen({ session }: Props) {
 
   const generate = async () => {
     setGenerateError('');
-    if (!payDate || !mineralType || !unit || !pricePerUnit) {
+    if (!periodStart || !periodEnd || !mineralType || !unit || !pricePerUnit) {
       setGenerateError('All fields are required.');
+      return;
+    }
+    if (periodEnd < periodStart) {
+      setGenerateError('Period end must be on or after period start.');
       return;
     }
     const price = parseFloat(pricePerUnit);
@@ -121,7 +170,7 @@ export function SupervisorPayRunsScreen({ session }: Props) {
     }
     setGenerating(true);
     try {
-      const d = await previewPayCycle({ payDate, mineralType, unit, pricePerUnit: price });
+      const d = await previewPayCycle({ periodStart, periodEnd, mineralType, unit, pricePerUnit: price });
       setDetail(d);
       setView('detail');
       loadList();
@@ -179,13 +228,14 @@ export function SupervisorPayRunsScreen({ session }: Props) {
 
         <View style={s.card}>
           <View style={s.detailHeaderRow}>
-            <Text style={s.detailTitle}>{cycle.mineralType} · {cycle.payDate}</Text>
+            <Text style={s.detailTitle}>{cycle.mineralType}</Text>
             <View style={[s.statusPill, { backgroundColor: (STATUS_COLOR[cycle.status] ?? '#374151') + '20' }]}>
               <Text style={[s.statusText, { color: STATUS_COLOR[cycle.status] ?? '#374151' }]}>
                 {STATUS_LABEL[cycle.status] ?? cycle.status}
               </Text>
             </View>
           </View>
+          <Row label="Period" value={`${fmtDate(cycle.periodStart)} – ${fmtDate(cycle.periodEnd)}`} />
           <Row label="Total Volume" value={`${cycle.totalVolume} ${cycle.unit}`} />
           <Row label="Price / Unit" value={fmt(cycle.pricePerUnit)} />
           <Row label="Gross Total" value={fmt(cycle.grossTotal)} bold />
@@ -245,13 +295,26 @@ export function SupervisorPayRunsScreen({ session }: Props) {
         </TouchableOpacity>
 
         <Text style={s.pageTitle}>Generate Pay Run</Text>
-        <Text style={s.pageSub}>Pulls all approved, unpaid shift logs for the date and mineral you specify.</Text>
+        <Text style={s.pageSub}>Pulls all approved, unpaid shift logs for the week and mineral you specify.</Text>
 
         <View style={s.card}>
-          <Field label="Pay Date (YYYY-MM-DD)" value={payDate} onChange={setPayDate} placeholder="e.g. 2026-07-03" />
+          <Field label="Period Start (YYYY-MM-DD)" value={periodStart} onChange={setPeriodStart} placeholder="e.g. 2026-06-23" />
+          <Field label="Period End (YYYY-MM-DD)" value={periodEnd} onChange={setPeriodEnd} placeholder="e.g. 2026-06-29" />
           <Field label="Mineral Type" value={mineralType} onChange={setMineralType} placeholder="e.g. Gold" />
           <Field label="Unit" value={unit} onChange={setUnit} placeholder="e.g. kg or oz" />
-          <Field label="Price Per Unit (GHS)" value={pricePerUnit} onChange={setPricePerUnit} placeholder="e.g. 320.00" keyboard="decimal-pad" />
+
+          <Text style={s.inputLabel}>Price Per Unit (GHS)</Text>
+          <TextInput
+            style={s.input}
+            value={pricePerUnit}
+            onChangeText={v => { setPricePerUnit(v); setPriceFromMarket(false); }}
+            placeholder="e.g. 320.00"
+            placeholderTextColor="#9ca3af"
+            keyboardType="decimal-pad"
+          />
+          {priceFromMarket && (
+            <Text style={s.marketHint}>Pre-filled from live market rate — edit if needed.</Text>
+          )}
 
           {/* Formula picker */}
           <Text style={[s.inputLabel, { marginTop: 14 }]}>Pay Split Formula</Text>
@@ -313,7 +376,7 @@ export function SupervisorPayRunsScreen({ session }: Props) {
             <View style={s.detailHeaderRow}>
               <View style={{ flex: 1 }}>
                 <Text style={s.detailTitle}>{c.mineralType}</Text>
-                <Text style={s.cycleDate}>{fmtDate(c.payDate)}</Text>
+                <Text style={s.cycleDate}>{fmtDate(c.periodStart)} – {fmtDate(c.periodEnd)}</Text>
               </View>
               <View style={[s.statusPill, { backgroundColor: (STATUS_COLOR[c.status] ?? '#374151') + '20' }]}>
                 <Text style={[s.statusText, { color: STATUS_COLOR[c.status] ?? '#374151' }]}>
@@ -401,6 +464,8 @@ const s = StyleSheet.create({
 
   inputLabel: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 4, textTransform: 'uppercase' },
   input: { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, fontWeight: '700', padding: 10 },
+
+  marketHint: { color: '#1f6f5b', fontSize: 11, fontWeight: '700', marginTop: 4 },
 
   formulaNote: { color: '#5d6875', fontSize: 13, fontWeight: '600', marginBottom: 8 },
   formulaBtn: { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, padding: 12, marginBottom: 6 },

@@ -1140,7 +1140,8 @@ export type WorkerPayRecord = {
 export type PayCycle = {
   id: number;
   site: string;
-  payDate: string;
+  periodStart: string;
+  periodEnd: string;
   mineralType: string;
   unit: string;
   totalVolume: number;
@@ -1167,12 +1168,17 @@ export type PaySplitConfig = {
 };
 
 export function previewPayCycle(payload: {
-  payDate: string;
+  periodStart: string;
+  periodEnd: string;
   mineralType: string;
   unit: string;
   pricePerUnit: number;
 }) {
   return post<PayCycleDetail>('/pay/preview', payload);
+}
+
+export function getMarketPrices() {
+  return request<any[]>('/market/prices');
 }
 
 export function approvePayCycleManager(id: number) {
