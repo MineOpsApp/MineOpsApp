@@ -6,7 +6,7 @@ import type { UserProfile, WorkerDirectoryEntry } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
-type Props = { session: AuthSession };
+type Props = { session: AuthSession; onViewProfile?: (email: string) => void };
 
 const ROLE_LABELS: Record<string, string> = {
   worker: 'Worker',
@@ -14,7 +14,7 @@ const ROLE_LABELS: Record<string, string> = {
   safetyOfficer: 'Safety Officer',
 };
 
-export function SupervisorWorkerContactsScreen({ session: _ }: Props) {
+export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Props) {
   const [workers, setWorkers] = useState<WorkerDirectoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -166,6 +166,11 @@ export function SupervisorWorkerContactsScreen({ session: _ }: Props) {
 
             {isExpanded && (
               <View style={styles.contactsPanel}>
+                {onViewProfile && (
+                  <Pressable onPress={() => onViewProfile(w.email)} style={styles.viewProfileBtn}>
+                    <Text style={styles.viewProfileBtnText}>🪪 View Full Profile & ID Card →</Text>
+                  </Pressable>
+                )}
                 {profile?.bio ? (
                   <View style={styles.bioRow}>
                     <Text style={styles.bioText}>{profile.bio}</Text>
@@ -242,6 +247,8 @@ const styles = StyleSheet.create({
   profileStatsRow: { alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 12 },
   profileStat: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
   profileStatDot: { color: '#9aa5b1', fontSize: 11 },
+  viewProfileBtn: { backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 10 },
+  viewProfileBtnText: { color: '#15803d', fontSize: 13, fontWeight: '800' },
   workerName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
   workerRole: { color: '#8fa3b8', fontSize: 11, fontWeight: '700' },
   workerRight: { marginRight: 6 },

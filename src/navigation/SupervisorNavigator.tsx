@@ -27,6 +27,8 @@ import { SupervisorSafetyChecklistScreen } from '../screens/supervisor/Superviso
 import { SupervisorFirstAidKitScreen } from '../screens/supervisor/SupervisorFirstAidKitScreen';
 import { SupervisorMineralInventoryScreen } from '../screens/supervisor/SupervisorMineralInventoryScreen';
 import { SupervisorCertificationsScreen } from '../screens/supervisor/SupervisorCertificationsScreen';
+import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
+import { WorkerProfileViewScreen } from '../screens/supervisor/WorkerProfileViewScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -50,7 +52,8 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'market' | 'audit' | 'drills' | 'guests' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile'>('menu');
+  const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
     <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -69,11 +72,28 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'reset') return <View style={{ flex: 1 }}>{backBtn}<SupervisorResetPasswordScreen session={session} /></View>;
   if (screen === 'equipment') return <View style={{ flex: 1 }}>{backBtn}<SupervisorEquipmentRegistryScreen session={session} /></View>;
   if (screen === 'approvals') return <View style={{ flex: 1 }}>{backBtn}<SupervisorPendingApprovalsScreen session={session} /></View>;
-  if (screen === 'workerContacts') return <View style={{ flex: 1 }}>{backBtn}<SupervisorWorkerContactsScreen session={session} /></View>;
+  if (screen === 'workerContacts') return (
+    <View style={{ flex: 1 }}>
+      {backBtn}
+      <SupervisorWorkerContactsScreen
+        session={session}
+        onViewProfile={(email) => { setViewingWorkerEmail(email); setScreen('workerProfile'); }}
+      />
+    </View>
+  );
   if (screen === 'checklist') return <View style={{ flex: 1 }}>{backBtn}<SupervisorSafetyChecklistScreen session={session} /></View>;
   if (screen === 'firstAid') return <View style={{ flex: 1 }}>{backBtn}<SupervisorFirstAidKitScreen session={session} /></View>;
   if (screen === 'mineralInventory') return <View style={{ flex: 1 }}>{backBtn}<SupervisorMineralInventoryScreen session={session} /></View>;
   if (screen === 'certifications') return <View style={{ flex: 1 }}>{backBtn}<SupervisorCertificationsScreen session={session} /></View>;
+  if (screen === 'profile') return <View style={{ flex: 1 }}>{backBtn}<WorkerProfileScreen session={session} /></View>;
+  if (screen === 'workerProfile') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('workerContacts')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back to Contacts</Text>
+      </Pressable>
+      <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
+    </View>
+  );
   return (
     <MoreScreen
       items={[
@@ -93,6 +113,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '🩺', label: 'First Aid Kits', description: 'Per-zone kit inventory and weekly check status', onPress: () => setScreen('firstAid') },
         { icon: '⛏', label: 'Mineral Inventory', description: 'Live stock totals and transaction history from approved shift logs', onPress: () => setScreen('mineralInventory') },
         { icon: '🎓', label: 'Certifications', description: 'Track worker certifications, expiry dates, and renewal history', onPress: () => setScreen('certifications') },
+        { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
       ]}
     />
   );
