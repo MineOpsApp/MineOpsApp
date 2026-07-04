@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 
 import { loginUser, registerUser, tryRestoreSession, setAuthToken, redeemGuestCode } from '../services/api';
 import type { AuthSession } from '../types/auth';
@@ -21,6 +23,7 @@ import type { UserRole } from '../types/role';
 const WORKER_ROLES = [
   { id: 'worker' as UserRole, label: 'Worker', icon: '⛏', description: 'Field worker on site' },
   { id: 'guest' as UserRole, label: 'Guest', icon: '👤', description: 'Visitor or contractor' },
+  { id: 'buyer' as UserRole, label: 'Buyer', icon: '🛒', description: 'Purchase minerals from mines' },
 ];
 
 
@@ -43,6 +46,8 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pendingApproval, setPendingApproval] = useState(false);
+  const [businessName, setBusinessName] = useState('');
+  const [verificationDocument, setVerificationDocument] = useState<string | null>(null);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
 
@@ -105,7 +110,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   setIsSubmitting(true);
     try {
       if (mode === 'register') {
-        const result = await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedSite, guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined });
+        const result = await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedRole === 'buyer' ? undefined : selectedSite, guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined, businessName: selectedRole === 'buyer' ? businessName.trim() : undefined, verificationDocument: selectedRole === 'buyer' ? verificationDocument ?? undefined : undefined });
         if (result?.pending) {
           setPendingApproval(true);
         } else {
@@ -339,14 +344,52 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   </>
 ) : null}
 
-              <Text style={styles.fieldLabel}>Assigned Site</Text>
-              <View style={styles.siteGrid}>
-                {SITES.map((site) => (
-                  <Pressable key={site} onPress={() => setSelectedSite(site)} style={[styles.sitePill, selectedSite === site && styles.sitePillActive]}>
-                    <Text style={[styles.sitePillText, selectedSite === site && styles.sitePillTextActive]}>{site}</Text>
+              {selectedRole === 'buyer' ? (
+                <>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.fieldLabel}>Business Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={businessName}
+                      onChangeText={setBusinessName}
+                      placeholder="Registered company name"
+                      placeholderTextColor="#8fa3b8"
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <Text style={styles.fieldLabel}>Verification Document</Text>
+                  <Pressable
+                    onPress={async () => {
+                      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                      if (status !== 'granted') { Alert.alert('Permission required', 'Allow photo library access to upload a document.'); return; }
+                      const result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7 });
+                      if (!result.canceled && result.assets[0].base64) {
+                        setVerificationDocument('data:image/jpeg;base64,' + result.assets[0].base64);
+                      }
+                    }}
+                    style={[styles.docUploadBtn, verificationDocument ? styles.docUploadBtnDone : null]}
+                  >
+                    {verificationDocument ? (
+                      <Image source={{ uri: verificationDocument }} style={styles.docThumb} />
+                    ) : null}
+                    <Text style={styles.docUploadText}>{verificationDocument ? '✓ Document attached — tap to change' : '📎 Attach business registration or ID'}</Text>
                   </Pressable>
-                ))}
-              </View>
+                </>
+              ) : null}
+
+              {selectedRole !== 'buyer' ? (
+                <>
+                  <Text style={styles.fieldLabel}>Assigned Site</Text>
+                  <View style={styles.siteGrid}>
+                    {SITES.map((site) => (
+                      <Pressable key={site} onPress={() => setSelectedSite(site)} style={[styles.sitePill, selectedSite === site && styles.sitePillActive]}>
+                        <Text style={[styles.sitePillText, selectedSite === site && styles.sitePillTextActive]}>{site}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              ) : null}
 
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Full Name</Text>
@@ -469,4 +512,8 @@ const styles = StyleSheet.create({
   pendingIcon: { marginBottom: 20 },
   pendingTitle: { color: '#ffffff', fontSize: 22, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
   pendingBody: { color: '#4d6475', fontSize: 14, fontWeight: '600', lineHeight: 22, marginBottom: 32, textAlign: 'center' },
+  docUploadBtn: { alignItems: 'center', backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderStyle: 'dashed', borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 20, padding: 14 },
+  docUploadBtnDone: { borderColor: '#1f6f5b', borderStyle: 'solid' },
+  docUploadText: { color: '#8fa3b8', flex: 1, fontSize: 13, fontWeight: '700' },
+  docThumb: { borderRadius: 6, height: 40, width: 40 },
 });

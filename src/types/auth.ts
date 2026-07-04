@@ -22,4 +22,6 @@ export type AuthPayload = {
   role?: UserRole;
   assignedSite?: string;
   guestSubRole?: string;
+  businessName?: string;
+  verificationDocument?: string;
 };

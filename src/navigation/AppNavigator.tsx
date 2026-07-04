@@ -2,6 +2,7 @@ import { WorkerNavigator } from './WorkerNavigator';
 import { SupervisorNavigator } from './SupervisorNavigator';
 import { SafetyOfficerNavigator } from './SafetyOfficerNavigator';
 import { GuestNavigator } from './GuestNavigator';
+import { BuyerNavigator } from './BuyerNavigator';
 import type { AuthSession } from '../types/auth';
 
 type AppNavigatorProps = {
@@ -17,6 +18,8 @@ export function AppNavigator({ session, onLogout }: AppNavigatorProps) {
       return <SupervisorNavigator session={session} onLogout={onLogout} />;
     case 'safetyOfficer':
       return <SafetyOfficerNavigator session={session} onLogout={onLogout} />;
+    case 'buyer':
+      return <BuyerNavigator session={session} onLogout={onLogout} />;
     case 'guest':
     default:
       return <GuestNavigator session={session} onLogout={onLogout} />;

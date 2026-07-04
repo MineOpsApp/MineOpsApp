@@ -1331,3 +1331,126 @@ export function updateInsuranceConfig(payload: {
 }) {
   return patch<Site>('/sites/insurance-config', payload);
 }
+// ── Marketplace ───────────────────────────────────────────────────────────────
+
+export type MineralListing = {
+  id: number;
+  site: string;
+  mineralType: string;
+  quantity: number;
+  unit: string;
+  grade: string | null;
+  askingPrice: number;
+  location: string | null;
+  availableFrom: string | null;
+  minOrderQuantity: number | null;
+  photoData: string | null;
+  status: string;
+  createdBy: string;
+  createdAt: string;
+};
+
+export type MarketplaceOffer = {
+  id: number;
+  listingId: number;
+  parentOfferId: number | null;
+  buyerEmail: string;
+  buyerName: string;
+  offerPrice: number;
+  offerQuantity: number;
+  message: string | null;
+  status: string;
+  createdAt: string;
+  respondedAt: string | null;
+  respondedBy: string | null;
+};
+
+export type MarketplaceTransaction = {
+  id: number;
+  listingId: number;
+  offerId: number;
+  site: string;
+  buyerEmail: string;
+  buyerName: string;
+  mineralType: string;
+  quantity: number;
+  agreedPrice: number;
+  batchStatus: string;
+  createdAt: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+};
+
+export type PendingBuyer = {
+  id: number;
+  fullName: string;
+  email: string;
+  businessName: string | null;
+  createdAt: string | null;
+};
+
+// Listings
+export function getMarketplaceListings() {
+  return request<MineralListing[]>('/marketplace/listings');
+}
+export function createListing(payload: {
+  mineralType: string;
+  quantity: number;
+  unit: string;
+  grade?: string | null;
+  askingPrice: number;
+  location?: string | null;
+  availableFrom?: string | null;
+  minOrderQuantity?: number | null;
+  photoData?: string | null;
+}) {
+  return post<MineralListing>('/marketplace/listings', payload);
+}
+export function withdrawListing(id: number) {
+  return patch<MineralListing>(`/marketplace/listings/${id}/withdraw`, {});
+}
+
+// Offers
+export function createOffer(listingId: number, payload: { offerPrice: number; offerQuantity: number; message?: string | null }) {
+  return post<MarketplaceOffer>(`/marketplace/listings/${listingId}/offers`, payload);
+}
+export function getMyOffers() {
+  return request<MarketplaceOffer[]>('/marketplace/offers/mine');
+}
+export function getListingOffers(listingId: number) {
+  return request<MarketplaceOffer[]>(`/marketplace/listings/${listingId}/offers`);
+}
+export function counterOffer(offerId: number, payload: { offerPrice: number; offerQuantity: number; message?: string | null }) {
+  return post<MarketplaceOffer>(`/marketplace/offers/${offerId}/counter`, payload);
+}
+export function acceptOffer(offerId: number) {
+  return post<MarketplaceTransaction>(`/marketplace/offers/${offerId}/accept`, {});
+}
+export function rejectOffer(offerId: number) {
+  return post<MarketplaceOffer>(`/marketplace/offers/${offerId}/reject`, {});
+}
+export function withdrawOffer(offerId: number) {
+  return post<MarketplaceOffer>(`/marketplace/offers/${offerId}/withdraw`, {});
+}
+
+// Transactions
+export function getMyTransactions() {
+  return request<MarketplaceTransaction[]>('/marketplace/transactions/mine');
+}
+export function getSiteTransactions() {
+  return request<MarketplaceTransaction[]>('/marketplace/transactions/site');
+}
+export function updateTransactionStatus(id: number, batchStatus: string) {
+  return patch<MarketplaceTransaction>(`/marketplace/transactions/${id}/status`, { batchStatus });
+}
+
+// Buyer verification (supervisor admin)
+export function getPendingBuyers() {
+  return request<PendingBuyer[]>('/admin/buyers/pending');
+}
+export function approveBuyer(email: string) {
+  return post<{ email: string; approved: boolean }>('/admin/buyers/approve', { email });
+}
+export function rejectBuyer(email: string) {
+  return post<{ email: string; rejected: boolean }>('/admin/buyers/reject', { email });
+}
