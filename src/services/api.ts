@@ -1026,6 +1026,7 @@ export type UserProfile = {
   emergencyContactCount: number;
   momoNumber: string | null;
   momoNetwork: string | null;
+  insuranceStatus?: string;
 };
 
 export function getMyProfile() {
@@ -1305,4 +1306,28 @@ export function getPublicInventory() {
 
 export function updateInventoryVisibility(visible: boolean) {
   return patch<Site>('/sites/visibility', { visible });
+}
+
+// ── Worker insurance ──────────────────────────────────────────────────────────
+
+export type InsuranceStatus = {
+  status: 'NOT_INSURED' | 'INSURED' | 'NOT_AVAILABLE';
+  enrolledAt?: string | null;
+};
+
+export function getInsuranceStatus() {
+  return request<InsuranceStatus>('/insurance/status');
+}
+
+export function applyForInsurance() {
+  return post<InsuranceStatus>('/insurance/apply', {});
+}
+
+export function updateInsuranceConfig(payload: {
+  insuranceEnabled?: boolean;
+  insuranceProviderName?: string;
+  insurancePremium?: number | null;
+  insuranceDeductionMode?: 'DEDUCT_FROM_PAY' | 'BILL_TO_MINE';
+}) {
+  return patch<Site>('/sites/insurance-config', payload);
 }

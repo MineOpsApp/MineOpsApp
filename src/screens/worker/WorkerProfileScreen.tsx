@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
-import { getMyProfile, parseApiError, updateMyProfile } from '../../services/api';
-import type { UserProfile } from '../../services/api';
+import { getMyProfile, getInsuranceStatus, applyForInsurance, parseApiError, updateMyProfile } from '../../services/api';
+import type { UserProfile, InsuranceStatus } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
@@ -48,13 +48,28 @@ export function WorkerProfileScreen({ session: _ }: Props) {
   const [editingBio, setEditingBio] = useState(false);
   const [bioText, setBioText] = useState('');
   const [savingBio, setSavingBio] = useState(false);
+  const [insurance, setInsurance] = useState<InsuranceStatus | null>(null);
+  const [applyingInsurance, setApplyingInsurance] = useState(false);
 
   useEffect(() => {
     getMyProfile()
       .then((p) => { setProfile(p); setBioText(p.bio ?? ''); })
       .catch(() => {})
       .finally(() => setLoading(false));
+    getInsuranceStatus().then(setInsurance).catch(() => {});
   }, []);
+
+  async function handleApplyInsurance() {
+    setApplyingInsurance(true);
+    try {
+      const result = await applyForInsurance();
+      setInsurance(result);
+    } catch (e) {
+      Alert.alert('Error', parseApiError(e));
+    } finally {
+      setApplyingInsurance(false);
+    }
+  }
 
   async function pickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -336,6 +351,47 @@ export function WorkerProfileScreen({ session: _ }: Props) {
             <Text style={styles.detailValue}>{formatDate(profile.createdAt)}</Text>
           </View>
         ) : null}
+      </View>
+
+      {/* Insurance */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Insurance</Text>
+        {insurance === null ? (
+          <Text style={styles.bioEmpty}>Loading…</Text>
+        ) : insurance.status === 'NOT_AVAILABLE' ? (
+          <Text style={styles.bioEmpty}>Not offered at this site</Text>
+        ) : insurance.status === 'INSURED' ? (
+          <>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Status</Text>
+              <View style={[styles.statusPill, { backgroundColor: '#dcfce7' }]}>
+                <Text style={[styles.statusPillText, { color: '#15803d' }]}>Insured ✓</Text>
+              </View>
+            </View>
+            {insurance.enrolledAt ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Since</Text>
+                <Text style={styles.detailValue}>{formatDate(insurance.enrolledAt)}</Text>
+              </View>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Status</Text>
+              <Text style={styles.detailValue}>Not enrolled</Text>
+            </View>
+            <Pressable
+              onPress={handleApplyInsurance}
+              style={[styles.bioSaveBtn, applyingInsurance && styles.btnDisabled, { marginTop: 10 }]}
+              disabled={applyingInsurance}
+            >
+              <Text style={styles.bioSaveBtnText}>
+                {applyingInsurance ? 'Applying…' : 'Apply for Insurance'}
+              </Text>
+            </Pressable>
+          </>
+        )}
       </View>
     </ScrollView>
   );
