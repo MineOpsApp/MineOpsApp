@@ -37,6 +37,7 @@ import { SupervisorInsuranceSettingsScreen } from '../screens/supervisor/Supervi
 import { SupervisorListingsScreen } from '../screens/supervisor/SupervisorListingsScreen';
 import { SupervisorOffersScreen } from '../screens/supervisor/SupervisorOffersScreen';
 import { SupervisorTransactionsScreen } from '../screens/supervisor/SupervisorTransactionsScreen';
+import { SafetyIntelligenceScreen } from '../screens/supervisor/SafetyIntelligenceScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -60,7 +61,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -112,6 +113,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'guestCodes') return <View style={{ flex: 1 }}>{backBtn}<SupervisorGuestCodesScreen session={session} /></View>;
   if (screen === 'siteMap') return <View style={{ flex: 1 }}>{backBtn}<SupervisorSiteMapScreen session={session} /></View>;
   if (screen === 'insurance') return <View style={{ flex: 1 }}>{backBtn}<SupervisorInsuranceSettingsScreen session={session} /></View>;
+  if (screen === 'safetyIntelligence') return <View style={{ flex: 1 }}>{backBtn}<SafetyIntelligenceScreen session={session} /></View>;
   if (screen === 'listings') return <View style={{ flex: 1 }}>{backBtn}<SupervisorListingsScreen session={session} /></View>;
   if (screen === 'offers') return <View style={{ flex: 1 }}>{backBtn}<SupervisorOffersScreen session={session} /></View>;
   if (screen === 'transactions') return <View style={{ flex: 1 }}>{backBtn}<SupervisorTransactionsScreen session={session} /></View>;
@@ -140,6 +142,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '🎟', label: 'Guest Codes', description: 'Generate QR / PIN codes for site visitors and inspectors', onPress: () => setScreen('guestCodes') },
         { icon: '🗺', label: 'Site Map', description: 'Upload the site floor plan for the interactive zone map', onPress: () => setScreen('siteMap') },
         { icon: '🛡', label: 'Insurance Settings', description: 'Configure worker insurance enrolment and premium deduction', onPress: () => setScreen('insurance') },
+        { icon: '🧠', label: 'Safety Intelligence', description: 'Hotspots, trending hazard types, and recommendations from the last 30 days', onPress: () => setScreen('safetyIntelligence') },
         { icon: '📋', label: 'Listings', description: 'Create and manage mineral listings for verified buyers', onPress: () => setScreen('listings') },
         { icon: '🤝', label: 'Buyer Offers', description: 'Review, counter, accept or reject incoming offers', onPress: () => setScreen('offers') },
         { icon: '📦', label: 'Transactions', description: 'Track batch dispatch status for sold mineral orders', onPress: () => setScreen('transactions') },

@@ -1454,3 +1454,26 @@ export function approveBuyer(email: string) {
 export function rejectBuyer(email: string) {
   return post<{ email: string; rejected: boolean }>('/admin/buyers/reject', { email });
 }
+
+// Safety Intelligence
+export type SafetyIntelligenceSummary = {
+  hotspots: Array<{
+    location: string;
+    hazardCount: number;
+    incidentCount: number;
+    totalCount: number;
+    mostRecentSeverity: string;
+    mostRecentAt: string | null;
+  }>;
+  trends: Array<{
+    hazardType: string;
+    currentCount: number;
+    priorCount: number;
+    trend: 'NEW' | 'RISING' | 'STABLE';
+  }>;
+  recommendations: string[];
+};
+
+export function getSafetyIntelligenceSummary() {
+  return request<SafetyIntelligenceSummary>('/safety-intelligence/summary');
+}
