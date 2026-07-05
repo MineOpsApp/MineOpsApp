@@ -20,10 +20,12 @@ import {
   previewPayCycle,
   updatePaySplitConfig,
   parseApiError,
+  exportPayCycleCsv,
   type PayCycle,
   type PayCycleDetail,
   type PaySplitConfig,
 } from '../../services/api';
+import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
@@ -75,6 +77,19 @@ export function SupervisorPayRunsScreen({ session }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport(cycleId: number) {
+    setExporting(true);
+    try {
+      const csv = await exportPayCycleCsv(cycleId);
+      await exportAndShareCsv(`pay-cycle-${cycleId}.csv`, csv);
+    } catch (e: any) {
+      setError(e.message ?? 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   // Generate form state
   const defaults = defaultPeriodDates();
@@ -224,7 +239,12 @@ export function SupervisorPayRunsScreen({ session }: Props) {
           <Text style={s.backBtnText}>← Pay Runs</Text>
         </TouchableOpacity>
 
-        <Text style={s.pageTitle}>Pay Run Detail</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', marginBottom: 8 }}>
+          <Text style={[s.pageTitle, { flex: 1, marginBottom: 0 }]}>Pay Run Detail</Text>
+          <TouchableOpacity style={s.exportBtn} onPress={() => handleExport(cycle.id)} disabled={exporting}>
+            <Text style={s.exportBtnText}>{exporting ? '…' : '↓ CSV'}</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={s.card}>
           <View style={s.detailHeaderRow}>
@@ -428,6 +448,8 @@ const s = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
   container: { backgroundColor: '#f4f6f8', padding: 20, paddingBottom: 48 },
   pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
+  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   pageSub: { color: '#5d6875', fontSize: 13, fontWeight: '700', marginBottom: 16 },
 
   backBtn: { marginBottom: 12 },

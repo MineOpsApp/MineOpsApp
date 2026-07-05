@@ -4,7 +4,8 @@ import {
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 
-import { approveShiftLog, getSiteShiftLogs, rejectShiftLog } from '../../services/api';
+import { approveShiftLog, getSiteShiftLogs, rejectShiftLog, exportShiftLogsCsv } from '../../services/api';
+import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { ShiftLog } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
@@ -108,6 +109,19 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actioning, setActioning] = useState<Record<number, boolean>>({});
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const csv = await exportShiftLogsCsv();
+      await exportAndShareCsv('shift-logs.csv', csv);
+    } catch (e: any) {
+      Alert.alert('Export failed', e.message ?? 'Unknown error');
+    } finally {
+      setExporting(false);
+    }
+  }
   const pendingLoad = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function updateFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
@@ -327,10 +341,15 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
           </View>
         ) : null}
 
-        {/* Result count */}
-        <Text style={styles.resultCount}>
-          {logs.length} log{logs.length !== 1 ? 's' : ''} · newest first
-        </Text>
+        {/* Result count + export */}
+        <View style={{ alignItems: 'center', flexDirection: 'row', marginBottom: 8 }}>
+          <Text style={[styles.resultCount, { flex: 1, marginBottom: 0 }]}>
+            {logs.length} log{logs.length !== 1 ? 's' : ''} · newest first
+          </Text>
+          <TouchableOpacity style={styles.exportBtn} onPress={handleExport} disabled={exporting}>
+            <Text style={styles.exportBtnText}>{exporting ? '…' : '↓ CSV'}</Text>
+          </TouchableOpacity>
+        </View>
 
         {logs.length === 0 ? (
           <View style={styles.emptyCard}>
@@ -419,6 +438,8 @@ const styles = StyleSheet.create({
   pendingBanner: { backgroundColor: '#fef3c7', borderColor: '#f59e0b', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 10 },
   pendingBannerText: { color: '#92400e', fontSize: 13, fontWeight: '700' },
   resultCount: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginBottom: 8 },
+  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   emptyCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, padding: 16, alignItems: 'center' },
   emptyText: { color: '#9aa5b1', fontSize: 13, fontWeight: '600' },
   logCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },

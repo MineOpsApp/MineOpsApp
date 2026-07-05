@@ -261,6 +261,30 @@ async function request<T>(path: string): Promise<T> {
   }
 }
 
+async function requestText(path: string): Promise<string> {
+  await maybeRefresh();
+  try {
+    const doFetch = () => fetchWithTimeout(`${API_BASE_URL}${path}`);
+    const response = await doFetch();
+    if (response.status === 401) {
+      const refreshed = await doTokenRefresh();
+      if (refreshed) {
+        const retryRes = await doFetch();
+        if (!retryRes.ok) throw new Error(`${retryRes.status}: ${await retryRes.text()}`);
+        return retryRes.text();
+      }
+      sessionExpiredListener?.();
+      throw new Error('Session expired. Please sign in again.');
+    }
+    if (!response.ok) throw new Error(`${response.status}: ${await response.text()}`);
+    return response.text();
+  } catch (error: any) {
+    if (error?.name === 'AbortError') throw new Error('Request timed out. Check your connection.');
+    if (error?.message?.includes('Network request failed')) throw new Error('Cannot reach server. Check your connection.');
+    throw error;
+  }
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   await maybeRefresh();
   try {
@@ -1665,4 +1689,21 @@ export function getDispute(transactionId: number) {
 }
 export function resolveDispute(disputeId: number, resolutionNotes: string) {
   return patch<TransactionDispute>(`/community/disputes/${disputeId}/resolve`, { resolutionNotes });
+}
+
+// CSV exports
+export function exportHazardsCsv() {
+  return requestText('/hazards/export/csv');
+}
+export function exportIncidentsCsv() {
+  return requestText('/incidents/export/csv');
+}
+export function exportPayCycleCsv(cycleId: number) {
+  return requestText(`/pay/${cycleId}/export/csv`);
+}
+export function exportShiftLogsCsv() {
+  return requestText('/shift-logs/export/csv');
+}
+export function exportTransactionsCsv() {
+  return requestText('/marketplace/transactions/export/csv');
 }

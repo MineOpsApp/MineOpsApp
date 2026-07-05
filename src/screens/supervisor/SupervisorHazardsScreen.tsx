@@ -3,7 +3,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
-import { getSiteHazardReports, reviewHazardReport, closeHazardReport } from '../../services/api';
+import { getSiteHazardReports, reviewHazardReport, closeHazardReport, exportHazardsCsv } from '../../services/api';
+import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { HazardReport } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -44,6 +45,19 @@ export function SupervisorHazardsScreen({ session }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const csv = await exportHazardsCsv();
+      await exportAndShareCsv('hazard-reports.csv', csv);
+    } catch (e: any) {
+      Alert.alert('Export failed', e.message ?? 'Unknown error');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     getSiteHazardReports(0).then((data) => {
@@ -89,7 +103,12 @@ export function SupervisorHazardsScreen({ session }: Props) {
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Hazard Reports</Text>
-        {open.length > 0 && <View style={styles.urgentBadge}><Text style={styles.urgentBadgeText}>{open.length} open</Text></View>}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {open.length > 0 && <View style={styles.urgentBadge}><Text style={styles.urgentBadgeText}>{open.length} open</Text></View>}
+          <Pressable style={styles.exportBtn} onPress={handleExport} disabled={exporting}>
+            <Text style={styles.exportBtnText}>{exporting ? '…' : '↓ CSV'}</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Summary strip — always uses unfiltered totals */}
@@ -178,6 +197,8 @@ const styles = StyleSheet.create({
   container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
   pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
   pageTitle: { color: '#17212b', flex: 1, fontSize: 22, fontWeight: '900' },
+  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   urgentBadge: { backgroundColor: '#b42318', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   urgentBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   strip: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },

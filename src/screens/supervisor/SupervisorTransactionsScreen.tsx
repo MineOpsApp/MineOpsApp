@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-import { getSiteTransactions, updateTransactionStatus, submitRating, raiseDispute, parseApiError, type MarketplaceTransaction } from '../../services/api';
+import { getSiteTransactions, updateTransactionStatus, submitRating, raiseDispute, parseApiError, exportTransactionsCsv, type MarketplaceTransaction } from '../../services/api';
+import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { AuthSession } from '../../types/auth';
 
 type Props = { session: AuthSession };
@@ -34,6 +35,19 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
   const [disputeTx, setDisputeTx] = useState<MarketplaceTransaction | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
   const [submittingDispute, setSubmittingDispute] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const csv = await exportTransactionsCsv();
+      await exportAndShareCsv('marketplace-transactions.csv', csv);
+    } catch (e: any) {
+      Alert.alert('Export failed', e.message ?? 'Unknown error');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   function load() {
     return getSiteTransactions().then(setTransactions).catch(() => {});
@@ -125,7 +139,12 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
     >
-      <Text style={styles.title}>Transactions</Text>
+      <View style={{ alignItems: 'center', flexDirection: 'row', marginBottom: 2 }}>
+        <Text style={[styles.title, { flex: 1, marginBottom: 0 }]}>Transactions</Text>
+        <TouchableOpacity style={styles.exportBtn} onPress={handleExport} disabled={exporting}>
+          <Text style={styles.exportBtnText}>{exporting ? '…' : '↓ CSV'}</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.subtitle}>Site transaction history — pull to refresh</Text>
 
       {transactions.length === 0 ? (
@@ -246,6 +265,8 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
 const styles = StyleSheet.create({
   container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
   title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
+  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   subtitle: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
   emptyCard: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 40 },
   emptyIcon: { fontSize: 32, marginBottom: 10 },

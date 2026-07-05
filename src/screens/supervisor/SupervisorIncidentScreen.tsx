@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getSiteIncidents, updateIncidentStatus } from '../../services/api';
+import { getSiteIncidents, updateIncidentStatus, exportIncidentsCsv } from '../../services/api';
+import { exportAndShareCsv } from '../../utils/exportCsv';
 import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AuthSession } from '../../types/auth';
 
@@ -83,6 +84,19 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
   const [investigationNotes, setInvestigationNotes] = useState<Record<number, string>>({});
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const csv = await exportIncidentsCsv();
+      await exportAndShareCsv('incident-reports.csv', csv);
+    } catch (e: any) {
+      Alert.alert('Export failed', e.message ?? 'Unknown error');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   function load() { return getSiteIncidents().then(setIncidents).catch(() => {}); }
   useEffect(() => { load(); }, []);
@@ -113,7 +127,12 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
     >
-      <Text style={styles.pageTitle}>Incident Reports</Text>
+      <View style={{ alignItems: 'center', flexDirection: 'row', marginBottom: 2 }}>
+        <Text style={[styles.pageTitle, { flex: 1 }]}>Incident Reports</Text>
+        <Pressable style={styles.exportBtn} onPress={handleExport} disabled={exporting}>
+          <Text style={styles.exportBtnText}>{exporting ? '…' : '↓ CSV'}</Text>
+        </Pressable>
+      </View>
       <Text style={styles.pageSub}>Pull to refresh</Text>
 
       {/* Summary strip — always uses unfiltered totals */}
@@ -239,6 +258,8 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
 const styles = StyleSheet.create({
   container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
   pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
+  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   pageSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
   strip: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
   stripItem: { alignItems: 'center', flex: 1 },
