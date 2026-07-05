@@ -1691,6 +1691,18 @@ export function resolveDispute(disputeId: number, resolutionNotes: string) {
   return patch<TransactionDispute>(`/community/disputes/${disputeId}/resolve`, { resolutionNotes });
 }
 
+// Search
+export type SearchResults = {
+  hazards: { id: number; hazardType: string; location: string; severity: string; status: string; createdAt: string }[];
+  incidents: { id: number; category: string; severity: string; zone: string; description: string; status: string; reportedAt: string }[];
+  workers: { id: number; fullName: string; email: string; role: string }[];
+  listings: { id: number; mineralType: string; location: string; quantity: number; unit: string; askingPrice: number; site: string }[];
+  forumPosts: { id: number; title: string; body: string; authorName: string; createdAt: string }[];
+};
+export function search(q: string) {
+  return request<SearchResults>(`/search?q=${encodeURIComponent(q)}`);
+}
+
 // CSV exports
 export function exportHazardsCsv() {
   return requestText('/hazards/export/csv');

@@ -13,6 +13,7 @@ import { WorkerProfileViewScreen } from '../screens/supervisor/WorkerProfileView
 import { SupervisorMessagesScreen } from '../screens/supervisor/SupervisorMessagesScreen';
 import { SafetyIntelligenceScreen } from '../screens/supervisor/SafetyIntelligenceScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
+import { SearchScreen } from '../screens/SearchScreen';
 import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
@@ -40,7 +41,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SafetyMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile' | 'messages' | 'safetyIntelligence' | 'community'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile' | 'messages' | 'safetyIntelligence' | 'community' | 'search'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -71,6 +72,7 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
   );
   if (screen === 'messages') return <View style={{ flex: 1 }}>{backBtn}<SupervisorMessagesScreen session={session} /></View>;
   if (screen === 'community') return <View style={{ flex: 1 }}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></View>;
+  if (screen === 'search') return <View style={{ flex: 1 }}>{backBtn}<SearchScreen session={session} /></View>;
 
   return (
     <MoreScreen
@@ -81,6 +83,7 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
         { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
         { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
         { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
+        { icon: '🔍', label: 'Search', description: 'Find hazards, incidents, workers, listings, and forum posts', onPress: () => setScreen('search') },
       ]}
     />
   );

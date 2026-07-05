@@ -9,12 +9,14 @@ import { BuyerListingsScreen } from '../screens/buyer/BuyerListingsScreen';
 import { BuyerOffersScreen } from '../screens/buyer/BuyerOffersScreen';
 import { BuyerTransactionsScreen } from '../screens/buyer/BuyerTransactionsScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
+import { SearchScreen } from '../screens/SearchScreen';
 
 export type BuyerTabParamList = {
   Listings: undefined;
   Offers: undefined;
   Transactions: undefined;
   Community: undefined;
+  Search: undefined;
 };
 
 const Tab = createBottomTabNavigator<BuyerTabParamList>();
@@ -24,6 +26,7 @@ const TAB_ICONS: Record<string, string> = {
   Offers: '🤝',
   Transactions: '📦',
   Community: '🌐',
+  Search: '🔍',
 };
 
 type Props = { session: AuthSession; onLogout: () => void };
@@ -53,6 +56,7 @@ export function BuyerNavigator({ session, onLogout }: Props) {
         <Tab.Screen name="Offers" children={() => <BuyerOffersScreen session={session} />} />
         <Tab.Screen name="Transactions" children={() => <BuyerTransactionsScreen session={session} />} />
         <Tab.Screen name="Community" children={() => <CommunityScreen isSupervisor={false} userEmail={session.user.email} />} />
+        <Tab.Screen name="Search" children={() => <SearchScreen session={session} />} />
       </Tab.Navigator>
     </View>
   );

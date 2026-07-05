@@ -23,6 +23,7 @@ import { WorkerMessagesScreen } from '../screens/worker/WorkerMessagesScreen';
 import { WorkerLoneWorkerScreen } from '../screens/worker/WorkerLoneWorkerScreen';
 import { WorkerPayScreen } from '../screens/worker/WorkerPayScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
+import { SearchScreen } from '../screens/SearchScreen';
 
 import type { AuthSession } from '../types/auth';
 
@@ -44,7 +45,7 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
-type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker' | 'pay' | 'community';
+type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker' | 'pay' | 'community' | 'search';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -184,6 +185,15 @@ function WorkerMoreStack({
     </View>
   );
 
+  if (screen === 'search') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <SearchScreen session={session} />
+    </View>
+  );
+
   return (
     <MoreScreen
       items={[
@@ -200,6 +210,7 @@ function WorkerMoreStack({
         { icon: '🛡', label: 'Lone Worker', description: 'Enable check-in timer when working alone or underground', onPress: () => setScreen('loneWorker') },
         { icon: '💰', label: 'My Pay', description: 'View pay history and manage your MoMo disbursement details', onPress: () => setScreen('pay') },
         { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
+        { icon: '🔍', label: 'Search', description: 'Find hazards, workers, listings, and forum posts', onPress: () => setScreen('search') },
       ]}
     />
   );
