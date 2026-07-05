@@ -1,10 +1,10 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import { useEffect, useState } from 'react';
 import type { AuthSession } from '../types/auth';
-import { getUnreadNotificationCount } from '../services/api';
+import { getUnreadNotificationCount, getMySites, switchSite, type SiteAccess } from '../services/api';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { getQueue } from '../utils/offlineQueue';
 
@@ -27,6 +27,11 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifVisible, setNotifVisible] = useState(false);
   const [queueLength, setQueueLength] = useState(0);
+  const [sitePickerVisible, setSitePickerVisible] = useState(false);
+  const [accessibleSites, setAccessibleSites] = useState<SiteAccess[]>([]);
+  const [switching, setSwitching] = useState(false);
+
+  const isSupervisor = session.user.role === 'supervisor';
 
 useEffect(() => {
   const check = async () => {
@@ -64,6 +69,11 @@ useEffect(() => {
   const interval = setInterval(checkQueue, 10000);
   return () => clearInterval(interval);
 }, []);
+
+useEffect(() => {
+  if (!isSupervisor) return;
+  getMySites().then(setAccessibleSites).catch(() => {});
+}, [isSupervisor]);
 
   function cycleTheme() {
     if (mode === 'system') setMode('light');
@@ -104,6 +114,15 @@ useEffect(() => {
 
         {/* Right: actions */}
         <View style={styles.actions}>
+          {isSupervisor && accessibleSites.length > 1 && (
+            <>
+              <Pressable onPress={() => setSitePickerVisible(true)} style={styles.actionBtn} hitSlop={10}>
+                <Text style={styles.actionIcon}>🏭</Text>
+                <Text style={styles.actionLabel}>Sites</Text>
+              </Pressable>
+              <View style={styles.divider} />
+            </>
+          )}
           <Pressable onPress={() => setNotifVisible(true)} style={styles.actionBtn} hitSlop={10}>
             <View>
               <Text style={styles.actionIcon}>🔔</Text>
@@ -127,6 +146,53 @@ useEffect(() => {
           </Pressable>
         </View>
       </View>
+
+      <Modal
+        visible={sitePickerVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSitePickerVisible(false)}
+      >
+        <SafeAreaView style={[styles.modalSafe, { backgroundColor: '#0d1117' }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: 'rgba(255,255,255,0.1)' }]}>
+            <Text style={styles.modalTitle}>Switch Site</Text>
+            <Pressable onPress={() => setSitePickerVisible(false)} hitSlop={12} style={styles.closeBtn}>
+              <Text style={styles.closeIcon}>✕</Text>
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 20, gap: 10 }}>
+            {accessibleSites.map((s, i) => (
+              <Pressable
+                key={i}
+                disabled={s.isCurrent || switching}
+                onPress={async () => {
+                  setSwitching(true);
+                  try {
+                    await switchSite(s.site);
+                    const updated = await getMySites();
+                    setAccessibleSites(updated);
+                    setSitePickerVisible(false);
+                  } catch { /* ignore */ }
+                  setSwitching(false);
+                }}
+                style={[
+                  styles.siteRow,
+                  s.isCurrent && styles.siteRowActive,
+                ]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.siteName}>{s.site}</Text>
+                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 2 }}>
+                    {s.isHome && <Text style={styles.siteTag}>HOME</Text>}
+                    {s.isCurrent && <Text style={[styles.siteTag, { color: '#4ade80' }]}>ACTIVE</Text>}
+                  </View>
+                </View>
+                {!s.isCurrent && <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 16 }}>→</Text>}
+              </Pressable>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
 
       <Modal
         visible={notifVisible}
@@ -209,4 +275,14 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   syncBannerText: { color: '#fde68a', fontSize: 12, fontWeight: '700' },
+  siteRow: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+  },
+  siteRowActive: { backgroundColor: 'rgba(63,185,80,0.15)', borderColor: '#3fb950', borderWidth: 1 },
+  siteName: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+  siteTag: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
 });

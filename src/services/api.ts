@@ -1748,3 +1748,25 @@ export function exportShiftLogsCsv() {
 export function exportTransactionsCsv() {
   return requestText('/marketplace/transactions/export/csv');
 }
+
+// Multi-site access
+export type SiteAccess = {
+  id: number | null;
+  site: string;
+  isCurrent: boolean;
+  isHome: boolean;
+  grantedByEmail: string | null;
+  grantedAt: string | null;
+};
+export function getMySites() {
+  return request<SiteAccess[]>('/my-sites');
+}
+export function switchSite(site: string) {
+  return post<void>('/my-sites/switch', { site });
+}
+export function grantSiteAccess(supervisorEmail: string, site: string) {
+  return post<SiteAccess>('/my-sites/grant', { supervisorEmail, site });
+}
+export function revokeSiteAccess(id: number) {
+  return del<void>(`/my-sites/grant/${id}`);
+}
