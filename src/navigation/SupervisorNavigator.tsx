@@ -38,6 +38,7 @@ import { SupervisorListingsScreen } from '../screens/supervisor/SupervisorListin
 import { SupervisorOffersScreen } from '../screens/supervisor/SupervisorOffersScreen';
 import { SupervisorTransactionsScreen } from '../screens/supervisor/SupervisorTransactionsScreen';
 import { SafetyIntelligenceScreen } from '../screens/supervisor/SafetyIntelligenceScreen';
+import CommunityScreen from '../screens/community/CommunityScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -61,7 +62,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -117,6 +118,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'listings') return <View style={{ flex: 1 }}>{backBtn}<SupervisorListingsScreen session={session} /></View>;
   if (screen === 'offers') return <View style={{ flex: 1 }}>{backBtn}<SupervisorOffersScreen session={session} /></View>;
   if (screen === 'transactions') return <View style={{ flex: 1 }}>{backBtn}<SupervisorTransactionsScreen session={session} /></View>;
+  if (screen === 'community') return <View style={{ flex: 1 }}>{backBtn}<CommunityScreen isSupervisor userEmail={session.user.email} /></View>;
   return (
     <MoreScreen
       items={[
@@ -146,6 +148,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '📋', label: 'Listings', description: 'Create and manage mineral listings for verified buyers', onPress: () => setScreen('listings') },
         { icon: '🤝', label: 'Buyer Offers', description: 'Review, counter, accept or reject incoming offers', onPress: () => setScreen('offers') },
         { icon: '📦', label: 'Transactions', description: 'Track batch dispatch status for sold mineral orders', onPress: () => setScreen('transactions') },
+        { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
       ]}
     />
   );

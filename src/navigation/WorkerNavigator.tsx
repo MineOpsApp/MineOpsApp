@@ -22,6 +22,7 @@ import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerMessagesScreen } from '../screens/worker/WorkerMessagesScreen';
 import { WorkerLoneWorkerScreen } from '../screens/worker/WorkerLoneWorkerScreen';
 import { WorkerPayScreen } from '../screens/worker/WorkerPayScreen';
+import CommunityScreen from '../screens/community/CommunityScreen';
 
 import type { AuthSession } from '../types/auth';
 
@@ -43,7 +44,7 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
-type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker' | 'pay';
+type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker' | 'pay' | 'community';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -174,6 +175,15 @@ function WorkerMoreStack({
     </View>
   );
 
+  if (screen === 'community') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <CommunityScreen isSupervisor={false} userEmail={session.user.email} />
+    </View>
+  );
+
   return (
     <MoreScreen
       items={[
@@ -189,6 +199,7 @@ function WorkerMoreStack({
         { icon: '💬', label: 'Message Supervisor', description: 'Send a quick message to your site supervisor', onPress: () => setScreen('messages') },
         { icon: '🛡', label: 'Lone Worker', description: 'Enable check-in timer when working alone or underground', onPress: () => setScreen('loneWorker') },
         { icon: '💰', label: 'My Pay', description: 'View pay history and manage your MoMo disbursement details', onPress: () => setScreen('pay') },
+        { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
       ]}
     />
   );

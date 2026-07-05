@@ -1477,3 +1477,187 @@ export type SafetyIntelligenceSummary = {
 export function getSafetyIntelligenceSummary() {
   return request<SafetyIntelligenceSummary>('/safety-intelligence/summary');
 }
+
+// ── Community ─────────────────────────────────────────────────────────────────
+
+export type MineProfile = {
+  name: string;
+  mineralsProduced: string;
+  productionCapacity: string;
+  establishedYear: number;
+  profileDescription: string;
+  contactEmail: string;
+  safetyScore: number;
+};
+
+export type BuyerProfile = {
+  fullName: string;
+  email: string;
+  companyName: string;
+  buyerVerificationStatus: string;
+};
+
+export type ForumPost = {
+  id: number;
+  category: string;
+  subforum: string;
+  authorEmail: string;
+  authorName: string;
+  authorRole: string;
+  title: string;
+  body: string;
+  replyCount: number;
+  createdAt: string;
+};
+
+export type ForumReply = {
+  id: number;
+  postId: number;
+  authorEmail: string;
+  authorName: string;
+  authorRole: string;
+  body: string;
+  createdAt: string;
+};
+
+export type CommunityEvent = {
+  id: number;
+  title: string;
+  description: string;
+  eventType: string;
+  eventDate: string;
+  createdByEmail: string;
+  createdByName: string;
+  createdAt: string;
+};
+
+export type JobPosting = {
+  id: number;
+  site: string;
+  title: string;
+  description: string;
+  postedByEmail: string;
+  postedByName: string;
+  status: string;
+  createdAt: string;
+};
+
+export type JobInterest = {
+  id: number;
+  jobPostingId: number;
+  applicantEmail: string;
+  applicantName: string;
+  applicantRole: string;
+  message: string;
+  createdAt: string;
+};
+
+export type MarketplaceRating = {
+  id: number;
+  transactionId: number;
+  raterEmail: string;
+  raterRole: string;
+  reliability: number;
+  communication: number;
+  productQuality: number | null;
+  listingAccuracy: number | null;
+  comment: string | null;
+  createdAt: string;
+};
+
+export type TransactionDispute = {
+  id: number;
+  transactionId: number;
+  raisedByEmail: string;
+  raisedByRole: string;
+  reason: string;
+  status: string;
+  resolutionNotes: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+};
+
+// Directory
+export function getMines() {
+  return request<MineProfile[]>('/community/mines');
+}
+export function getMine(siteName: string) {
+  return request<MineProfile>(`/community/mines/${encodeURIComponent(siteName)}`);
+}
+export function getVerifiedBuyers() {
+  return request<BuyerProfile[]>('/community/buyers');
+}
+export function updateMineProfile(payload: Partial<Omit<MineProfile, 'name' | 'safetyScore'>>) {
+  return patch<MineProfile>('/community/mine-profile', payload);
+}
+
+// Forum
+export function getForumPosts(subforum?: string, category?: string) {
+  const params = new URLSearchParams();
+  if (subforum) params.set('subforum', subforum);
+  if (category) params.set('category', category);
+  const qs = params.toString();
+  return request<ForumPost[]>(`/forum/posts${qs ? '?' + qs : ''}`);
+}
+export function createForumPost(payload: { title: string; body: string; subforum?: string; category?: string }) {
+  return post<ForumPost>('/forum/posts', payload);
+}
+export function getPostReplies(postId: number) {
+  return request<ForumReply[]>(`/forum/posts/${postId}/replies`);
+}
+export function createReply(postId: number, body: string) {
+  return post<ForumReply>(`/forum/posts/${postId}/replies`, { body });
+}
+
+// Events
+export function getCommunityEvents() {
+  return request<CommunityEvent[]>('/community/events');
+}
+export function createCommunityEvent(payload: { title: string; description?: string; eventType?: string; eventDate: string }) {
+  return post<CommunityEvent>('/community/events', payload);
+}
+
+// Job board
+export function getJobPostings() {
+  return request<JobPosting[]>('/community/jobs');
+}
+export function createJobPosting(payload: { title: string; description?: string }) {
+  return post<JobPosting>('/community/jobs', payload);
+}
+export function closeJobPosting(id: number) {
+  return patch<JobPosting>(`/community/jobs/${id}/close`, {});
+}
+export function expressJobInterest(id: number, message?: string) {
+  return post<JobInterest>(`/community/jobs/${id}/interest`, { message: message ?? '' });
+}
+export function getJobInterest(id: number) {
+  return request<JobInterest[]>(`/community/jobs/${id}/interest`);
+}
+
+// Ratings
+export function submitRating(transactionId: number, payload: {
+  reliability: number;
+  communication: number;
+  productQuality?: number;
+  listingAccuracy?: number;
+  comment?: string;
+}) {
+  return post<MarketplaceRating>(`/community/transactions/${transactionId}/ratings`, payload);
+}
+export function getMineRatings(siteName: string) {
+  return request<MarketplaceRating[]>(`/community/mines/${encodeURIComponent(siteName)}/ratings`);
+}
+export function getBuyerRatings(email: string) {
+  return request<MarketplaceRating[]>(`/community/buyers/${encodeURIComponent(email)}/ratings`);
+}
+
+// Disputes
+export function raiseDispute(transactionId: number, reason: string) {
+  return post<TransactionDispute>(`/community/transactions/${transactionId}/dispute`, { reason });
+}
+export function getDispute(transactionId: number) {
+  return request<TransactionDispute>(`/community/transactions/${transactionId}/dispute`);
+}
+export function resolveDispute(disputeId: number, resolutionNotes: string) {
+  return patch<TransactionDispute>(`/community/disputes/${disputeId}/resolve`, { resolutionNotes });
+}
