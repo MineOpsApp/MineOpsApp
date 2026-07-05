@@ -1073,6 +1073,11 @@ export type SupervisorDashboard = {
   certExpiringSoon: number;
   announcements: { id: number; content: string; createdByName: string; createdAt: string }[];
   activeLoneWorkers: { id: number; workerName: string; intervalMinutes: number; lastCheckedInAt: string; deadline: string; alerted: boolean }[];
+  safetyScore: number;
+  safetyRecommendationCount: number;
+  pendingBuyerVerifications: number;
+  pendingMarketplaceOffers: number;
+  openDisputes: number;
 };
 
 export function getSupervisorDashboard() {

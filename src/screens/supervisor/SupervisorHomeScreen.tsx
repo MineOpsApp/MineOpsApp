@@ -56,9 +56,19 @@ export function SupervisorHomeScreen({ session }: Props) {
             <Text style={styles.greeting}>{greeting}, {session.user.fullName.split(' ')[0]}</Text>
             <Text style={styles.site}>{session.user.assignedSite ?? 'Mine Site'}</Text>
           </View>
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>Live</Text>
+          <View style={styles.heroBadges}>
+            {dash && (
+              <View style={[styles.scoreBadge,
+                dash.safetyScore >= 80 ? styles.scoreBadgeGreen
+                  : dash.safetyScore >= 50 ? styles.scoreBadgeAmber
+                  : styles.scoreBadgeRed]}>
+                <Text style={styles.scoreText}>Safety {dash.safetyScore}</Text>
+              </View>
+            )}
+            <View style={styles.liveBadge}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveText}>Live</Text>
+            </View>
           </View>
         </View>
 
@@ -144,6 +154,30 @@ export function SupervisorHomeScreen({ session }: Props) {
                   <Text style={styles.actionCardValue}>{dash.hazardCount}</Text>
                   <Text style={styles.actionCardLabel}>Active hazard{dash.hazardCount !== 1 ? 's' : ''} on site</Text>
                   <Text style={styles.actionCardHint}>Hazards tab</Text>
+                </View>
+              )}
+              {dash.pendingBuyerVerifications > 0 && (
+                <View style={[styles.actionCard, styles.actionCardYellow]}>
+                  <Text style={styles.actionCardIcon}>👤</Text>
+                  <Text style={styles.actionCardValue}>{dash.pendingBuyerVerifications}</Text>
+                  <Text style={styles.actionCardLabel}>Pending buyer verification{dash.pendingBuyerVerifications !== 1 ? 's' : ''}</Text>
+                  <Text style={styles.actionCardHint}>More → Pending Approvals</Text>
+                </View>
+              )}
+              {dash.pendingMarketplaceOffers > 0 && (
+                <View style={[styles.actionCard, styles.actionCardGreen]}>
+                  <Text style={styles.actionCardIcon}>📦</Text>
+                  <Text style={styles.actionCardValue}>{dash.pendingMarketplaceOffers}</Text>
+                  <Text style={styles.actionCardLabel}>Offer{dash.pendingMarketplaceOffers !== 1 ? 's' : ''} awaiting response</Text>
+                  <Text style={styles.actionCardHint}>Marketplace → Offers</Text>
+                </View>
+              )}
+              {dash.openDisputes > 0 && (
+                <View style={[styles.actionCard, styles.actionCardRed]}>
+                  <Text style={styles.actionCardIcon}>⚑</Text>
+                  <Text style={styles.actionCardValue}>{dash.openDisputes}</Text>
+                  <Text style={styles.actionCardLabel}>Open dispute{dash.openDisputes !== 1 ? 's' : ''} on site transactions</Text>
+                  <Text style={styles.actionCardHint}>Community → Transactions</Text>
                 </View>
               )}
             </View>
@@ -244,6 +278,12 @@ const styles = StyleSheet.create({
   hero: { alignItems: 'center', backgroundColor: '#17212b', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
   greeting: { color: '#fff', fontSize: 16, fontWeight: '800' },
   site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  heroBadges: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  scoreBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+  scoreBadgeGreen: { backgroundColor: 'rgba(74,222,128,0.18)' },
+  scoreBadgeAmber: { backgroundColor: 'rgba(251,191,36,0.22)' },
+  scoreBadgeRed: { backgroundColor: 'rgba(248,113,113,0.22)' },
+  scoreText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   liveBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
   liveDot: { backgroundColor: '#4ade80', borderRadius: 4, height: 7, width: 7 },
   liveText: { color: '#fff', fontSize: 12, fontWeight: '700' },

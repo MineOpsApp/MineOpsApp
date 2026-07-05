@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { SosButton } from '../../components/SosButton';
-import { getSiteHazardAlerts, getDangerZones } from '../../services/api';
+import { getSiteHazardAlerts, getDangerZones, getSupervisorDashboard, type SupervisorDashboard } from '../../services/api';
 import type { HazardReport, DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -11,28 +11,63 @@ type Props = { session: AuthSession };
 export function SafetyHomeScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [zones, setZones] = useState<DangerZone[]>([]);
+  const [dash, setDash] = useState<SupervisorDashboard | null>(null);
   const [connectionError, setConnectionError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getSiteHazardAlerts().then(setHazards).catch(() => setConnectionError(true));
-getDangerZones().then(setZones).catch(() => setConnectionError(true));
-  }, []);
+  async function load() {
+    try {
+      const [h, z, d] = await Promise.all([
+        getSiteHazardAlerts(),
+        getDangerZones(),
+        getSupervisorDashboard(),
+      ]);
+      setHazards(h);
+      setZones(z);
+      setDash(d);
+      setConnectionError(false);
+    } catch {
+      setConnectionError(true);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function refresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
 
   const openHazards = hazards.filter((h) => h.status.toUpperCase() === 'OPEN');
   const activeZones = zones.filter((z) => z.status !== 'Cleared');
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+      >
 
         <View style={styles.hero}>
           <View>
             <Text style={styles.greeting}>Safety Overview</Text>
             <Text style={styles.site}>{session.user.assignedSite ?? 'Obuasi Mine'}</Text>
           </View>
-          <View style={[styles.statusBadge, openHazards.length > 0 ? styles.statusBadgeRed : styles.statusBadgeGreen]}>
-            <View style={[styles.statusDot, { backgroundColor: openHazards.length > 0 ? '#f87171' : '#4ade80' }]} />
-            <Text style={styles.statusText}>{openHazards.length > 0 ? 'Alerts Active' : 'All Clear'}</Text>
+          <View style={styles.heroBadges}>
+            {dash && (
+              <View style={[styles.scoreBadge,
+                dash.safetyScore >= 80 ? styles.scoreBadgeGreen
+                  : dash.safetyScore >= 50 ? styles.scoreBadgeAmber
+                  : styles.scoreBadgeRed]}>
+                <Text style={styles.scoreText}>Safety {dash.safetyScore}</Text>
+              </View>
+            )}
+            <View style={[styles.statusBadge, openHazards.length > 0 ? styles.statusBadgeRed : styles.statusBadgeGreen]}>
+              <View style={[styles.statusDot, { backgroundColor: openHazards.length > 0 ? '#f87171' : '#4ade80' }]} />
+              <Text style={styles.statusText}>{openHazards.length > 0 ? 'Alerts Active' : 'All Clear'}</Text>
+            </View>
           </View>
         </View>
            {connectionError ? (
@@ -56,6 +91,16 @@ getDangerZones().then(setZones).catch(() => setConnectionError(true));
             <Text style={styles.stripLabel}>Total Reports</Text>
           </View>
         </View>
+
+        {dash && dash.safetyRecommendationCount > 0 && (
+          <View style={styles.recoCard}>
+            <Text style={styles.recoIcon}>🛡</Text>
+            <View style={styles.recoBody}>
+              <Text style={styles.recoTitle}>{dash.safetyRecommendationCount} safety recommendation{dash.safetyRecommendationCount !== 1 ? 's' : ''}</Text>
+              <Text style={styles.recoHint}>More → Safety Intelligence</Text>
+            </View>
+          </View>
+        )}
 
         <Text style={styles.sectionTitle}>Open Hazards</Text>
         {openHazards.length === 0 ? (
@@ -110,6 +155,17 @@ const styles = StyleSheet.create({
   hero: { alignItems: 'center', backgroundColor: '#17212b', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
   greeting: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
   site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  heroBadges: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  scoreBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+  scoreBadgeGreen: { backgroundColor: 'rgba(74,222,128,0.18)' },
+  scoreBadgeAmber: { backgroundColor: 'rgba(251,191,36,0.22)' },
+  scoreBadgeRed: { backgroundColor: 'rgba(248,113,113,0.22)' },
+  scoreText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  recoCard: { alignItems: 'center', backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 4, marginHorizontal: 20, marginTop: 16, padding: 14 },
+  recoIcon: { fontSize: 20 },
+  recoBody: { flex: 1 },
+  recoTitle: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
+  recoHint: { color: '#a16207', fontSize: 11, fontWeight: '600' },
   statusBadge: { alignItems: 'center', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
   statusBadgeGreen: { backgroundColor: 'rgba(74,222,128,0.15)' },
   statusBadgeRed: { backgroundColor: 'rgba(248,113,113,0.15)' },
