@@ -1691,6 +1691,33 @@ export function resolveDispute(disputeId: number, resolutionNotes: string) {
   return patch<TransactionDispute>(`/community/disputes/${disputeId}/resolve`, { resolutionNotes });
 }
 
+// Notifications
+export type AppNotification = {
+  id: number;
+  type: string;
+  title: string;
+  body: string;
+  relatedEntityType: string | null;
+  relatedEntityId: number | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export function getNotifications(page: number) {
+  return request<{ content: AppNotification[]; totalElements: number; last: boolean }>(
+    `/notifications?page=${page}&size=20&sort=createdAt,desc`
+  );
+}
+export function getUnreadNotificationCount() {
+  return request<{ count: number }>('/notifications/unread-count');
+}
+export function markNotificationRead(id: number) {
+  return patch<AppNotification>(`/notifications/${id}/read`, {});
+}
+export function markAllNotificationsRead() {
+  return patch<void>('/notifications/read-all', {});
+}
+
 // Search
 export type SearchResults = {
   hazards: { id: number; hazardType: string; location: string; severity: string; status: string; createdAt: string }[];

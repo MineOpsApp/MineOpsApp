@@ -1,9 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import { useEffect, useState } from 'react';
 import type { AuthSession } from '../types/auth';
+import { getUnreadNotificationCount } from '../services/api';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
 
 type AppHeaderProps = {
   session: AuthSession;
@@ -21,11 +23,12 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
   const { mode, setMode } = useThemeMode();
   const theme = useTheme(mode);
   const [serverDown, setServerDown] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifVisible, setNotifVisible] = useState(false);
 
 useEffect(() => {
   const check = async () => {
     try {
-      
       setServerDown(false);
     } catch {
       setServerDown(true);
@@ -33,6 +36,18 @@ useEffect(() => {
   };
   check();
   const interval = setInterval(check, 30000);
+  return () => clearInterval(interval);
+}, []);
+
+useEffect(() => {
+  const fetchUnread = async () => {
+    try {
+      const res = await getUnreadNotificationCount();
+      setUnreadCount(res.count);
+    } catch { /* best-effort */ }
+  };
+  fetchUnread();
+  const interval = setInterval(fetchUnread, 30000);
   return () => clearInterval(interval);
 }, []);
 
@@ -68,6 +83,18 @@ useEffect(() => {
 
         {/* Right: actions */}
         <View style={styles.actions}>
+          <Pressable onPress={() => setNotifVisible(true)} style={styles.actionBtn} hitSlop={10}>
+            <View>
+              <Text style={styles.actionIcon}>🔔</Text>
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : String(unreadCount)}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.actionLabel}>Alerts</Text>
+          </Pressable>
+          <View style={styles.divider} />
           <Pressable onPress={cycleTheme} style={styles.actionBtn} hitSlop={10}>
             <Text style={styles.actionIcon}>{themeIcon}</Text>
             <Text style={styles.actionLabel}>{themeLabel}</Text>
@@ -79,6 +106,23 @@ useEffect(() => {
           </Pressable>
         </View>
       </View>
+
+      <Modal
+        visible={notifVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setNotifVisible(false)}
+      >
+        <SafeAreaView style={[styles.modalSafe, { backgroundColor: '#0d1117' }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: 'rgba(255,255,255,0.1)' }]}>
+            <Text style={styles.modalTitle}>Notifications</Text>
+            <Pressable onPress={() => setNotifVisible(false)} hitSlop={12} style={styles.closeBtn}>
+              <Text style={styles.closeIcon}>✕</Text>
+            </Pressable>
+          </View>
+          <NotificationsScreen onUnreadChange={setUnreadCount} />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -113,4 +157,28 @@ const styles = StyleSheet.create({
   actionIcon: { color: '#ffffff', fontSize: 16, textAlign: 'center' },
   actionLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
   divider: { backgroundColor: 'rgba(255,255,255,0.12)', height: 36, marginHorizontal: 4, width: 1 },
+  badge: {
+    alignItems: 'center',
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+    justifyContent: 'center',
+    minWidth: 16,
+    paddingHorizontal: 3,
+    position: 'absolute',
+    right: -6,
+    top: -4,
+  },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
+  modalSafe: { flex: 1 },
+  modalHeader: {
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  modalTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
+  closeBtn: { padding: 4 },
+  closeIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '700' },
 });
