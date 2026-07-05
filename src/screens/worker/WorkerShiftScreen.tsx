@@ -3,6 +3,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 
 import { ActionButton } from '../../components/ActionButton';
 import { getMyShiftLogs, getSiteEquipment, parseApiError, submitShiftLog } from '../../services/api';
+import { enqueue } from '../../utils/offlineQueue';
+import NetInfo from '@react-native-community/netinfo';
 import type { ShiftLog } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
@@ -107,13 +109,26 @@ export function WorkerShiftScreen({ session: _ }: Props) {
 
     setSubmitting(true);
     try {
-      const log = await submitShiftLog({
+      const payload = {
         zone, shiftType, mineralType,
         volumeExtracted: parseFloat(volume),
         unit, equipmentCode, equipmentName,
         notes: notes.trim(),
         shiftDate,
-      });
+      };
+
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+      if (!isOnline) {
+        await enqueue('shiftLog', payload as Record<string, unknown>);
+        setVolume('');
+        setNotes('');
+        setVolumeTouched(false);
+        Alert.alert('Saved offline', 'Shift log queued — will send automatically when you reconnect.');
+        return;
+      }
+
+      const log = await submitShiftLog(payload);
       setLogs((prev) => [log, ...prev]);
       setVolume('');
       setNotes('');

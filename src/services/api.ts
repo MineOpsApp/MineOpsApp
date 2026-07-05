@@ -438,7 +438,8 @@ export function createHazardReport(report: {
   description: string;
   severity?: string;
   latitude?: number; longitude?: number;
-  photoData?: string
+  photoData?: string;
+  clientRequestId?: string;
 }) {
   return post<HazardReport>('/hazards', report);
 }
@@ -490,6 +491,7 @@ export function submitShiftLog(payload: {
   equipmentName: string;
   notes?: string;
   shiftDate?: string;
+  clientRequestId?: string;
 }) {
   return post<any>('/shift-logs', payload);
 }
@@ -656,8 +658,8 @@ export function savePushToken(token: string) {
   return post<any>('/auth/push-token', { token });
 }
 
-export function clockIn(zone?: string, notes?: string) {
-  return post<any>('/attendance/clock-in', { zone, notes });
+export function clockIn(zone?: string, notes?: string, clientRequestId?: string) {
+  return post<any>('/attendance/clock-in', { zone, notes, clientRequestId });
 }
 
 export function clockOut() {

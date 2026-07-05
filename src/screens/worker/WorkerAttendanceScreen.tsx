@@ -3,6 +3,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { ActionButton } from '../../components/ActionButton';
 import { clockIn, clockOut, getMyAttendanceStatus, getMyAttendanceHistory } from '../../services/api';
+import { enqueue } from '../../utils/offlineQueue';
+import NetInfo from '@react-native-community/netinfo';
 import type { AuthSession } from '../../types/auth';
 
 type AttendanceRecord = {
@@ -44,6 +46,13 @@ export function WorkerAttendanceScreen({ session }: Props) {
   async function handleClockIn() {
     setLoading(true);
     try {
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+      if (!isOnline) {
+        await enqueue('clockIn', { zone: selectedZone });
+        Alert.alert('Saved offline', `Clock-in for ${selectedZone} queued — will send when you reconnect.`);
+        return;
+      }
       const record = await clockIn(selectedZone);
       setOnSite(true);
       setActiveRecord(record);
@@ -66,6 +75,15 @@ export function WorkerAttendanceScreen({ session }: Props) {
         text: 'Clock Out', style: 'destructive', onPress: async () => {
           setLoading(true);
           try {
+            const netState = await NetInfo.fetch();
+            const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+            if (!isOnline) {
+              await enqueue('clockOut', {});
+              setOnSite(false);
+              setActiveRecord(null);
+              Alert.alert('Saved offline', 'Clock-out queued — will send when you reconnect.');
+              return;
+            }
             const record = await clockOut();
             setOnSite(false);
             setActiveRecord(null);

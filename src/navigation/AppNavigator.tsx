@@ -1,8 +1,12 @@
+import { useEffect } from 'react';
+import { AppState } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { WorkerNavigator } from './WorkerNavigator';
 import { SupervisorNavigator } from './SupervisorNavigator';
 import { SafetyOfficerNavigator } from './SafetyOfficerNavigator';
 import { GuestNavigator } from './GuestNavigator';
 import { BuyerNavigator } from './BuyerNavigator';
+import { drainQueue } from '../utils/offlineQueue';
 import type { AuthSession } from '../types/auth';
 
 type AppNavigatorProps = {
@@ -11,6 +15,23 @@ type AppNavigatorProps = {
 };
 
 export function AppNavigator({ session, onLogout }: AppNavigatorProps) {
+  useEffect(() => {
+    const unsubNet = NetInfo.addEventListener(state => {
+      if (state.isConnected && state.isInternetReachable !== false) {
+        drainQueue().catch(() => {});
+      }
+    });
+    const unsubApp = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        drainQueue().catch(() => {});
+      }
+    });
+    return () => {
+      unsubNet();
+      unsubApp.remove();
+    };
+  }, []);
+
   switch (session.user.role) {
     case 'worker':
       return <WorkerNavigator session={session} onLogout={onLogout} />;

@@ -17,4 +17,5 @@ export type CreateSosAlertRequest = {
   message: string;
   actorName: string;
   actorEmail: string;
+  clientRequestId?: string;
 };

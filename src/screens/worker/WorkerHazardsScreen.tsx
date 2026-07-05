@@ -5,7 +5,9 @@ import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
 import { createHazardReport, getHazardReports } from '../../services/api';
+import { enqueue } from '../../utils/offlineQueue';
 import type { HazardReport } from '../../types/actions';
+import NetInfo from '@react-native-community/netinfo';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
@@ -85,7 +87,7 @@ useEffect(() => {
         }
       } catch { /* location optional */ }
 
-      const report = await createHazardReport({
+      const payload = {
         description,
         hazardType: hazardType.trim() || 'General',
         location: hazardLocation.trim() || 'Unspecified',
@@ -97,7 +99,18 @@ useEffect(() => {
         latitude,
         longitude,
         photoData: photo ?? undefined,
-      });
+      };
+
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+      if (!isOnline) {
+        await enqueue('hazard', payload as Record<string, unknown>);
+        setHazardDescription('');
+        Alert.alert('Saved offline', 'Hazard report queued — will send automatically when you reconnect.');
+        return;
+      }
+
+      const report = await createHazardReport(payload);
       setHazards((c) => [report, ...c]);
       setHazardDescription('');
       Alert.alert('Hazard reported', `Report #${report.id} sent to safety team.`);

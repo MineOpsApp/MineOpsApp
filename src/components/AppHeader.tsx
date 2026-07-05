@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { AuthSession } from '../types/auth';
 import { getUnreadNotificationCount } from '../services/api';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
+import { getQueue } from '../utils/offlineQueue';
 
 type AppHeaderProps = {
   session: AuthSession;
@@ -25,6 +26,7 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
   const [serverDown, setServerDown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifVisible, setNotifVisible] = useState(false);
+  const [queueLength, setQueueLength] = useState(0);
 
 useEffect(() => {
   const check = async () => {
@@ -51,6 +53,18 @@ useEffect(() => {
   return () => clearInterval(interval);
 }, []);
 
+useEffect(() => {
+  const checkQueue = async () => {
+    try {
+      const q = await getQueue();
+      setQueueLength(q.length);
+    } catch { /* best-effort */ }
+  };
+  checkQueue();
+  const interval = setInterval(checkQueue, 10000);
+  return () => clearInterval(interval);
+}, []);
+
   function cycleTheme() {
     if (mode === 'system') setMode('light');
     else if (mode === 'light') setMode('dark');
@@ -68,6 +82,13 @@ useEffect(() => {
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: headerBg }]}>
       {/* Green accent line at very top */}
       <View style={[styles.accentLine, { backgroundColor: accentLine }]} />
+      {queueLength > 0 && (
+        <View style={styles.syncBanner}>
+          <Text style={styles.syncBannerText}>
+            ⏳ {queueLength} action{queueLength !== 1 ? 's' : ''} waiting to sync
+          </Text>
+        </View>
+      )}
       <View style={styles.header}>
         {/* Left: brand + user info */}
         <View style={styles.left}>
@@ -181,4 +202,11 @@ const styles = StyleSheet.create({
   modalTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
   closeBtn: { padding: 4 },
   closeIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '700' },
+  syncBanner: {
+    alignItems: 'center',
+    backgroundColor: '#7c4f00',
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+  },
+  syncBannerText: { color: '#fde68a', fontSize: 12, fontWeight: '700' },
 });

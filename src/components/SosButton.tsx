@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 
 import { createSosAlert } from '../services/api';
+import { enqueue } from '../utils/offlineQueue';
 import type { AuthUser } from '../types/auth';
 import type { UserRole } from '../types/role';
 
@@ -13,21 +15,31 @@ type SosButtonProps = {
 export function SosButton({ role, user }: SosButtonProps) {
   const [onCooldown, setOnCooldown] = useState(false);
   async function sendAlert() {
-  try {
-    const alert = await createSosAlert({
+    const netState = await NetInfo.fetch();
+    const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+    const payload = {
       actorEmail: user.email,
       actorName: user.fullName,
       message: 'Emergency assistance requested',
       role,
       site: user.assignedSite ?? 'Obuasi Mine',
-    });
-    setOnCooldown(true);
-    setTimeout(() => setOnCooldown(false), 60000);
-    Alert.alert('SOS sent', `Alert #${alert.id} — help is on the way.`);
-  } catch {
-    Alert.alert('SOS failed', 'Could not send alert. Try again.');
+    };
+    if (!isOnline) {
+      await enqueue('sos', payload as Record<string, unknown>);
+      setOnCooldown(true);
+      setTimeout(() => setOnCooldown(false), 60000);
+      Alert.alert('SOS queued', 'No signal — alert saved and will send automatically when you reconnect.');
+      return;
+    }
+    try {
+      const alert = await createSosAlert(payload);
+      setOnCooldown(true);
+      setTimeout(() => setOnCooldown(false), 60000);
+      Alert.alert('SOS sent', `Alert #${alert.id} — help is on the way.`);
+    } catch {
+      Alert.alert('SOS failed', 'Could not send alert. Try again.');
+    }
   }
-}
 
   function handlePress() {
   if (onCooldown) {
