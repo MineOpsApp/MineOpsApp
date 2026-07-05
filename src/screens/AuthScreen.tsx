@@ -47,6 +47,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [pendingApproval, setPendingApproval] = useState(false);
   const [businessName, setBusinessName] = useState('');
+  const [goldbodLicenseNumber, setGoldbodLicenseNumber] = useState('');
   const [verificationDocument, setVerificationDocument] = useState<string | null>(null);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
@@ -110,7 +111,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   setIsSubmitting(true);
     try {
       if (mode === 'register') {
-        const result = await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedRole === 'buyer' ? undefined : selectedSite, guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined, businessName: selectedRole === 'buyer' ? businessName.trim() : undefined, verificationDocument: selectedRole === 'buyer' ? verificationDocument ?? undefined : undefined });
+        const result = await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedRole === 'buyer' ? undefined : selectedSite, guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined, businessName: selectedRole === 'buyer' ? businessName.trim() : undefined, verificationDocument: selectedRole === 'buyer' ? verificationDocument ?? undefined : undefined, goldbodLicenseNumber: selectedRole === 'buyer' && goldbodLicenseNumber.trim() ? goldbodLicenseNumber.trim() : undefined });
         if (result?.pending) {
           setPendingApproval(true);
         } else {
@@ -355,6 +356,18 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                       placeholder="Registered company name"
                       placeholderTextColor="#8fa3b8"
                       autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.fieldLabel}>GoldBod License Number <Text style={{ color: '#8fa3b8', fontWeight: '500' }}>(optional — required to bid on gold)</Text></Text>
+                    <TextInput
+                      style={styles.input}
+                      value={goldbodLicenseNumber}
+                      onChangeText={setGoldbodLicenseNumber}
+                      placeholder="e.g. GB-T1-2025-00123"
+                      placeholderTextColor="#8fa3b8"
+                      autoCapitalize="characters"
                       returnKeyType="next"
                     />
                   </View>

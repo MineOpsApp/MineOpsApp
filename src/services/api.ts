@@ -1417,6 +1417,7 @@ export type PendingBuyer = {
   fullName: string;
   email: string;
   businessName: string | null;
+  goldbodLicenseNumber: string | null;
   createdAt: string | null;
 };
 

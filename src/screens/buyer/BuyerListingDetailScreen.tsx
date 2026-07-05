@@ -10,12 +10,15 @@ type Props = {
   onBack: () => void;
 };
 
-export function BuyerListingDetailScreen({ session: _, listing, onBack }: Props) {
+export function BuyerListingDetailScreen({ session, listing, onBack }: Props) {
   const [offerPrice, setOfferPrice] = useState('');
   const [offerQty, setOfferQty] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const isGoldListing = listing.mineralType?.toLowerCase() === 'gold';
+  const hasGoldbodLicense = !!(session.user.goldbodLicenseNumber?.trim());
 
   async function handleSubmitOffer() {
     const price = parseFloat(offerPrice);
@@ -77,6 +80,14 @@ export function BuyerListingDetailScreen({ session: _, listing, onBack }: Props)
             <Pressable onPress={onBack} style={styles.backListingBtn}>
               <Text style={styles.backListingBtnText}>Back to listings</Text>
             </Pressable>
+          </View>
+        ) : isGoldListing && !hasGoldbodLicense ? (
+          <View style={styles.blockedCard}>
+            <Text style={styles.blockedIcon}>🪪</Text>
+            <Text style={styles.blockedTitle}>GoldBod License Required</Text>
+            <Text style={styles.blockedBody}>
+              Since 1 May 2025, a valid GoldBod license number is required to place offers on gold listings in Ghana. Add your license number in your profile to proceed.
+            </Text>
           </View>
         ) : (
           <View style={styles.offerCard}>
@@ -150,4 +161,8 @@ const styles = StyleSheet.create({
   successSub: { color: '#5d6875', fontSize: 13, fontWeight: '600', lineHeight: 20, marginBottom: 20, textAlign: 'center' },
   backListingBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 10, paddingHorizontal: 28, paddingVertical: 12 },
   backListingBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+  blockedCard: { alignItems: 'center', backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 12, borderWidth: 1, padding: 28 },
+  blockedIcon: { fontSize: 36, marginBottom: 12 },
+  blockedTitle: { color: '#92400e', fontSize: 16, fontWeight: '900', marginBottom: 8 },
+  blockedBody: { color: '#92400e', fontSize: 13, fontWeight: '600', lineHeight: 20, textAlign: 'center' },
 });

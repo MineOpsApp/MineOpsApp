@@ -193,6 +193,7 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
                       <Text style={styles.name}>{buyer.fullName}</Text>
                       <Text style={styles.email}>{buyer.email}</Text>
                       {buyer.businessName ? <Text style={styles.meta}>🏢 {buyer.businessName}</Text> : null}
+                      <Text style={styles.meta}>🪪 GoldBod: {buyer.goldbodLicenseNumber ?? 'Not provided'}</Text>
                       {buyer.createdAt ? <Text style={styles.time}>Registered {formatDate(buyer.createdAt)}</Text> : null}
                     </View>
                     <View style={styles.buyerBadge}><Text style={styles.buyerBadgeText}>BUYER</Text></View>

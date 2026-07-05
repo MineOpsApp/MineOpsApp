@@ -7,6 +7,7 @@ export type AuthUser = {
   role: UserRole;
   assignedSite?: string;
   guestSubRole?: string;
+  goldbodLicenseNumber?: string | null;
 };
 
 export type AuthSession = {
@@ -24,4 +25,5 @@ export type AuthPayload = {
   guestSubRole?: string;
   businessName?: string;
   verificationDocument?: string;
+  goldbodLicenseNumber?: string;
 };
