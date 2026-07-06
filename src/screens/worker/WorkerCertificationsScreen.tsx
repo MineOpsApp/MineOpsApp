@@ -41,14 +41,16 @@ export function WorkerCertificationsScreen({ session: _ }: Props) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [historyCache, setHistoryCache] = useState<Record<number, CertificationHistory[]>>({});
   const [loadingHistory, setLoadingHistory] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   async function load() {
-    try { setCerts(await getMyCertifications()); } catch {}
+    try { setCerts(await getMyCertifications()); } catch { setLoadError(true); }
   }
 
   useEffect(() => { load().finally(() => setLoading(false)); }, []);
 
   async function refresh() {
+    setLoadError(false);
     setRefreshing(true);
     await load();
     setRefreshing(false);
@@ -105,7 +107,11 @@ export function WorkerCertificationsScreen({ session: _ }: Props) {
         </View>
       </View>
 
-      {certs.length === 0 ? (
+      {loadError && certs.length === 0 ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>Could not load certifications. Pull to refresh.</Text>
+        </View>
+      ) : certs.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No certifications on file</Text>
           <Text style={styles.emptySub}>Your supervisor will add certifications to your profile.</Text>
@@ -195,6 +201,8 @@ const styles = StyleSheet.create({
   emptyCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, padding: 20, alignItems: 'center' },
   emptyTitle: { color: '#17212b', fontSize: 14, fontWeight: '800', marginBottom: 6 },
   emptySub: { color: '#9aa5b1', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
   certCard: { borderRadius: 10, borderWidth: 1.5, marginBottom: 12, padding: 14 },
   certHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
   certName: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 2 },

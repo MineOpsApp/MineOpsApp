@@ -174,6 +174,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
     if (!form.issuingAuthority.trim()) return Alert.alert('Required', 'Enter the issuing authority.');
     if (!form.issueDate.match(/^\d{4}-\d{2}-\d{2}$/)) return Alert.alert('Invalid', 'Issue date must be YYYY-MM-DD.');
     if (!form.expiryDate.match(/^\d{4}-\d{2}-\d{2}$/)) return Alert.alert('Invalid', 'Expiry date must be YYYY-MM-DD.');
+    if (form.issueDate >= form.expiryDate) return Alert.alert('Invalid dates', 'Expiry date must be after issue date.');
     if (!editingCert && !form.workerId) return Alert.alert('Required', 'Select a worker.');
 
     const payload: CertificationPayload = {

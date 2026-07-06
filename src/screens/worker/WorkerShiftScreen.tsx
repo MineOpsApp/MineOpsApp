@@ -106,6 +106,7 @@ export function WorkerShiftScreen({ session: _ }: Props) {
     const err = validateVolume(volume, unit);
     if (err) { Alert.alert('Invalid volume', err); return; }
     if (!equipmentCode.trim()) { Alert.alert('Required', 'Select or enter equipment.'); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(shiftDate)) { Alert.alert('Invalid date', 'Shift date must be in YYYY-MM-DD format (e.g. 2026-07-06).'); return; }
 
     setSubmitting(true);
     try {

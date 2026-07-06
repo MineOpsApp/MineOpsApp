@@ -44,6 +44,7 @@ export function WorkerPayScreen({ session: _ }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   // MoMo edit state
   const [editingMomo, setEditingMomo] = useState(false);
@@ -60,14 +61,16 @@ export function WorkerPayScreen({ session: _ }: Props) {
       setProfile(prof);
       setMomoNumber(prof.momoNumber ?? '');
       setMomoNetwork(prof.momoNetwork ?? '');
-    } catch {}
+    } catch {
+      setLoadError(true);
+    }
     setLoading(false);
     setRefreshing(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const onRefresh = () => { setRefreshing(true); load(); };
+  const onRefresh = () => { setLoadError(false); setRefreshing(true); load(); };
 
   const saveMomo = async () => {
     setMomoError('');
@@ -103,6 +106,11 @@ export function WorkerPayScreen({ session: _ }: Props) {
     >
       <Text style={s.pageTitle}>My Pay</Text>
       <Text style={s.pageSub}>Payment history and MoMo details</Text>
+      {loadError ? (
+        <View style={s.errorBanner}>
+          <Text style={s.errorBannerText}>Could not load pay data. Pull to refresh.</Text>
+        </View>
+      ) : null}
 
       {/* MoMo section */}
       <View style={s.card}>
@@ -270,4 +278,6 @@ const s = StyleSheet.create({
   emptyIcon: { fontSize: 36, marginBottom: 10 },
   emptyText: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 4 },
   emptySubText: { color: '#5d6875', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 14 },
+  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 });

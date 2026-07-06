@@ -16,7 +16,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 
-import { loginUser, registerUser, tryRestoreSession, setAuthToken, redeemGuestCode } from '../services/api';
+import { loginUser, parseApiError, registerUser, redeemGuestCode, setAuthToken, tryRestoreSession } from '../services/api';
 import type { AuthSession } from '../types/auth';
 import type { UserRole } from '../types/role';
 
@@ -102,10 +102,12 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   if (mode === 'register') {
     if (!fullName.trim()) { Alert.alert('Missing information', 'Enter your full name.'); return; }
     if (!email.trim()) { Alert.alert('Missing information', 'Enter your email.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
     if (password.length < 6) { Alert.alert('Weak password', 'Password must be at least 6 characters.'); return; }
     if (password !== confirmPassword) { Alert.alert('Password mismatch', 'Passwords do not match.'); return; }
   } else {
     if (!email.trim() || !password.trim()) { Alert.alert('Missing information', 'Enter your email and password.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
   }
 
   setIsSubmitting(true);
@@ -136,7 +138,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
       } else if (msg.includes('400')) {
         Alert.alert('Invalid details', 'Check your information and try again.');
       } else {
-        Alert.alert('Connection failed', 'Could not reach the server. Check your connection.');
+        Alert.alert('Error', parseApiError(error));
       }
     } finally {
       setIsSubmitting(false);

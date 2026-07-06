@@ -26,13 +26,16 @@ export function WorkerMessagesScreen({ session }: Props) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   async function load() {
     try {
       const data = await getMyWorkerMessages();
       setMessages(data);
-    } catch { /* silent */ }
+    } catch {
+      setLoadError(true);
+    }
   }
 
   useEffect(() => {
@@ -40,6 +43,7 @@ export function WorkerMessagesScreen({ session }: Props) {
   }, []);
 
   async function refresh() {
+    setLoadError(false);
     setRefreshing(true);
     await load();
     setRefreshing(false);
@@ -117,6 +121,10 @@ export function WorkerMessagesScreen({ session }: Props) {
         {/* History */}
         {loading ? (
           <ActivityIndicator color="#1f6f5b" style={{ marginTop: 24 }} />
+        ) : loadError && messages.length === 0 ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorCardText}>Could not load messages. Pull to refresh.</Text>
+          </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyIcon}>💬</Text>
@@ -198,6 +206,16 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: { opacity: 0.4 },
   sendBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  errorCard: {
+    backgroundColor: '#2d1212',
+    borderColor: '#6e3333',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12,
+    padding: 14,
+  },
+  errorCardText: { color: '#f87171', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
   emptyCard: {
     alignItems: 'center',

@@ -85,6 +85,7 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [exporting, setExporting] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   async function handleExport() {
     setExporting(true);
@@ -98,7 +99,10 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
     }
   }
 
-  function load() { return getSiteIncidents().then(setIncidents).catch(() => {}); }
+  function load() {
+    setLoadError(false);
+    return getSiteIncidents().then(setIncidents).catch(() => { setLoadError(true); });
+  }
   useEffect(() => { load(); }, []);
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
@@ -182,11 +186,17 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
       </View>
 
       {incidents.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>✓</Text>
-          <Text style={styles.emptyTitle}>No incidents reported</Text>
-          <Text style={styles.emptySub}>Site is clear</Text>
-        </View>
+        loadError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>Failed to load incidents. Pull to refresh.</Text>
+          </View>
+        ) : (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyIcon}>✓</Text>
+            <Text style={styles.emptyTitle}>No incidents reported</Text>
+            <Text style={styles.emptySub}>Site is clear</Text>
+          </View>
+        )
       ) : visible.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyText}>No incidents match the selected filters</Text>
@@ -278,6 +288,8 @@ const styles = StyleSheet.create({
   emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
   emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
   emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
   incidentCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 8, padding: 14 },
   incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
   incidentLeft: { flex: 1 },

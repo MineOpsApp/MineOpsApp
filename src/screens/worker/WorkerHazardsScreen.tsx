@@ -4,7 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
-import { createHazardReport, getHazardReports } from '../../services/api';
+import { createHazardReport, getHazardReports, parseApiError } from '../../services/api';
 import { enqueue } from '../../utils/offlineQueue';
 import type { HazardReport } from '../../types/actions';
 import NetInfo from '@react-native-community/netinfo';
@@ -114,23 +114,11 @@ useEffect(() => {
       setHazards((c) => [report, ...c]);
       setHazardDescription('');
       Alert.alert('Hazard reported', `Report #${report.id} sent to safety team.`);
-    } catch {
-      Alert.alert('Failed', 'Could not submit the hazard report.');
+    } catch (e) {
+      Alert.alert('Failed', parseApiError(e));
     } finally {
       setLoading(false);
     }
-
-    async function loadMore() {
-  setLoadingMore(true);
-  const nextPage = page + 1;
-  try {
-    const data = await getHazardReports(session.user.email, nextPage);
-    setHazards((c) => [...c, ...(data.content ?? [])]);
-    setPage(nextPage);
-    setHasMore(nextPage < data.totalPages - 1);
-  } catch {} finally { setLoadingMore(false); }
-}
-
   }
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>

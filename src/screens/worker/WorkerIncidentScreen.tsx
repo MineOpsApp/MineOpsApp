@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
-import { createIncident, getMyIncidents } from '../../services/api';
+import { createIncident, getMyIncidents, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { useEffect } from 'react';
 
@@ -116,8 +116,8 @@ export function WorkerIncidentScreen({ session }: Props) {
       Alert.alert('Incident reported', severity === 'Critical' || severity === 'Serious'
         ? 'Your supervisor and safety officer have been notified.'
         : 'Incident recorded successfully.');
-    } catch {
-      Alert.alert('Failed', 'Could not submit incident report.');
+    } catch (e) {
+      Alert.alert('Failed', parseApiError(e));
     } finally { setLoading(false); }
   }
 

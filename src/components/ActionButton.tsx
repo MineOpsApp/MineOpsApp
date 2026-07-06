@@ -4,14 +4,16 @@ type ActionButtonProps = {
   label: string;
   onPress: () => void;
   tone?: 'default' | 'danger';
+  disabled?: boolean;
 };
 
-export function ActionButton({ label, onPress, tone = 'default' }: ActionButtonProps) {
+export function ActionButton({ label, onPress, tone = 'default', disabled = false }: ActionButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={[styles.button, tone === 'danger' && styles.dangerButton]}
+      disabled={disabled}
+      style={[styles.button, tone === 'danger' && styles.dangerButton, disabled && styles.disabledButton]}
     >
       <Text style={styles.text}>{label}</Text>
     </Pressable>
@@ -30,6 +32,9 @@ const styles = StyleSheet.create({
   },
   dangerButton: {
     backgroundColor: '#b42318',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   text: {
     color: '#ffffff',

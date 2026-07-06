@@ -89,7 +89,7 @@ const [suspending, setSuspending] = useState(false);
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>The worker will receive a temporary password to log in. They should update it immediately.</Text>
           </View>
-          <ActionButton label={loading ? 'Resetting...' : 'Reset Password'} onPress={handleReset} />
+          <ActionButton label={loading ? 'Resetting...' : 'Reset Password'} onPress={handleReset} disabled={loading} />
         </View>
         
       )}
@@ -107,13 +107,22 @@ const [suspending, setSuspending] = useState(false);
   />
   <View style={styles.suspendRow}>
     <Pressable
-      onPress={() => handleSuspend(true)}
-      style={[styles.suspendBtn, styles.suspendBtnRed]}>
+      disabled={suspending}
+      onPress={() => Alert.alert(
+        'Suspend account?',
+        'This will prevent the worker from logging in. You can reinstate them at any time.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Suspend', style: 'destructive', onPress: () => handleSuspend(true) },
+        ]
+      )}
+      style={[styles.suspendBtn, styles.suspendBtnRed, suspending && { opacity: 0.6 }]}>
       <Text style={styles.suspendBtnText}>{suspending ? '...' : 'Suspend'}</Text>
     </Pressable>
     <Pressable
+      disabled={suspending}
       onPress={() => handleSuspend(false)}
-      style={[styles.suspendBtn, styles.suspendBtnGreen]}>
+      style={[styles.suspendBtn, styles.suspendBtnGreen, suspending && { opacity: 0.6 }]}>
       <Text style={styles.suspendBtnText}>{suspending ? '...' : 'Reinstate'}</Text>
     </Pressable>
   </View>

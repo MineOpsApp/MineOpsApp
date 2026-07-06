@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
-import { getNotices, createNotice } from '../../services/api';
+import { getNotices, createNotice, parseApiError } from '../../services/api';
 import type { Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -13,17 +13,22 @@ export function SafetyNoticesScreen({ session }: Props) {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [title, setTitle] = useState('Safety Alert');
   const [message, setMessage] = useState('');
+  const [posting, setPosting] = useState(false);
 
   useEffect(() => {
     getNotices().then(setNotices).catch(() => {});
   }, []);
 
   async function post() {
+    if (!title.trim()) { Alert.alert('Required', 'Enter a notice title.'); return; }
+    if (!message.trim()) { Alert.alert('Required', 'Enter the notice message.'); return; }
+    setPosting(true);
     try {
-      const notice = await createNotice({ title: title.trim() || 'Safety Alert', message: message.trim() || 'Safety notice posted', postedByRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email });
+      const notice = await createNotice({ title: title.trim(), message: message.trim(), postedByRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email });
       setNotices((c) => [notice, ...c]);
       Alert.alert('Posted', `Notice #${notice.id} posted.`);
-    } catch { Alert.alert('Action failed', 'Could not post notice.'); }
+    } catch (e) { Alert.alert('Action failed', parseApiError(e)); }
+    finally { setPosting(false); }
   }
 
   return (
@@ -31,7 +36,7 @@ export function SafetyNoticesScreen({ session }: Props) {
       <Text style={styles.title}>Notices</Text>
       <InputField label="Title" onChangeText={setTitle} value={title} />
       <InputField label="Message" multiline onChangeText={setMessage} value={message} placeholder="Enter notice details..." />
-      <ActionButton label="Post Notice" onPress={post} />
+      <ActionButton label={posting ? 'Posting...' : 'Post Notice'} onPress={post} disabled={posting} />
       <Text style={styles.sectionTitle}>Posted Notices</Text>
       {notices.map((n) => (
         <View key={n.id} style={styles.card}>

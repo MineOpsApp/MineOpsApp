@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
-import { scheduleBlast, getAllBlasts, cancelBlast, executeBlast } from '../../services/api';
+import { scheduleBlast, getAllBlasts, cancelBlast, executeBlast, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 
 type BlastSchedule = {
@@ -44,10 +44,8 @@ export function SupervisorBlastScreen({ session }: Props) {
       setBlasts((c) => [blast, ...c]);
       setNotes('');
       Alert.alert('Blast scheduled', `Blasting in ${zone} in ${minutesAhead} minutes. All site users have been notified.`);
-    } catch (error: any) {
-      const msg = error?.message ?? '';
-      if (msg.includes('400')) Alert.alert('Too soon', 'Blast must be at least 5 minutes in advance.');
-      else Alert.alert('Failed', 'Could not schedule blast.');
+    } catch (e) {
+      Alert.alert('Failed', parseApiError(e));
     } finally { setLoading(false); }
   }
 
@@ -130,7 +128,7 @@ export function SupervisorBlastScreen({ session }: Props) {
           </Text>
         </View>
 
-        <ActionButton label={loading ? 'Scheduling...' : `Schedule Blast in ${zone}`} onPress={handleSchedule} tone="danger" />
+        <ActionButton label={loading ? 'Scheduling...' : `Schedule Blast in ${zone}`} onPress={handleSchedule} tone="danger" disabled={loading} />
       </View>
 
       {/* Active blasts */}

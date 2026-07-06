@@ -3,7 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
-import { getWorkerProfile, updateWorkerEquipmentStatus, reportEquipmentFault, requestEquipmentMaintenance, logEquipmentShift, getEquipmentShiftLogs } from '../../services/api';
+import { getWorkerProfile, updateWorkerEquipmentStatus, reportEquipmentFault, requestEquipmentMaintenance, logEquipmentShift, getEquipmentShiftLogs, parseApiError } from '../../services/api';
 import type { WorkerProfile } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -42,6 +42,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
   const [shiftNotes, setShiftNotes] = useState('');
   const [faultDescription, setFaultDescription] = useState('');
   const [maintenanceDetails, setMaintenanceDetails] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     getWorkerProfile(session.user.email).then(setProfile).catch(() => {});
@@ -54,30 +55,36 @@ export function WorkerEquipmentScreen({ session }: Props) {
 
   async function logShift() {
     if (!equipment) { Alert.alert('No equipment', 'No equipment assigned.'); return; }
+    setSubmitting(true);
     try {
       const log = await logEquipmentShift({ equipmentCode: equipment.code, equipmentName: equipment.name, status: shiftStatus, checkType, notes: shiftNotes.trim() });
       setShiftLogs((c) => [log, ...c]);
       setShiftNotes('');
       Alert.alert('Logged', `${CHECK_LABELS[checkType]} — ${shiftStatus}`);
-    } catch { Alert.alert('Failed', 'Could not log equipment status.'); }
+    } catch (e) { Alert.alert('Failed', parseApiError(e)); }
+    finally { setSubmitting(false); }
   }
 
   async function reportFault() {
     if (!equipment) { Alert.alert('No equipment', 'Load profile first.'); return; }
+    setSubmitting(true);
     try {
       await reportEquipmentFault({ description: faultDescription.trim() || 'Fault reported', equipmentCode: equipment.code, workerEmail: session.user.email, workerName: session.user.fullName });
       setFaultDescription('');
       Alert.alert('Fault reported', 'Your report has been submitted.');
-    } catch { Alert.alert('Failed', 'Could not report fault.'); }
+    } catch (e) { Alert.alert('Failed', parseApiError(e)); }
+    finally { setSubmitting(false); }
   }
 
   async function requestMaintenance() {
     if (!equipment) { Alert.alert('No equipment', 'Load profile first.'); return; }
+    setSubmitting(true);
     try {
       await requestEquipmentMaintenance({ equipmentCode: equipment.code, requestDetails: maintenanceDetails.trim() || 'Maintenance requested', workerEmail: session.user.email, workerName: session.user.fullName });
       setMaintenanceDetails('');
       Alert.alert('Requested', 'Maintenance request submitted.');
-    } catch { Alert.alert('Failed', 'Could not request maintenance.'); }
+    } catch (e) { Alert.alert('Failed', parseApiError(e)); }
+    finally { setSubmitting(false); }
   }
 
   function formatTime(dateStr: string) {
@@ -132,7 +139,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
           })}
         </View>
         <InputField label="Notes (optional)" multiline onChangeText={setShiftNotes} value={shiftNotes} placeholder="Any observations..." />
-        <ActionButton label="Log Shift Check" onPress={logShift} />
+        <ActionButton label={submitting ? 'Saving...' : 'Log Shift Check'} onPress={logShift} disabled={submitting} />
       </View>
 
       {/* Recent logs */}
@@ -159,14 +166,14 @@ export function WorkerEquipmentScreen({ session }: Props) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Report Fault</Text>
         <InputField label="Fault details" multiline onChangeText={setFaultDescription} value={faultDescription} placeholder="Describe the fault..." />
-        <ActionButton label="Report Fault" onPress={reportFault} tone="danger" />
+        <ActionButton label={submitting ? 'Submitting...' : 'Report Fault'} onPress={reportFault} tone="danger" disabled={submitting} />
       </View>
 
       {/* Maintenance */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Request Maintenance</Text>
         <InputField label="Details" multiline onChangeText={setMaintenanceDetails} value={maintenanceDetails} placeholder="What maintenance is needed?" />
-        <ActionButton label="Request Service" onPress={requestMaintenance} />
+        <ActionButton label={submitting ? 'Submitting...' : 'Request Service'} onPress={requestMaintenance} disabled={submitting} />
       </View>
 
     </ScrollView>

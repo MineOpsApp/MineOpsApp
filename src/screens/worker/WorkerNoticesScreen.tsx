@@ -11,9 +11,10 @@ type Props = { session: AuthSession };
 export function WorkerNoticesScreen({ session }: Props) {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [acknowledging, setAcknowledging] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    getNotices().then(setNotices).catch(() => {});
+    getNotices().then(setNotices).catch(() => setLoadError(true));
   }, []);
 
   async function acknowledge(notice: Notice) {
@@ -113,7 +114,11 @@ export function WorkerNoticesScreen({ session }: Props) {
         </>
       ) : null}
 
-      {notices.length === 0 ? (
+      {loadError && notices.length === 0 ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>Could not load notices. Check your connection.</Text>
+        </View>
+      ) : notices.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyIcon}>📢</Text>
           <Text style={styles.emptyTitle}>No notices yet</Text>
@@ -155,6 +160,8 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 32, marginBottom: 10 },
   emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
   emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
   categoryBadge: { alignSelf: 'flex-start', borderRadius: 6, borderWidth: 1, marginBottom: 4, marginHorizontal: 14, marginTop: 10, paddingHorizontal: 8, paddingVertical: 3 },
 badgeSafety: { backgroundColor: '#fff5f5', borderColor: '#b42318' },
 badgeOps: { backgroundColor: '#fffbeb', borderColor: '#d29922' },

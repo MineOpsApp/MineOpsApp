@@ -46,6 +46,7 @@ const [loadingGuests, setLoadingGuests] = useState(false);
   async function createGuest() {
     if (!fullName.trim()) { Alert.alert('Missing info', 'Enter the guest full name.'); return; }
     if (!email.trim()) { Alert.alert('Missing info', 'Enter the guest email address.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
     setLoading(true);
     try {
       const tempPassword = `Guest${Math.random().toString(36).slice(2, 8).toUpperCase()}!`;
@@ -190,7 +191,7 @@ const [loadingGuests, setLoadingGuests] = useState(false);
                 </View>
               </View>
 
-              <ActionButton label={loading ? 'Creating...' : 'Create Guest Account'} onPress={createGuest} />
+              <ActionButton label={loading ? 'Creating...' : 'Create Guest Account'} onPress={createGuest} disabled={loading} />
             </>
           )}
         </>
@@ -216,7 +217,7 @@ const [loadingGuests, setLoadingGuests] = useState(false);
               </Pressable>
             ))}
           </View>
-          <ActionButton label={renewing ? 'Renewing...' : `Renew ${renewHours}h Access`} onPress={handleRenew} />
+          <ActionButton label={renewing ? 'Renewing...' : `Renew ${renewHours}h Access`} onPress={handleRenew} disabled={renewing} />
         </View>
       ) : (
         <View style={styles.card}>

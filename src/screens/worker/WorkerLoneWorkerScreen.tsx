@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { checkInLoneWorker, getLoneWorkerStatus, startLoneWorker, stopLoneWorker, type LoneWorkerStatus } from '../../services/api';
+import { checkInLoneWorker, getLoneWorkerStatus, parseApiError, startLoneWorker, stopLoneWorker, type LoneWorkerStatus } from '../../services/api';
 
 const INTERVALS = [
   { label: '30 min', value: 30 },
@@ -61,8 +61,8 @@ export function WorkerLoneWorkerScreen() {
     try {
       const s = await startLoneWorker(selectedInterval);
       setStatus(s);
-    } catch {
-      setError('Failed to start lone worker mode');
+    } catch (e) {
+      setError(parseApiError(e));
     } finally {
       setBusy(false);
     }
@@ -74,8 +74,8 @@ export function WorkerLoneWorkerScreen() {
     try {
       const s = await checkInLoneWorker();
       setStatus(s);
-    } catch {
-      setError('Failed to check in');
+    } catch (e) {
+      setError(parseApiError(e));
     } finally {
       setBusy(false);
     }
@@ -87,8 +87,8 @@ export function WorkerLoneWorkerScreen() {
     try {
       await stopLoneWorker();
       setStatus({ active: false });
-    } catch {
-      setError('Failed to stop session');
+    } catch (e) {
+      setError(parseApiError(e));
     } finally {
       setBusy(false);
     }

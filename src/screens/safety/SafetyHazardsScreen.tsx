@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
-import { getHazardReports, reviewHazardReport, closeHazardReport } from '../../services/api';
+import { getHazardReports, reviewHazardReport, closeHazardReport, parseApiError } from '../../services/api';
 import type { HazardReport } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
@@ -12,23 +12,30 @@ type Props = { session: AuthSession };
 export function SafetyHazardsScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [actionTaken, setActionTaken] = useState('Area secured and safety protocols applied');
+  const [actioning, setActioning] = useState<number | null>(null);
 
   useEffect(() => {
     getHazardReports().then(setHazards).catch(() => {});
   }, []);
 
   async function review(id: number) {
+    if (actioning !== null) return;
+    setActioning(id);
     try {
       const updated = await reviewHazardReport(id, { actionTaken: actionTaken.trim() || 'Reviewed', actorEmail: session.user.email, actorName: session.user.fullName, actorRole: session.user.role });
       setHazards((c) => c.map((h) => h.id === updated.id ? updated : h));
-    } catch { Alert.alert('Action failed', 'Could not review the hazard.'); }
+    } catch (e) { Alert.alert('Action failed', parseApiError(e)); }
+    finally { setActioning(null); }
   }
 
   async function close(id: number) {
+    if (actioning !== null) return;
+    setActioning(id);
     try {
       const updated = await closeHazardReport(id, { actionTaken: actionTaken.trim() || 'Cleared', actorEmail: session.user.email, actorName: session.user.fullName, actorRole: session.user.role });
       setHazards((c) => c.map((h) => h.id === updated.id ? updated : h));
-    } catch { Alert.alert('Action failed', 'Could not close the hazard.'); }
+    } catch (e) { Alert.alert('Action failed', parseApiError(e)); }
+    finally { setActioning(null); }
   }
 
   return (

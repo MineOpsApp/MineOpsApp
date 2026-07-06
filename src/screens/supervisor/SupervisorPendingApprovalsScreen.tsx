@@ -27,10 +27,12 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
   const [buyers, setBuyers] = useState<PendingBuyer[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   function load() {
-    getPendingWorkers().then(setWorkers).catch(() => {});
-    getPendingBuyers().then(setBuyers).catch(() => {});
+    setLoadError(false);
+    getPendingWorkers().then(setWorkers).catch(() => setLoadError(true));
+    getPendingBuyers().then(setBuyers).catch(() => setLoadError(true));
   }
 
   useEffect(() => { load(); }, []);
@@ -137,7 +139,11 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
       <Text style={styles.title}>Pending Approvals</Text>
       <Text style={styles.subtitle}>Pull to refresh</Text>
 
-      {totalPending === 0 ? (
+      {loadError ? (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>Failed to load approvals. Pull to refresh.</Text>
+        </View>
+      ) : totalPending === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyIcon}>✓</Text>
           <Text style={styles.emptyTitle}>No pending registrations</Text>
@@ -245,4 +251,6 @@ const styles = StyleSheet.create({
   rejectBtn: { alignItems: 'center', backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, paddingHorizontal: 20, paddingVertical: 10 },
   rejectBtnText: { color: '#dc2626', fontSize: 13, fontWeight: '800' },
   btnDisabled: { opacity: 0.5 },
+  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 });
