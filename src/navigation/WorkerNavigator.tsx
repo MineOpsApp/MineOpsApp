@@ -24,6 +24,7 @@ import { WorkerLoneWorkerScreen } from '../screens/worker/WorkerLoneWorkerScreen
 import { WorkerPayScreen } from '../screens/worker/WorkerPayScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import { SearchScreen } from '../screens/SearchScreen';
+import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
 
 import type { AuthSession } from '../types/auth';
 
@@ -45,7 +46,7 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
-type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker' | 'pay' | 'community' | 'search';
+type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker' | 'pay' | 'community' | 'search' | 'illegalReport';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -193,6 +194,14 @@ function WorkerMoreStack({
       <SearchScreen session={session} />
     </View>
   );
+  if (screen === 'illegalReport') return (
+    <View style={{ flex: 1 }}>
+      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+      </Pressable>
+      <IllegalMineReportScreen />
+    </View>
+  );
 
   return (
     <MoreScreen
@@ -211,6 +220,7 @@ function WorkerMoreStack({
         { icon: '💰', label: 'My Pay', description: 'View pay history and manage your MoMo disbursement details', onPress: () => setScreen('pay') },
         { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
         { icon: '🔍', label: 'Search', description: 'Find hazards, workers, listings, and forum posts', onPress: () => setScreen('search') },
+        { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
       ]}
     />
   );

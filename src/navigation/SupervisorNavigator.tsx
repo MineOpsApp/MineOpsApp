@@ -41,6 +41,9 @@ import { SafetyIntelligenceScreen } from '../screens/supervisor/SafetyIntelligen
 import CommunityScreen from '../screens/community/CommunityScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { SupervisorSiteAccessScreen } from '../screens/supervisor/SupervisorSiteAccessScreen';
+import { SupervisorPermitStatusScreen } from '../screens/supervisor/SupervisorPermitStatusScreen';
+import { SupervisorBulkPurchaseScreen } from '../screens/supervisor/SupervisorBulkPurchaseScreen';
+import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -64,7 +67,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'permitStatus' | 'bulkPurchase' | 'illegalReport'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -123,6 +126,9 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'community') return <View style={{ flex: 1 }}>{backBtn}<CommunityScreen isSupervisor userEmail={session.user.email} /></View>;
   if (screen === 'search') return <View style={{ flex: 1 }}>{backBtn}<SearchScreen session={session} /></View>;
   if (screen === 'siteAccess') return <View style={{ flex: 1 }}>{backBtn}<SupervisorSiteAccessScreen session={session} /></View>;
+  if (screen === 'permitStatus') return <View style={{ flex: 1 }}>{backBtn}<SupervisorPermitStatusScreen session={session} /></View>;
+  if (screen === 'bulkPurchase') return <View style={{ flex: 1 }}>{backBtn}<SupervisorBulkPurchaseScreen session={session} /></View>;
+  if (screen === 'illegalReport') return <View style={{ flex: 1 }}>{backBtn}<IllegalMineReportScreen /></View>;
   return (
     <MoreScreen
       items={[
@@ -155,6 +161,9 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
         { icon: '🔍', label: 'Search', description: 'Find hazards, incidents, workers, listings, and forum posts', onPress: () => setScreen('search') },
         { icon: '🏭', label: 'Site Access', description: 'Grant or revoke multi-site access for supervisors', onPress: () => setScreen('siteAccess') },
+        { icon: '📋', label: 'Permit Status', description: 'Self-report Minerals Commission permit progress for this site', onPress: () => setScreen('permitStatus') },
+        { icon: '💰', label: 'GoldBod Bulk Purchase', description: 'Flag site inventory as available for GoldBod acquisition', onPress: () => setScreen('bulkPurchase') },
+        { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
       ]}
     />
   );

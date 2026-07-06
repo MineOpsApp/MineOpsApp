@@ -1,4 +1,4 @@
-export type UserRole = 'worker' | 'supervisor' | 'safetyOfficer' | 'guest' | 'buyer';
+export type UserRole = 'worker' | 'supervisor' | 'safetyOfficer' | 'guest' | 'buyer' | 'government';
 
 export type RolePermission = {
   label: string;

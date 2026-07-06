@@ -1750,6 +1750,90 @@ export function exportTransactionsCsv() {
   return requestText('/marketplace/transactions/export/csv');
 }
 
+// Government dashboard
+export type MiningPermitStatus = {
+  id: number | null;
+  site: string;
+  applicationSubmitted: boolean;
+  communityNotificationDone: boolean;
+  ministerialReviewStatus: string | null;
+  epaPermitObtained: boolean;
+  updatedByEmail: string | null;
+  updatedAt: string | null;
+};
+
+export type BulkPurchaseRequest = {
+  id: number;
+  site: string;
+  mineralType: string;
+  quantityAvailable: number;
+  unit: string;
+  status: string;
+  flaggedByEmail: string;
+  createdAt: string;
+};
+
+export type IllegalMineReport = {
+  id: number;
+  reporterEmail: string;
+  reporterRole: string;
+  locationDescription: string;
+  details: string | null;
+  status: string;
+  reviewedByEmail: string | null;
+  reviewNotes: string | null;
+  createdAt: string;
+};
+
+// Government-role endpoints
+export function getGovernmentInventory() {
+  return request<MineralInventory[]>('/government/inventory');
+}
+export function getGovernmentBulkPurchaseRequests() {
+  return request<BulkPurchaseRequest[]>('/government/bulk-purchase-requests');
+}
+export function fulfillBulkPurchaseRequest(id: number) {
+  return patch<BulkPurchaseRequest>(`/government/bulk-purchase-requests/${id}/fulfill`, {});
+}
+export function getGovernmentIllegalMineReports() {
+  return request<IllegalMineReport[]>('/government/illegal-mine-reports');
+}
+export function reviewIllegalMineReport(id: number, payload: { status: string; reviewNotes?: string }) {
+  return patch<IllegalMineReport>(`/government/illegal-mine-reports/${id}/review`, payload);
+}
+export function getGovernmentPermits() {
+  return request<MiningPermitStatus[]>('/government/permits');
+}
+
+// Supervisor permit status
+export function getMyPermitStatus() {
+  return request<MiningPermitStatus>('/permits/mine');
+}
+export function updatePermitStatus(payload: Partial<{
+  applicationSubmitted: boolean;
+  communityNotificationDone: boolean;
+  ministerialReviewStatus: string;
+  epaPermitObtained: boolean;
+}>) {
+  return patch<MiningPermitStatus>('/permits/mine', payload);
+}
+
+// Supervisor bulk purchase flagging
+export function getSiteBulkPurchaseRequests() {
+  return request<BulkPurchaseRequest[]>('/bulk-purchase-requests');
+}
+export function flagForBulkPurchase(payload: { mineralType: string; quantityAvailable: number; unit: string }) {
+  return post<BulkPurchaseRequest>('/bulk-purchase-requests', payload);
+}
+export function withdrawBulkPurchaseRequest(id: number) {
+  return del<void>(`/bulk-purchase-requests/${id}`);
+}
+
+// Illegal mine report (any non-guest role)
+export function submitIllegalMineReport(payload: { locationDescription: string; details?: string }) {
+  return post<IllegalMineReport>('/illegal-mine-reports', payload);
+}
+
 // Multi-site access
 export type SiteAccess = {
   id: number | null;

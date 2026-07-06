@@ -6,6 +6,7 @@ import { SupervisorNavigator } from './SupervisorNavigator';
 import { SafetyOfficerNavigator } from './SafetyOfficerNavigator';
 import { GuestNavigator } from './GuestNavigator';
 import { BuyerNavigator } from './BuyerNavigator';
+import { GovernmentNavigator } from './GovernmentNavigator';
 import { drainQueue } from '../utils/offlineQueue';
 import type { AuthSession } from '../types/auth';
 
@@ -41,6 +42,8 @@ export function AppNavigator({ session, onLogout }: AppNavigatorProps) {
       return <SafetyOfficerNavigator session={session} onLogout={onLogout} />;
     case 'buyer':
       return <BuyerNavigator session={session} onLogout={onLogout} />;
+    case 'government':
+      return <GovernmentNavigator session={session} onLogout={onLogout} />;
     case 'guest':
     default:
       return <GuestNavigator session={session} onLogout={onLogout} />;

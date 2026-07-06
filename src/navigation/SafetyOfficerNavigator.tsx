@@ -14,6 +14,7 @@ import { SupervisorMessagesScreen } from '../screens/supervisor/SupervisorMessag
 import { SafetyIntelligenceScreen } from '../screens/supervisor/SafetyIntelligenceScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import { SearchScreen } from '../screens/SearchScreen';
+import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
 import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
@@ -41,7 +42,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SafetyMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile' | 'messages' | 'safetyIntelligence' | 'community' | 'search'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile' | 'messages' | 'safetyIntelligence' | 'community' | 'search' | 'illegalReport'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -73,6 +74,7 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'messages') return <View style={{ flex: 1 }}>{backBtn}<SupervisorMessagesScreen session={session} /></View>;
   if (screen === 'community') return <View style={{ flex: 1 }}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></View>;
   if (screen === 'search') return <View style={{ flex: 1 }}>{backBtn}<SearchScreen session={session} /></View>;
+  if (screen === 'illegalReport') return <View style={{ flex: 1 }}>{backBtn}<IllegalMineReportScreen /></View>;
 
   return (
     <MoreScreen
@@ -84,6 +86,7 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
         { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
         { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
         { icon: '🔍', label: 'Search', description: 'Find hazards, incidents, workers, listings, and forum posts', onPress: () => setScreen('search') },
+        { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
       ]}
     />
   );
