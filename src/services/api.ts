@@ -1855,3 +1855,51 @@ export function grantSiteAccess(supervisorEmail: string, site: string) {
 export function revokeSiteAccess(id: number) {
   return del<void>(`/my-sites/grant/${id}`);
 }
+
+export type SubscriptionTier = {
+  id: number;
+  name: string;
+  monthlyPriceGhs: number;
+  description: string | null;
+  active: boolean;
+};
+
+export type SiteSubscription = {
+  id: number | null;
+  site: string;
+  tierId: number | null;
+  status: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED';
+  trialEndsAt: string | null;
+  currentPeriodEndsAt: string | null;
+  createdAt: string | null;
+};
+
+export type SubscriptionPaymentResult = {
+  subscription: SiteSubscription;
+  payment: {
+    id: number;
+    amountGhs: number;
+    method: string | null;
+    reference: string | null;
+    createdAt: string;
+  };
+};
+
+export function getSubscriptionTiers() {
+  return request<SubscriptionTier[]>('/subscriptions/tiers');
+}
+
+export function getMySiteSubscription() {
+  return request<SiteSubscription>('/subscriptions/mine');
+}
+
+export function recordSubscriptionPayment(payload: {
+  amountGhs: string;
+  method: string;
+  reference?: string;
+  periodCoveredStart?: string;
+  periodCoveredEnd: string;
+  tierId?: number;
+}) {
+  return post<SubscriptionPaymentResult>('/subscriptions/mine/record-payment', payload);
+}

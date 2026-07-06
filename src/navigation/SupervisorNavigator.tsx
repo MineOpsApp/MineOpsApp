@@ -44,6 +44,7 @@ import { SupervisorSiteAccessScreen } from '../screens/supervisor/SupervisorSite
 import { SupervisorPermitStatusScreen } from '../screens/supervisor/SupervisorPermitStatusScreen';
 import { SupervisorBulkPurchaseScreen } from '../screens/supervisor/SupervisorBulkPurchaseScreen';
 import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
+import { SupervisorSubscriptionScreen } from '../screens/supervisor/SupervisorSubscriptionScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -67,7 +68,7 @@ const TAB_ICONS: Record<string, string> = {
 type Props = { session: AuthSession; onLogout: () => void };
 
 function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'permitStatus' | 'bulkPurchase' | 'illegalReport'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription'>('menu');
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
 
   const backBtn = (
@@ -129,6 +130,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'permitStatus') return <View style={{ flex: 1 }}>{backBtn}<SupervisorPermitStatusScreen session={session} /></View>;
   if (screen === 'bulkPurchase') return <View style={{ flex: 1 }}>{backBtn}<SupervisorBulkPurchaseScreen session={session} /></View>;
   if (screen === 'illegalReport') return <View style={{ flex: 1 }}>{backBtn}<IllegalMineReportScreen /></View>;
+  if (screen === 'subscription') return <View style={{ flex: 1 }}>{backBtn}<SupervisorSubscriptionScreen session={session} /></View>;
   return (
     <MoreScreen
       items={[
@@ -164,6 +166,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
         { icon: '📋', label: 'Permit Status', description: 'Self-report Minerals Commission permit progress for this site', onPress: () => setScreen('permitStatus') },
         { icon: '💰', label: 'GoldBod Bulk Purchase', description: 'Flag site inventory as available for GoldBod acquisition', onPress: () => setScreen('bulkPurchase') },
         { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
+        { icon: '💳', label: 'Subscription', description: 'View subscription status, plan details, and record payments', onPress: () => setScreen('subscription') },
       ]}
     />
   );
