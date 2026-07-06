@@ -15,7 +15,7 @@ export function SafetyHazardsScreen({ session }: Props) {
   const [actioning, setActioning] = useState<number | null>(null);
 
   useEffect(() => {
-    getHazardReports().then(setHazards).catch(() => {});
+    getHazardReports().then((p) => setHazards(p?.content ?? [])).catch(() => {});
   }, []);
 
   async function review(id: number) {

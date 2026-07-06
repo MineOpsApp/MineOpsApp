@@ -40,7 +40,7 @@ export function WorkerHandoverScreen({ session }: Props) {
   function load() {
     return Promise.all([
       getMyShiftLogs().catch(() => []),
-      getHazardReports(session.user.email).catch(() => []),
+      getHazardReports(session.user.email).then((p: any) => p?.content ?? []).catch(() => []),
       getNotices().catch(() => []),
       getEquipmentShiftLogs().catch(() => []),
     ]).then(([s, h, n, e]) => {
