@@ -20,6 +20,8 @@ export type Theme = {
   amberLight: string;
   success: string;
   successLight: string;
+  info: string;
+  infoLight: string;
   tabBar: string;
   tabBarBorder: string;
 };
@@ -42,6 +44,8 @@ const light: Theme = {
   amberLight: '#fffbeb',
   success: '#15803d',
   successLight: '#f0fdf4',
+  info: '#1d5f99',
+  infoLight: '#e8f0fb',
   tabBar: '#ffffff',
   tabBarBorder: '#e5e9ef',
 };
@@ -64,6 +68,8 @@ const dark: Theme = {
   amberLight: '#2d2015',
   success: '#3fb950',
   successLight: '#122620',
+  info: '#58a6ff',
+  infoLight: '#122a4a',
   tabBar: '#161b22',
   tabBarBorder: '#30363d',
 };

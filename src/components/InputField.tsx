@@ -1,4 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTheme, type Theme } from '../theme/theme';
+import { useThemeMode } from '../theme/ThemeContext';
 
 type InputFieldProps = {
   label: string;
@@ -9,6 +11,10 @@ type InputFieldProps = {
 };
 
 export function InputField({ label, multiline = false, onChangeText, placeholder, value }: InputFieldProps) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   return (
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
@@ -17,7 +23,7 @@ export function InputField({ label, multiline = false, onChangeText, placeholder
         numberOfLines={multiline ? 3 : 1}
         onChangeText={onChangeText}
         placeholder={placeholder ?? label}
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         style={[styles.input, multiline && styles.multilineInput]}
         value={value}
       />
@@ -25,31 +31,33 @@ export function InputField({ label, multiline = false, onChangeText, placeholder
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: 10,
-  },
-  label: {
-    color: '#17212b',
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 5,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  input: {
-    backgroundColor: '#ffffff',
-    borderColor: '#dde3ea',
-    borderRadius: 8,
-    borderWidth: 1,
-    color: '#17212b',
-    fontSize: 15,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  multilineInput: {
-    minHeight: 88,
-    textAlignVertical: 'top',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    wrapper: {
+      marginBottom: 10,
+    },
+    label: {
+      color: theme.text,
+      fontSize: 13,
+      fontWeight: '800',
+      marginBottom: 5,
+      textTransform: 'uppercase',
+      letterSpacing: 0.3,
+    },
+    input: {
+      backgroundColor: theme.bgInput,
+      borderColor: theme.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      color: theme.text,
+      fontSize: 15,
+      minHeight: 48,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    multilineInput: {
+      minHeight: 88,
+      textAlignVertical: 'top',
+    },
+  });
+}

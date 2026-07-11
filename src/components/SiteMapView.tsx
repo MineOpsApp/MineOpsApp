@@ -11,6 +11,8 @@ import {
 import Svg, { Polygon, Text as SvgText } from 'react-native-svg';
 
 import { getSiteMap, getZoneDetail, type MapPoint, type SiteMapData, type ZoneDetail } from '../services/api';
+import { useTheme, type Theme } from '../theme/theme';
+import { useThemeMode } from '../theme/ThemeContext';
 import type { DangerZone } from '../types/actions';
 
 type Props = {
@@ -20,6 +22,7 @@ type Props = {
   pollIntervalMs?: number;
 };
 
+// Category color map — stays fixed regardless of theme
 const RISK_COLOR: Record<string, string> = {
   High:   '#ef4444',
   Medium: '#f59e0b',
@@ -57,6 +60,10 @@ function centroid(points: MapPoint[]): { x: number; y: number } {
 }
 
 export function SiteMapView({ zones, readOnly = true, onZoneDetail, pollIntervalMs = 25000 }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const s = makeStyles(theme);
+
   const [mapData, setMapData]   = useState<SiteMapData | null>(null);
   const [loading, setLoading]   = useState(true);
   const [noMap, setNoMap]       = useState(false);
@@ -113,7 +120,7 @@ export function SiteMapView({ zones, readOnly = true, onZoneDetail, pollInterval
   };
 
   if (loading) {
-    return <View style={s.placeholder}><ActivityIndicator color="#1f6f5b" /></View>;
+    return <View style={s.placeholder}><ActivityIndicator color={theme.accent} /></View>;
   }
 
   if (noMap || !mapData) {
@@ -143,7 +150,6 @@ export function SiteMapView({ zones, readOnly = true, onZoneDetail, pollInterval
               const pts = parsePoints(z.polygonPoints)!;
               const color = RISK_COLOR[z.riskLevel] ?? '#f59e0b';
               const isSelected = selected?.id === z.id;
-              const c = centroid(pts);
               return (
                 <Polygon
                   key={z.id}
@@ -189,7 +195,7 @@ export function SiteMapView({ zones, readOnly = true, onZoneDetail, pollInterval
           </View>
 
           {detailLoading ? (
-            <ActivityIndicator color="#1f6f5b" style={{ marginVertical: 8 }} />
+            <ActivityIndicator color={theme.accent} style={{ marginVertical: 8 }} />
           ) : detail ? (
             <>
               <Text style={s.detailStat}>
@@ -217,28 +223,30 @@ export function SiteMapView({ zones, readOnly = true, onZoneDetail, pollInterval
   );
 }
 
-const s = StyleSheet.create({
-  root:         { marginBottom: 12 },
-  mapContainer: { borderRadius: 12, overflow: 'hidden', backgroundColor: '#000', minHeight: 200 },
-  image:        { width: '100%', aspectRatio: 16 / 9 },
-  placeholder:  { alignItems: 'center', backgroundColor: '#f4f6f8', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, justifyContent: 'center', minHeight: 120, padding: 24 },
-  placeholderIcon: { fontSize: 30, marginBottom: 6 },
-  placeholderText: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-  placeholderSub:  { color: '#5d6875', fontSize: 12, fontWeight: '600', marginTop: 4, textAlign: 'center' },
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    root:         { marginBottom: 12 },
+    mapContainer: { borderRadius: 12, overflow: 'hidden', backgroundColor: '#000', minHeight: 200 },
+    image:        { width: '100%', aspectRatio: 16 / 9 },
+    placeholder:  { alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 12, borderWidth: 1, justifyContent: 'center', minHeight: 120, padding: 24 },
+    placeholderIcon: { fontSize: 30, marginBottom: 6 },
+    placeholderText: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    placeholderSub:  { color: theme.textSub, fontSize: 12, fontWeight: '600', marginTop: 4, textAlign: 'center' },
 
-  detailCard:   { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, marginTop: 8, padding: 14 },
-  detailHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 8 },
-  riskDot:      { borderRadius: 6, height: 12, marginRight: 8, width: 12 },
-  detailZoneName: { color: '#17212b', flex: 1, fontSize: 14, fontWeight: '900' },
-  closeBtn:     { paddingLeft: 8 },
-  closeBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '800' },
-  detailStat:   { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    detailCard:   { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginTop: 8, padding: 14 },
+    detailHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 8 },
+    riskDot:      { borderRadius: 6, height: 12, marginRight: 8, width: 12 },
+    detailZoneName: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '900' },
+    closeBtn:     { paddingLeft: 8 },
+    closeBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
+    detailStat:   { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 8 },
 
-  hazardRow: { alignItems: 'center', borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', gap: 8, paddingVertical: 4 },
-  hazardSev: { color: '#b42318', fontSize: 11, fontWeight: '800', minWidth: 52 },
-  hazardType:{ color: '#17212b', flex: 1, fontSize: 12, fontWeight: '700' },
+    hazardRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', gap: 8, paddingVertical: 4 },
+    hazardSev: { color: theme.danger, fontSize: 11, fontWeight: '800', minWidth: 52 },
+    hazardType:{ color: theme.text, flex: 1, fontSize: 12, fontWeight: '700' },
 
-  blastRow:  { alignItems: 'center', borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  blastLabel:{ color: '#92400e', fontSize: 12, fontWeight: '800' },
-  blastTime: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
-});
+    blastRow:  { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+    blastLabel:{ color: theme.amber, fontSize: 12, fontWeight: '800' },
+    blastTime: { color: theme.textSub, fontSize: 11, fontWeight: '700' },
+  });
+}

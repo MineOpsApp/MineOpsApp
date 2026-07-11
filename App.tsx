@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import {
   getStoredEmail,
   logout,
@@ -10,8 +11,33 @@ import {
 } from './src/services/api';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/theme/ThemeContext';
+import { useThemeMode } from './src/theme/ThemeContext';
 import { registerForPushNotifications } from './src/utils/notifications';
 import type { AuthSession } from './src/types/auth';
+
+type RootProps = {
+  session: AuthSession | null;
+  storedEmail: string | null;
+  onAuthenticated: (s: AuthSession) => void;
+  onLogout: () => void;
+};
+
+function ThemedRoot({ session, storedEmail, onAuthenticated, onLogout }: RootProps) {
+  const { mode } = useThemeMode();
+  const systemScheme = useColorScheme();
+  const resolved = mode === 'system' ? (systemScheme ?? 'light') : mode;
+  return (
+    <>
+      <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />
+      <RootNavigator
+        session={session}
+        storedEmail={storedEmail}
+        onAuthenticated={onAuthenticated}
+        onLogout={onLogout}
+      />
+    </>
+  );
+}
 
 export default function App() {
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -55,6 +81,7 @@ export default function App() {
   if (loading) {
     return (
       <View style={styles.splash}>
+        <StatusBar style="light" />
         <ActivityIndicator color="#1f6f5b" size="large" />
       </View>
     );
@@ -62,7 +89,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <RootNavigator
+      <ThemedRoot
         session={session}
         storedEmail={storedEmail}
         onAuthenticated={handleAuthenticated}

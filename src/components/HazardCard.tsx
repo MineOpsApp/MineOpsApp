@@ -1,6 +1,8 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import type { HazardReport } from '../types/actions';
 import { useState } from 'react';
+import { useTheme, type Theme } from '../theme/theme';
+import { useThemeMode } from '../theme/ThemeContext';
+import type { HazardReport } from '../types/actions';
 
 type HazardCardProps = {
   canClear: boolean;
@@ -10,6 +12,7 @@ type HazardCardProps = {
   onReview: (id: number) => void;
 };
 
+// Category color maps — intentional, stay fixed regardless of theme
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   OPEN:     { bg: '#fdeceb', text: '#b42318', label: 'Open' },
   REVIEWED: { bg: '#fff7e0', text: '#a15c00', label: 'Reviewed' },
@@ -32,6 +35,8 @@ function severityStyle(severity?: string) {
 }
 
 function HazardPhoto({ photoData }: { photoData: string }) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
   const [expanded, setExpanded] = useState(false);
   return (
     <Pressable onPress={() => setExpanded((e) => !e)} style={{ marginTop: 8 }}>
@@ -42,8 +47,8 @@ function HazardPhoto({ photoData }: { photoData: string }) {
           resizeMode="cover"
         />
       ) : (
-        <View style={{ alignItems: 'center', backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
-          <Text style={{ color: '#5d6875', fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
+          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
         </View>
       )}
     </Pressable>
@@ -51,6 +56,10 @@ function HazardPhoto({ photoData }: { photoData: string }) {
 }
 
 export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: HazardCardProps) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const badge = statusStyle(hazard.status);
   const sevStyle = severityStyle(hazard.severity);
   const isOpen = hazard.status.toUpperCase() === 'OPEN';
@@ -86,14 +95,15 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
       </Text>
 
       {hazard.latitude && hazard.longitude ? (
-              <Text style={styles.detail}>
-            📍 {hazard.latitude.toFixed(5)}, {hazard.longitude.toFixed(5)}
-          </Text>
-        ) : null}
+        <Text style={styles.detail}>
+          📍 {hazard.latitude.toFixed(5)}, {hazard.longitude.toFixed(5)}
+        </Text>
+      ) : null}
 
-        {hazard.photoData ? (
-  <HazardPhoto photoData={hazard.photoData} />
-) : null}
+      {hazard.photoData ? (
+        <HazardPhoto photoData={hazard.photoData} />
+      ) : null}
+
       {hazard.actionTaken ? (
         <Text style={styles.action}>Action: {hazard.actionTaken}</Text>
       ) : null}
@@ -124,92 +134,94 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#ffffff',
-    borderColor: '#dde3ea',
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 10,
-    padding: 14,
-  },
-  topRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  meta: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  id: {
-    color: '#5d6875',
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  type: {
-    color: '#17212b',
-    fontSize: 16,
-    fontWeight: '900',
-    marginTop: 2,
-  },
-  badges: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  description: {
-    color: '#17212b',
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 20,
-    marginBottom: 6,
-  },
-  detail: {
-    color: '#5d6875',
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
-    marginBottom: 2,
-  },
-  action: {
-    color: '#1f6f5b',
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 6,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-  },
-  button: {
-    alignItems: 'center',
-    borderRadius: 8,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 38,
-    paddingHorizontal: 10,
-  },
-  reviewButton: {
-    backgroundColor: '#1f6f5b',
-  },
-  clearButton: {
-    backgroundColor: '#a15c00',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: theme.bgCard,
+      borderColor: theme.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginBottom: 10,
+      padding: 14,
+    },
+    topRow: {
+      alignItems: 'flex-start',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 6,
+    },
+    meta: {
+      flex: 1,
+      paddingRight: 10,
+    },
+    id: {
+      color: theme.textSub,
+      fontSize: 12,
+      fontWeight: '800',
+      textTransform: 'uppercase',
+    },
+    type: {
+      color: theme.text,
+      fontSize: 16,
+      fontWeight: '900',
+      marginTop: 2,
+    },
+    badges: {
+      alignItems: 'center',
+      flexDirection: 'row',
+    },
+    badge: {
+      borderRadius: 6,
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+    },
+    badgeText: {
+      fontSize: 12,
+      fontWeight: '900',
+    },
+    description: {
+      color: theme.text,
+      fontSize: 14,
+      fontWeight: '600',
+      lineHeight: 20,
+      marginBottom: 6,
+    },
+    detail: {
+      color: theme.textSub,
+      fontSize: 13,
+      fontWeight: '600',
+      lineHeight: 18,
+      marginBottom: 2,
+    },
+    action: {
+      color: theme.accent,
+      fontSize: 13,
+      fontWeight: '700',
+      marginTop: 6,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginTop: 10,
+    },
+    button: {
+      alignItems: 'center',
+      borderRadius: 8,
+      flex: 1,
+      justifyContent: 'center',
+      minHeight: 38,
+      paddingHorizontal: 10,
+    },
+    reviewButton: {
+      backgroundColor: theme.accent,
+    },
+    clearButton: {
+      backgroundColor: '#a15c00',
+    },
+    buttonText: {
+      color: '#ffffff',
+      fontSize: 13,
+      fontWeight: '900',
+    },
+  });
+}

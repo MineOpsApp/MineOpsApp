@@ -7,6 +7,7 @@ import { WorkerEmergencyContactsScreen } from '../screens/worker/WorkerEmergency
 import { WorkerPayScreen } from '../screens/worker/WorkerPayScreen';
 import { WorkerCertificationsScreen } from '../screens/worker/WorkerCertificationsScreen';
 import { BuyerProfileScreen } from '../screens/buyer/BuyerProfileScreen';
+import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import type { AuthSession } from '../types/auth';
 
@@ -22,6 +23,8 @@ type Props = {
 export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) {
   const [screen, setScreen] = useState<Screen>('menu');
   const { mode, setMode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
   const role = session.user.role;
 
   const themeLabel = mode === 'dark' ? 'Dark' : mode === 'light' ? 'Light' : 'Auto';
@@ -163,51 +166,53 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { backgroundColor: '#f0f2f5', flex: 1 },
-  header: {
-    alignItems: 'center',
-    backgroundColor: '#17212b',
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-  headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
-  closeBtn: { padding: 4 },
-  closeIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '700' },
-  content: { padding: 20, paddingBottom: 40 },
-  avatarCard: {
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderColor: '#e5e9ef',
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 14,
-    marginBottom: 24,
-    padding: 18,
-  },
-  avatar: { alignItems: 'center', backgroundColor: '#17212b', borderRadius: 24, height: 48, justifyContent: 'center', width: 48 },
-  avatarInitials: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
-  avatarInfo: { flex: 1 },
-  avatarName: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 3 },
-  avatarSite: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
-  sectionLabel: { color: '#8fa3b8', fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 },
-  list: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
-  row: { alignItems: 'center', flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 14 },
-  rowBorder: { borderBottomColor: '#f4f6f8', borderBottomWidth: 1 },
-  iconWrap: { alignItems: 'center', backgroundColor: '#f4f6f8', borderRadius: 10, height: 40, justifyContent: 'center', marginRight: 14, width: 40 },
-  icon: { fontSize: 20 },
-  body: { flex: 1 },
-  label: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 2 },
-  signOutLabel: { color: '#b42318' },
-  desc: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
-  arrow: { color: '#8fa3b8', fontSize: 22 },
-  chip: { backgroundColor: '#f4f6f8', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
-  chipText: { color: '#5d6875', fontSize: 12, fontWeight: '800' },
-  backBtn: { padding: 16, paddingBottom: 8 },
-  backBtnText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    safe: { backgroundColor: theme.bg, flex: 1 },
+    header: {
+      alignItems: 'center',
+      backgroundColor: theme.bgHero,
+      borderBottomColor: 'rgba(255,255,255,0.08)',
+      borderBottomWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+    },
+    headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
+    closeBtn: { padding: 4 },
+    closeIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '700' },
+    content: { padding: 20, paddingBottom: 40 },
+    avatarCard: {
+      alignItems: 'center',
+      backgroundColor: theme.bgCard,
+      borderColor: theme.border,
+      borderRadius: 16,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: 14,
+      marginBottom: 24,
+      padding: 18,
+    },
+    avatar: { alignItems: 'center', backgroundColor: theme.bgHero, borderRadius: 24, height: 48, justifyContent: 'center', width: 48 },
+    avatarInitials: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
+    avatarInfo: { flex: 1 },
+    avatarName: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 3 },
+    avatarSite: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    sectionLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 },
+    list: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
+    row: { alignItems: 'center', flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 14 },
+    rowBorder: { borderBottomColor: theme.bgInput, borderBottomWidth: 1 },
+    iconWrap: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 10, height: 40, justifyContent: 'center', marginRight: 14, width: 40 },
+    icon: { fontSize: 20 },
+    body: { flex: 1 },
+    label: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 2 },
+    signOutLabel: { color: theme.danger },
+    desc: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    arrow: { color: theme.textMuted, fontSize: 22 },
+    chip: { backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+    chipText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
+    backBtn: { padding: 16, paddingBottom: 8 },
+    backBtnText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+  });
+}

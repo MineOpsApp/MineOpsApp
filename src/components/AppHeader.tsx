@@ -1,6 +1,6 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../theme/theme';
+import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import { useEffect, useState } from 'react';
 import type { AuthSession } from '../types/auth';
@@ -26,6 +26,7 @@ const ROLE_LABELS: Record<string, string> = {
 export function AppHeader({ session, onLogout }: AppHeaderProps) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
+  const styles = makeStyles(theme);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifVisible, setNotifVisible] = useState(false);
   const [queueLength, setQueueLength] = useState(0);
@@ -65,10 +66,6 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
     getMySites().then(setAccessibleSites).catch(() => {});
   }, [isSupervisor]);
 
-  const isDark = mode === 'dark' || mode === 'system';
-  const headerBg = isDark ? '#0d1117' : '#17212b';
-  const accentLine = isDark ? '#3fb950' : '#4ade80';
-
   const initials = session.user.fullName
     .split(' ')
     .filter(Boolean)
@@ -78,8 +75,8 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
     .toUpperCase();
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: headerBg }]}>
-      <View style={[styles.accentLine, { backgroundColor: accentLine }]} />
+    <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: theme.bgHero }]}>
+      <View style={[styles.accentLine, { backgroundColor: theme.accent }]} />
       {queueLength > 0 && (
         <View style={styles.syncBanner}>
           <Text style={styles.syncBannerText}>
@@ -136,7 +133,7 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
         presentationStyle="pageSheet"
         onRequestClose={() => setSitePickerVisible(false)}
       >
-        <SafeAreaView style={[styles.modalSafe, { backgroundColor: '#0d1117' }]}>
+        <SafeAreaView style={[styles.modalSafe, { backgroundColor: theme.bgHero }]}>
           <View style={[styles.modalHeader, { borderBottomColor: 'rgba(255,255,255,0.1)' }]}>
             <Text style={styles.modalTitle}>Switch Site</Text>
             <Pressable onPress={() => setSitePickerVisible(false)} hitSlop={12} style={styles.closeBtn}>
@@ -181,7 +178,7 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
         presentationStyle="pageSheet"
         onRequestClose={() => setNotifVisible(false)}
       >
-        <SafeAreaView style={[styles.modalSafe, { backgroundColor: '#0d1117' }]}>
+        <SafeAreaView style={[styles.modalSafe, { backgroundColor: theme.bgHero }]}>
           <View style={[styles.modalHeader, { borderBottomColor: 'rgba(255,255,255,0.1)' }]}>
             <Text style={styles.modalTitle}>Notifications</Text>
             <Pressable onPress={() => setNotifVisible(false)} hitSlop={12} style={styles.closeBtn}>
@@ -203,56 +200,58 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {},
-  accentLine: { height: 3, width: '100%' },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 14,
-  },
-  left: { flex: 1 },
-  avatarRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-  avatarCircle: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 20, height: 38, justifyContent: 'center', width: 38 },
-  avatarInitials: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-  userName: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
-  userRole: { color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '600', marginTop: 1 },
-  actions: { alignItems: 'center', flexDirection: 'row', gap: 4 },
-  actionBtn: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
-  actionIcon: { color: '#ffffff', fontSize: 16, textAlign: 'center' },
-  actionLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  divider: { backgroundColor: 'rgba(255,255,255,0.12)', height: 36, marginHorizontal: 4, width: 1 },
-  badge: {
-    alignItems: 'center',
-    backgroundColor: '#ef4444',
-    borderRadius: 8,
-    justifyContent: 'center',
-    minWidth: 16,
-    paddingHorizontal: 3,
-    position: 'absolute',
-    right: -6,
-    top: -4,
-  },
-  badgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
-  syncBanner: { alignItems: 'center', backgroundColor: '#7c4f00', paddingHorizontal: 16, paddingVertical: 5 },
-  syncBannerText: { color: '#fde68a', fontSize: 12, fontWeight: '700' },
-  modalSafe: { flex: 1 },
-  modalHeader: {
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-  modalTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
-  closeBtn: { padding: 4 },
-  closeIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '700' },
-  siteRow: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, flexDirection: 'row', padding: 14 },
-  siteRowActive: { backgroundColor: 'rgba(63,185,80,0.15)', borderColor: '#3fb950', borderWidth: 1 },
-  siteName: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
-  siteTag: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    safeArea: {},
+    accentLine: { height: 3, width: '100%' },
+    header: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 14,
+    },
+    left: { flex: 1 },
+    avatarRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
+    avatarCircle: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 20, height: 38, justifyContent: 'center', width: 38 },
+    avatarInitials: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+    userName: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
+    userRole: { color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '600', marginTop: 1 },
+    actions: { alignItems: 'center', flexDirection: 'row', gap: 4 },
+    actionBtn: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+    actionIcon: { color: '#ffffff', fontSize: 16, textAlign: 'center' },
+    actionLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+    divider: { backgroundColor: 'rgba(255,255,255,0.12)', height: 36, marginHorizontal: 4, width: 1 },
+    badge: {
+      alignItems: 'center',
+      backgroundColor: '#ef4444',
+      borderRadius: 8,
+      justifyContent: 'center',
+      minWidth: 16,
+      paddingHorizontal: 3,
+      position: 'absolute',
+      right: -6,
+      top: -4,
+    },
+    badgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
+    syncBanner: { alignItems: 'center', backgroundColor: '#7c4f00', paddingHorizontal: 16, paddingVertical: 5 },
+    syncBannerText: { color: '#fde68a', fontSize: 12, fontWeight: '700' },
+    modalSafe: { flex: 1 },
+    modalHeader: {
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+    },
+    modalTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
+    closeBtn: { padding: 4 },
+    closeIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '700' },
+    siteRow: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, flexDirection: 'row', padding: 14 },
+    siteRowActive: { backgroundColor: `${theme.accent}26`, borderColor: theme.accent, borderWidth: 1 },
+    siteName: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+    siteTag: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  });
+}

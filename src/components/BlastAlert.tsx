@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { getScheduledBlasts } from '../services/api';
+import { useTheme, type Theme } from '../theme/theme';
+import { useThemeMode } from '../theme/ThemeContext';
 
 export function BlastAlert() {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
   const [blasts, setBlasts] = useState<any[]>([]);
 
   useEffect(() => {
     getScheduledBlasts().then(setBlasts).catch(() => {});
     const interval = setInterval(() => {
       getScheduledBlasts().then(setBlasts).catch(() => {});
-    }, 30000); // refresh every 30s
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -40,12 +45,14 @@ export function BlastAlert() {
   );
 }
 
-const styles = StyleSheet.create({
-  banner: { alignItems: 'center', flexDirection: 'row', gap: 10, marginHorizontal: 20, marginTop: 10, padding: 12, borderRadius: 10, borderWidth: 1 },
-  bannerRed: { backgroundColor: '#fff5f5', borderColor: '#b42318' },
-  bannerAmber: { backgroundColor: '#fffbeb', borderColor: '#d29922' },
-  bannerIcon: { fontSize: 24 },
-  bannerBody: { flex: 1 },
-  bannerTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 2 },
-  bannerSub: { color: '#5d6875', fontSize: 12, fontWeight: '600' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    banner: { alignItems: 'center', flexDirection: 'row', gap: 10, marginHorizontal: 20, marginTop: 10, padding: 12, borderRadius: 10, borderWidth: 1 },
+    bannerRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
+    bannerAmber: { backgroundColor: theme.amberLight, borderColor: theme.amber },
+    bannerIcon: { fontSize: 24 },
+    bannerBody: { flex: 1 },
+    bannerTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 2 },
+    bannerSub: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
+  });
+}

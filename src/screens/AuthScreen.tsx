@@ -17,6 +17,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 
 import { loginUser, parseApiError, registerUser, redeemGuestCode, setAuthToken, tryRestoreSession } from '../services/api';
+import { useTheme, type Theme } from '../theme/theme';
+import { useThemeMode } from '../theme/ThemeContext';
 import type { AuthSession } from '../types/auth';
 import type { UserRole } from '../types/role';
 
@@ -26,7 +28,6 @@ const WORKER_ROLES = [
   { id: 'buyer' as UserRole, label: 'Buyer', icon: '🛒', description: 'Purchase minerals from mines' },
 ];
 
-
 const SITES = ['Obuasi Mine', 'Tarkwa Mine', 'Bogoso Mine', 'Prestea Mine'];
 
 type AuthScreenProps = {
@@ -35,7 +36,11 @@ type AuthScreenProps = {
 };
 
 export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
-  const [mode, setMode] = useState<'login' | 'register' | 'guest'>('login');
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'guest'>('login');
   const [selectedRole, setSelectedRole] = useState<UserRole>('worker');
   const [selectedSubRole, setSelectedSubRole] = useState<string>('visitor');
   const [selectedSite, setSelectedSite] = useState(SITES[0]);
@@ -52,7 +57,6 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
 
-  // Guest code tab state
   const [guestCode, setGuestCode]         = useState('');
   const [guestName, setGuestName]         = useState('');
   const [guestPhone, setGuestPhone]       = useState('');
@@ -98,21 +102,21 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   }
 
   async function submit() {
-  if (isSubmitting) return;
-  if (mode === 'register') {
-    if (!fullName.trim()) { Alert.alert('Missing information', 'Enter your full name.'); return; }
-    if (!email.trim()) { Alert.alert('Missing information', 'Enter your email.'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
-    if (password.length < 6) { Alert.alert('Weak password', 'Password must be at least 6 characters.'); return; }
-    if (password !== confirmPassword) { Alert.alert('Password mismatch', 'Passwords do not match.'); return; }
-  } else {
-    if (!email.trim() || !password.trim()) { Alert.alert('Missing information', 'Enter your email and password.'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
-  }
+    if (isSubmitting) return;
+    if (authMode === 'register') {
+      if (!fullName.trim()) { Alert.alert('Missing information', 'Enter your full name.'); return; }
+      if (!email.trim()) { Alert.alert('Missing information', 'Enter your email.'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
+      if (password.length < 6) { Alert.alert('Weak password', 'Password must be at least 6 characters.'); return; }
+      if (password !== confirmPassword) { Alert.alert('Password mismatch', 'Passwords do not match.'); return; }
+    } else {
+      if (!email.trim() || !password.trim()) { Alert.alert('Missing information', 'Enter your email and password.'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
+    }
 
-  setIsSubmitting(true);
+    setIsSubmitting(true);
     try {
-      if (mode === 'register') {
+      if (authMode === 'register') {
         const result = await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedRole === 'buyer' ? undefined : selectedSite, guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined, businessName: selectedRole === 'buyer' ? businessName.trim() : undefined, verificationDocument: selectedRole === 'buyer' ? verificationDocument ?? undefined : undefined, goldbodLicenseNumber: selectedRole === 'buyer' && goldbodLicenseNumber.trim() ? goldbodLicenseNumber.trim() : undefined });
         if (result?.pending) {
           setPendingApproval(true);
@@ -209,7 +213,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
           <Text style={styles.pendingBody}>
             Your account is pending supervisor approval. You'll be able to sign in once a supervisor reviews and approves your registration.
           </Text>
-          <Pressable onPress={() => { setPendingApproval(false); setMode('login'); }} style={styles.submitBtn}>
+          <Pressable onPress={() => { setPendingApproval(false); setAuthMode('login'); }} style={styles.submitBtn}>
             <Text style={styles.submitBtnText}>Back to Sign In</Text>
           </Pressable>
         </View>
@@ -233,19 +237,19 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
 
           {/* Mode toggle */}
           <View style={styles.modeSwitch}>
-            <Pressable onPress={() => setMode('login')} style={[styles.modeBtn, mode === 'login' && styles.modeBtnActive]}>
-              <Text style={[styles.modeBtnText, mode === 'login' && styles.modeBtnTextActive]}>Sign In</Text>
+            <Pressable onPress={() => setAuthMode('login')} style={[styles.modeBtn, authMode === 'login' && styles.modeBtnActive]}>
+              <Text style={[styles.modeBtnText, authMode === 'login' && styles.modeBtnTextActive]}>Sign In</Text>
             </Pressable>
-            <Pressable onPress={() => setMode('register')} style={[styles.modeBtn, mode === 'register' && styles.modeBtnActive]}>
-              <Text style={[styles.modeBtnText, mode === 'register' && styles.modeBtnTextActive]}>Register</Text>
+            <Pressable onPress={() => setAuthMode('register')} style={[styles.modeBtn, authMode === 'register' && styles.modeBtnActive]}>
+              <Text style={[styles.modeBtnText, authMode === 'register' && styles.modeBtnTextActive]}>Register</Text>
             </Pressable>
-            <Pressable onPress={() => setMode('guest')} style={[styles.modeBtn, mode === 'guest' && styles.modeBtnActive]}>
-              <Text style={[styles.modeBtnText, mode === 'guest' && styles.modeBtnTextActive]}>Guest Code</Text>
+            <Pressable onPress={() => setAuthMode('guest')} style={[styles.modeBtn, authMode === 'guest' && styles.modeBtnActive]}>
+              <Text style={[styles.modeBtnText, authMode === 'guest' && styles.modeBtnTextActive]}>Guest Code</Text>
             </Pressable>
           </View>
 
           {/* Guest code form */}
-          {mode === 'guest' ? (
+          {authMode === 'guest' ? (
             <>
               <View style={styles.adminNote}>
                 <Text style={styles.adminNoteText}>🎟 Join a site session using a PIN or QR code provided by your supervisor.</Text>
@@ -259,7 +263,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                     value={guestCode}
                     onChangeText={setGuestCode}
                     placeholder="e.g. 042817"
-                    placeholderTextColor="#8fa3b8"
+                    placeholderTextColor={theme.textMuted}
                     keyboardType="number-pad"
                     maxLength={6}
                     returnKeyType="next"
@@ -277,7 +281,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                   value={guestName}
                   onChangeText={setGuestName}
                   placeholder="As it appears on your ID"
-                  placeholderTextColor="#8fa3b8"
+                  placeholderTextColor={theme.textMuted}
                   autoCapitalize="words"
                   returnKeyType="next"
                 />
@@ -290,7 +294,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                   value={guestPhone}
                   onChangeText={setGuestPhone}
                   placeholder="+233 XX XXX XXXX"
-                  placeholderTextColor="#8fa3b8"
+                  placeholderTextColor={theme.textMuted}
                   keyboardType="phone-pad"
                   returnKeyType="done"
                   onSubmitEditing={submitGuestCode}
@@ -312,7 +316,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
           ) : null}
 
           {/* Register extras */}
-          {mode === 'register' ? (
+          {authMode === 'register' ? (
             <>
               <Text style={styles.fieldLabel}>I am a</Text>
               <View style={styles.roleRow}>
@@ -329,23 +333,23 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                 <Text style={styles.adminNoteText}>🔒 Supervisor & Safety Officer accounts are set up by site administrators</Text>
               </View>
 
-                {selectedRole === 'guest' ? (
-  <>
-    <Text style={styles.fieldLabel}>Guest Type</Text>
-    <View style={styles.roleRow}>
-      {[
-        { id: 'visitor', label: 'Visitor', icon: '👤' },
-        { id: 'inspector', label: 'Inspector', icon: '🔍' },
-        { id: 'investor', label: 'Investor', icon: '📊' },
-      ].map((sub) => (
-        <Pressable key={sub.id} onPress={() => setSelectedSubRole(sub.id)} style={[styles.roleCard, selectedSubRole === sub.id && styles.roleCardActive]}>
-          <Text style={styles.roleIcon}>{sub.icon}</Text>
-          <Text style={[styles.roleLabel, selectedSubRole === sub.id && styles.roleLabelActive]}>{sub.label}</Text>
-        </Pressable>
-      ))}
-    </View>
-  </>
-) : null}
+              {selectedRole === 'guest' ? (
+                <>
+                  <Text style={styles.fieldLabel}>Guest Type</Text>
+                  <View style={styles.roleRow}>
+                    {[
+                      { id: 'visitor', label: 'Visitor', icon: '👤' },
+                      { id: 'inspector', label: 'Inspector', icon: '🔍' },
+                      { id: 'investor', label: 'Investor', icon: '📊' },
+                    ].map((sub) => (
+                      <Pressable key={sub.id} onPress={() => setSelectedSubRole(sub.id)} style={[styles.roleCard, selectedSubRole === sub.id && styles.roleCardActive]}>
+                        <Text style={styles.roleIcon}>{sub.icon}</Text>
+                        <Text style={[styles.roleLabel, selectedSubRole === sub.id && styles.roleLabelActive]}>{sub.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              ) : null}
 
               {selectedRole === 'buyer' ? (
                 <>
@@ -356,19 +360,19 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                       value={businessName}
                       onChangeText={setBusinessName}
                       placeholder="Registered company name"
-                      placeholderTextColor="#8fa3b8"
+                      placeholderTextColor={theme.textMuted}
                       autoCapitalize="words"
                       returnKeyType="next"
                     />
                   </View>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.fieldLabel}>GoldBod License Number <Text style={{ color: '#8fa3b8', fontWeight: '500' }}>(optional — required to bid on gold)</Text></Text>
+                    <Text style={styles.fieldLabel}>GoldBod License Number <Text style={{ color: theme.textMuted, fontWeight: '500' }}>(optional — required to bid on gold)</Text></Text>
                     <TextInput
                       style={styles.input}
                       value={goldbodLicenseNumber}
                       onChangeText={setGoldbodLicenseNumber}
                       placeholder="e.g. GB-T1-2025-00123"
-                      placeholderTextColor="#8fa3b8"
+                      placeholderTextColor={theme.textMuted}
                       autoCapitalize="characters"
                       returnKeyType="next"
                     />
@@ -408,37 +412,37 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Full Name</Text>
-                <TextInput autoCapitalize="words" onChangeText={setFullName} placeholder="Your full name" placeholderTextColor="#8fa3b8" returnKeyType="next" style={styles.input} value={fullName} />
+                <TextInput autoCapitalize="words" onChangeText={setFullName} placeholder="Your full name" placeholderTextColor={theme.textMuted} returnKeyType="next" style={styles.input} value={fullName} />
               </View>
             </>
           ) : null}
 
           {/* Email / Password — hidden in guest mode */}
-          {mode !== 'guest' ? (
+          {authMode !== 'guest' ? (
             <>
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Email</Text>
-                <TextInput autoCapitalize="none" keyboardType="email-address" onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#8fa3b8" returnKeyType="next" style={styles.input} value={email} />
+                <TextInput autoCapitalize="none" keyboardType="email-address" onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor={theme.textMuted} returnKeyType="next" style={styles.input} value={email} />
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.fieldLabel}>Password</Text>
                 <View style={styles.passwordRow}>
-                  <TextInput onChangeText={setPassword} placeholder={mode === 'register' ? 'Min. 6 characters' : 'Your password'} placeholderTextColor="#8fa3b8" returnKeyType={mode === 'register' ? 'next' : 'done'} secureTextEntry={!showPassword} style={[styles.input, { flex: 1, marginBottom: 0 }]} value={password} onSubmitEditing={mode === 'login' ? submit : undefined} />
+                  <TextInput onChangeText={setPassword} placeholder={authMode === 'register' ? 'Min. 6 characters' : 'Your password'} placeholderTextColor={theme.textMuted} returnKeyType={authMode === 'register' ? 'next' : 'done'} secureTextEntry={!showPassword} style={[styles.input, { flex: 1, marginBottom: 0 }]} value={password} onSubmitEditing={authMode === 'login' ? submit : undefined} />
                   <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.showPasswordBtn}>
                     <Text style={styles.showPasswordText}>{showPassword ? 'Hide' : 'Show'}</Text>
                   </Pressable>
                 </View>
               </View>
 
-              {mode === 'register' ? (
+              {authMode === 'register' ? (
                 <View style={styles.inputGroup}>
                   <Text style={styles.fieldLabel}>Confirm Password</Text>
-                  <TextInput onChangeText={setConfirmPassword} onSubmitEditing={submit} placeholder="Repeat your password" placeholderTextColor="#8fa3b8" returnKeyType="done" secureTextEntry={!showPassword} style={styles.input} value={confirmPassword} />
+                  <TextInput onChangeText={setConfirmPassword} onSubmitEditing={submit} placeholder="Repeat your password" placeholderTextColor={theme.textMuted} returnKeyType="done" secureTextEntry={!showPassword} style={styles.input} value={confirmPassword} />
                 </View>
               ) : null}
 
-              {mode === 'login' && biometricAvailable && storedEmail ? (
+              {authMode === 'login' && biometricAvailable && storedEmail ? (
                 <Pressable
                   onPress={handleBiometricLogin}
                   disabled={biometricLoading}
@@ -455,11 +459,11 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
 
               <Pressable disabled={isSubmitting} onPress={submit} style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}>
                 <Text style={styles.submitBtnText}>
-                  {isSubmitting ? 'Please wait...' : mode === 'login' ? 'Sign In with Password →' : 'Create Account →'}
+                  {isSubmitting ? 'Please wait...' : authMode === 'login' ? 'Sign In with Password →' : 'Create Account →'}
                 </Text>
               </Pressable>
 
-              {mode === 'login' ? (
+              {authMode === 'login' ? (
                 <Text style={styles.hint}>Don't have an account? Tap Register above.</Text>
               ) : null}
             </>
@@ -471,64 +475,66 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { backgroundColor: '#0d1117', flex: 1 },
-  flex: { flex: 1 },
-  container: { flexGrow: 1, padding: 24, paddingBottom: 40 },
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    safeArea: { backgroundColor: theme.bg, flex: 1 },
+    flex: { flex: 1 },
+    container: { flexGrow: 1, padding: 24, paddingBottom: 40 },
 
-  header: { alignItems: 'center', marginBottom: 32, marginTop: 16 },
-  logoMark: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 20, height: 56, justifyContent: 'center', marginBottom: 12, width: 56 },
-  logoMarkText: { fontSize: 24 },
-  brand: { color: '#ffffff', fontSize: 26, fontWeight: '900', letterSpacing: -0.5, marginBottom: 4 },
-  tagline: { color: '#4d6475', fontSize: 13, fontWeight: '600' },
+    header: { alignItems: 'center', marginBottom: 32, marginTop: 16 },
+    logoMark: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 20, height: 56, justifyContent: 'center', marginBottom: 12, width: 56 },
+    logoMarkText: { fontSize: 24 },
+    brand: { color: theme.text, fontSize: 26, fontWeight: '900', letterSpacing: -0.5, marginBottom: 4 },
+    tagline: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
 
-  modeSwitch: { backgroundColor: '#161b22', borderRadius: 10, flexDirection: 'row', marginBottom: 24, padding: 4 },
-  modeBtn: { alignItems: 'center', borderRadius: 8, flex: 1, paddingVertical: 10 },
-  modeBtnActive: { backgroundColor: '#1f6f5b' },
-  modeBtnText: { color: '#4d6475', fontSize: 14, fontWeight: '800' },
-  modeBtnTextActive: { color: '#ffffff' },
+    modeSwitch: { backgroundColor: theme.bgCard, borderRadius: 10, flexDirection: 'row', marginBottom: 24, padding: 4 },
+    modeBtn: { alignItems: 'center', borderRadius: 8, flex: 1, paddingVertical: 10 },
+    modeBtnActive: { backgroundColor: theme.accent },
+    modeBtnText: { color: theme.textMuted, fontSize: 14, fontWeight: '800' },
+    modeBtnTextActive: { color: '#ffffff' },
 
-  fieldLabel: { color: '#8fa3b8', fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    fieldLabel: { color: theme.textMuted, fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
 
-  roleRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  roleCard: { alignItems: 'center', backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderWidth: 1, flex: 1, padding: 14 },
-  roleCardActive: { backgroundColor: '#122620', borderColor: '#1f6f5b' },
-  roleIcon: { fontSize: 22, marginBottom: 6 },
-  roleLabel: { color: '#8fa3b8', fontSize: 13, fontWeight: '900', marginBottom: 3 },
-  roleLabelActive: { color: '#3fb950' },
-  roleDesc: { color: '#4d6475', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+    roleRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+    roleCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flex: 1, padding: 14 },
+    roleCardActive: { backgroundColor: theme.accentLight, borderColor: theme.accent },
+    roleIcon: { fontSize: 22, marginBottom: 6 },
+    roleLabel: { color: theme.textMuted, fontSize: 13, fontWeight: '900', marginBottom: 3 },
+    roleLabelActive: { color: theme.accent },
+    roleDesc: { color: theme.textSub, fontSize: 11, fontWeight: '600', textAlign: 'center' },
 
-  adminNote: { backgroundColor: '#1c1a12', borderColor: '#d29922', borderLeftColor: '#d29922', borderLeftWidth: 3, borderRadius: 8, borderWidth: 1, marginBottom: 20, padding: 12 },
-  adminNoteText: { color: '#d29922', fontSize: 12, fontWeight: '600' },
+    adminNote: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderLeftColor: theme.amber, borderLeftWidth: 3, borderRadius: 8, borderWidth: 1, marginBottom: 20, padding: 12 },
+    adminNoteText: { color: theme.amber, fontSize: 12, fontWeight: '600' },
 
-  siteGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  sitePill: { borderColor: '#30363d', borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-  sitePillActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  sitePillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  sitePillTextActive: { color: '#ffffff' },
+    siteGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+    sitePill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+    sitePillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    sitePillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    sitePillTextActive: { color: '#ffffff' },
 
-  inputGroup: { marginBottom: 16 },
-  input: { backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderWidth: 1, color: '#e6edf3', fontSize: 15, marginBottom: 0, minHeight: 48, paddingHorizontal: 14 },
+    inputGroup: { marginBottom: 16 },
+    input: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, color: theme.text, fontSize: 15, marginBottom: 0, minHeight: 48, paddingHorizontal: 14 },
 
-  passwordRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  showPasswordBtn: { backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderWidth: 1, height: 48, alignItems: 'center', justifyContent: 'center', width: 48 },
-  showPasswordText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
+    passwordRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+    showPasswordBtn: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, height: 48, alignItems: 'center', justifyContent: 'center', width: 48 },
+    showPasswordText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
 
-  biometricBtn: { alignItems: 'center', backgroundColor: '#161b22', borderColor: '#1f6f5b', borderRadius: 10, borderWidth: 1.5, flexDirection: 'row', gap: 10, justifyContent: 'center', marginBottom: 12, marginTop: 8, minHeight: 52, paddingHorizontal: 20 },
-  biometricIcon: { fontSize: 22 },
-  biometricText: { color: '#3fb950', fontSize: 14, fontWeight: '800' },
-  submitBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 10, marginTop: 8, minHeight: 52, justifyContent: 'center' },
-  submitBtnDisabled: { opacity: 0.6 },
-  submitBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
+    biometricBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.accent, borderRadius: 10, borderWidth: 1.5, flexDirection: 'row', gap: 10, justifyContent: 'center', marginBottom: 12, marginTop: 8, minHeight: 52, paddingHorizontal: 20 },
+    biometricIcon: { fontSize: 22 },
+    biometricText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    submitBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, marginTop: 8, minHeight: 52, justifyContent: 'center' },
+    submitBtnDisabled: { opacity: 0.6 },
+    submitBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
 
-  hint: { color: '#4d6475', fontSize: 13, fontWeight: '600', marginTop: 16, textAlign: 'center' },
-  guestError: { color: '#f85149', fontSize: 13, fontWeight: '700', marginBottom: 10 },
-  pendingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  pendingIcon: { marginBottom: 20 },
-  pendingTitle: { color: '#ffffff', fontSize: 22, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
-  pendingBody: { color: '#4d6475', fontSize: 14, fontWeight: '600', lineHeight: 22, marginBottom: 32, textAlign: 'center' },
-  docUploadBtn: { alignItems: 'center', backgroundColor: '#161b22', borderColor: '#30363d', borderRadius: 10, borderStyle: 'dashed', borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 20, padding: 14 },
-  docUploadBtnDone: { borderColor: '#1f6f5b', borderStyle: 'solid' },
-  docUploadText: { color: '#8fa3b8', flex: 1, fontSize: 13, fontWeight: '700' },
-  docThumb: { borderRadius: 6, height: 40, width: 40 },
-});
+    hint: { color: theme.textSub, fontSize: 13, fontWeight: '600', marginTop: 16, textAlign: 'center' },
+    guestError: { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: 10 },
+    pendingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+    pendingIcon: { marginBottom: 20 },
+    pendingTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
+    pendingBody: { color: theme.textSub, fontSize: 14, fontWeight: '600', lineHeight: 22, marginBottom: 32, textAlign: 'center' },
+    docUploadBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderStyle: 'dashed', borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 20, padding: 14 },
+    docUploadBtnDone: { borderColor: theme.accent, borderStyle: 'solid' },
+    docUploadText: { color: theme.textMuted, flex: 1, fontSize: 13, fontWeight: '700' },
+    docThumb: { borderRadius: 6, height: 40, width: 40 },
+  });
+}
