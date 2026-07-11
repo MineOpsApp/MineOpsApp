@@ -12,6 +12,8 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 type Severity = 'Low' | 'Medium' | 'High' | 'Critical';
@@ -24,10 +26,14 @@ const SEVERITY_COLORS: Record<Severity, { bg: string; text: string }> = {
 };
 
 export function WorkerHazardsScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [page, setPage] = useState(0);
-const [hasMore, setHasMore] = useState(false);
-const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [hazardType, setHazardType] = useState('Ground instability');
   const [hazardLocation, setHazardLocation] = useState('Zone A');
   const [hazardDescription, setHazardDescription] = useState('');
@@ -35,41 +41,40 @@ const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
 
-useEffect(() => {
-  getHazardReports(session.user.email, 0).then((data) => {
-    setHazards(data.content ?? data);
-    setHasMore(data.totalPages ? 0 < data.totalPages - 1 : false);
-  }).catch(() => {});
-}, []);
+  useEffect(() => {
+    getHazardReports(session.user.email, 0).then((data) => {
+      setHazards(data.content ?? data);
+      setHasMore(data.totalPages ? 0 < data.totalPages - 1 : false);
+    }).catch(() => {});
+  }, []);
 
   async function takePhoto() {
-  const { status } = await ImagePicker.requestCameraPermissionsAsync();
-  if (status !== 'granted') {
-    Alert.alert('Permission needed', 'Camera access is required to take photos.');
-    return;
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Camera access is required to take photos.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      base64: true,
+      quality: 0.5,
+      allowsEditing: true,
+      exif: false,
+    });
+    if (!result.canceled && result.assets[0].base64) {
+      setPhoto(result.assets[0].base64);
+    }
   }
-  const result = await ImagePicker.launchCameraAsync({
-    base64: true,
-    quality: 0.5,
-    allowsEditing: true,
-    exif: false,
-  });
-  if (!result.canceled && result.assets[0].base64) {
-    setPhoto(result.assets[0].base64);
-  }
-}
 
   async function loadMore() {
-  setLoadingMore(true);
-  const nextPage = page + 1;
-  try {
-    const data = await getHazardReports(session.user.email, nextPage);
-    setHazards((c) => [...c, ...(data.content ?? [])]);
-    setPage(nextPage);
-    setHasMore(nextPage < data.totalPages - 1);
-  } catch {} finally { setLoadingMore(false); }
-}
-
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const data = await getHazardReports(session.user.email, nextPage);
+      setHazards((c) => [...c, ...(data.content ?? [])]);
+      setPage(nextPage);
+      setHasMore(nextPage < data.totalPages - 1);
+    } catch {} finally { setLoadingMore(false); }
+  }
 
   async function submit() {
     const description = hazardDescription.trim();
@@ -120,6 +125,7 @@ useEffect(() => {
       setLoading(false);
     }
   }
+
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
@@ -152,19 +158,19 @@ useEffect(() => {
             </Pressable>
           ))}
         </View>
-          <Text style={styles.fieldLabel}>Photo Evidence</Text>
-  {photo ? (
-  <View style={styles.photoPreview}>
-    <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photoImage} />
-    <Pressable onPress={() => setPhoto(null)} style={styles.removePhoto}>
-      <Text style={styles.removePhotoText}>Remove</Text>
-    </Pressable>
-  </View>
-) : (
-  <Pressable onPress={takePhoto} style={styles.photoBtn}>
-    <Text style={styles.photoBtnText}>📷 Take Photo</Text>
-  </Pressable>
-)}
+        <Text style={styles.fieldLabel}>Photo Evidence</Text>
+        {photo ? (
+          <View style={styles.photoPreview}>
+            <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photoImage} />
+            <Pressable onPress={() => setPhoto(null)} style={styles.removePhoto}>
+              <Text style={styles.removePhotoText}>Remove</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable onPress={takePhoto} style={styles.photoBtn}>
+            <Text style={styles.photoBtnText}>📷 Take Photo</Text>
+          </Pressable>
+        )}
         <ActionButton label={loading ? 'Submitting...' : 'Submit Hazard Report'} onPress={submit} tone="danger" />
       </View>
 
@@ -192,33 +198,33 @@ useEffect(() => {
     </ScrollView>
   );
 }
-    
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
-  pageTitle: { color: '#17212b', flex: 1, fontSize: 22, fontWeight: '900' },
-  countBadge: { backgroundColor: '#17212b', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  countText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
-  formCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 24, padding: 16 },
-  fieldLabel: { color: '#5d6875', fontSize: 12, fontWeight: '800', letterSpacing: 0.3, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
-  severityRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  severityBtn: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 10 },
-  severityBtnText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  historyHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 12 },
-  sectionTitle: { color: '#17212b', flex: 1, fontSize: 16, fontWeight: '900' },
-  sectionCount: { color: '#8fa3b8', fontSize: 13, fontWeight: '700' },
-  emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 32 },
-  emptyIcon: { fontSize: 32, marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-
-  photoBtn: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, marginBottom: 16, paddingVertical: 16 },
-photoBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '700' },
-photoPreview: { marginBottom: 16 },
-photoImage: { borderRadius: 8, height: 180, width: '100%' },
-removePhoto: { alignItems: 'center', marginTop: 8 },
-removePhotoText: { color: '#b42318', fontSize: 13, fontWeight: '700' },
-loadMoreBtn: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginTop: 8, paddingVertical: 12 },
-loadMoreText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
+    pageTitle: { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
+    countBadge: { backgroundColor: theme.bgHero, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+    countText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
+    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 24, padding: 16 },
+    fieldLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', letterSpacing: 0.3, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
+    severityRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    severityBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 10 },
+    severityBtnText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    historyHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 12 },
+    sectionTitle: { color: theme.text, flex: 1, fontSize: 16, fontWeight: '900' },
+    sectionCount: { color: theme.textMuted, fontSize: 13, fontWeight: '700' },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
+    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    photoBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, marginBottom: 16, paddingVertical: 16 },
+    photoBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '700' },
+    photoPreview: { marginBottom: 16 },
+    photoImage: { borderRadius: 8, height: 180, width: '100%' },
+    removePhoto: { alignItems: 'center', marginTop: 8 },
+    removePhotoText: { color: theme.danger, fontSize: 13, fontWeight: '700' },
+    loadMoreBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginTop: 8, paddingVertical: 12 },
+    loadMoreText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+  });
+}

@@ -6,6 +6,8 @@ import { clockIn, clockOut, getMyAttendanceStatus, getMyAttendanceHistory } from
 import { enqueue } from '../../utils/offlineQueue';
 import NetInfo from '@react-native-community/netinfo';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type AttendanceRecord = {
   id: number;
@@ -21,6 +23,10 @@ type Props = { session: AuthSession };
 const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Main Site', 'Processing Area'];
 
 export function WorkerAttendanceScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [onSite, setOnSite] = useState(false);
   const [activeRecord, setActiveRecord] = useState<AttendanceRecord | null>(null);
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
@@ -102,9 +108,9 @@ export function WorkerAttendanceScreen({ session }: Props) {
     catch { return dateStr; }
   }
 
-  function getDuration(clockIn: string, clockOut: string | null) {
-    const start = new Date(clockIn).getTime();
-    const end = clockOut ? new Date(clockOut).getTime() : Date.now();
+  function getDuration(clockInTime: string, clockOutTime: string | null) {
+    const start = new Date(clockInTime).getTime();
+    const end = clockOutTime ? new Date(clockOutTime).getTime() : Date.now();
     const hours = Math.floor((end - start) / 3600000);
     const mins = Math.floor(((end - start) % 3600000) / 60000);
     return `${hours}h ${mins}m`;
@@ -114,7 +120,6 @@ export function WorkerAttendanceScreen({ session }: Props) {
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Attendance</Text>
 
-      {/* Status card */}
       <View style={[styles.statusCard, onSite ? styles.statusCardGreen : styles.statusCardGrey]}>
         <View style={styles.statusLeft}>
           <View style={[styles.statusDot, { backgroundColor: onSite ? '#4ade80' : '#8fa3b8' }]} />
@@ -132,7 +137,6 @@ export function WorkerAttendanceScreen({ session }: Props) {
         </View>
       </View>
 
-      {/* Clock in/out */}
       {!onSite ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Clock In</Text>
@@ -157,7 +161,6 @@ export function WorkerAttendanceScreen({ session }: Props) {
         </View>
       )}
 
-      {/* History */}
       <Text style={styles.sectionTitle}>Attendance History</Text>
       {history.length === 0 ? (
         <View style={styles.emptyCard}>
@@ -175,7 +178,7 @@ export function WorkerAttendanceScreen({ session }: Props) {
           </View>
           <View style={styles.historyRight}>
             <Text style={styles.historyDuration}>{getDuration(r.clockInAt, r.clockOutAt)}</Text>
-            <Text style={[styles.historyStatus, { color: r.status === 'ON_SITE' ? '#15803d' : '#8fa3b8' }]}>
+            <Text style={[styles.historyStatus, { color: r.status === 'ON_SITE' ? '#15803d' : theme.textMuted }]}>
               {r.status === 'ON_SITE' ? 'On Site' : 'Completed'}
             </Text>
           </View>
@@ -185,36 +188,38 @@ export function WorkerAttendanceScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 16 },
-  statusCard: { borderRadius: 12, borderWidth: 2, marginBottom: 16, padding: 16 },
-  statusCardGreen: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
-  statusCardGrey: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef' },
-  statusLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
-  statusDot: { borderRadius: 8, height: 16, width: 16 },
-  statusTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 2 },
-  statusSub: { color: '#5d6875', fontSize: 12, fontWeight: '600' },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 12 },
-  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-  pill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#ffffff' },
-  onSiteInfo: { color: '#17212b', fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  clockOutBtn: { alignItems: 'center', backgroundColor: '#b42318', borderRadius: 8, marginTop: 8, paddingVertical: 12 },
-  clockOutBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 12 },
-  emptyCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, padding: 16 },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  historyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, padding: 12 },
-  historyLeft: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-  historyDot: { borderRadius: 5, height: 10, width: 10 },
-  historyZone: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
-  historyTime: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  historyRight: { alignItems: 'flex-end' },
-  historyDuration: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 2 },
-  historyStatus: { fontSize: 11, fontWeight: '700' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
+    statusCard: { borderRadius: 12, borderWidth: 2, marginBottom: 16, padding: 16 },
+    statusCardGreen: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
+    statusCardGrey: { backgroundColor: theme.bgInput, borderColor: theme.border },
+    statusLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
+    statusDot: { borderRadius: 8, height: 16, width: 16 },
+    statusTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 2 },
+    statusSub: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 12 },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#ffffff' },
+    onSiteInfo: { color: theme.text, fontSize: 14, fontWeight: '700', marginBottom: 6 },
+    clockOutBtn: { alignItems: 'center', backgroundColor: theme.danger, borderRadius: 8, marginTop: 8, paddingVertical: 12 },
+    clockOutBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 12 },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 16 },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    historyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, padding: 12 },
+    historyLeft: { alignItems: 'center', flexDirection: 'row', gap: 10 },
+    historyDot: { borderRadius: 5, height: 10, width: 10 },
+    historyZone: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    historyTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    historyRight: { alignItems: 'flex-end' },
+    historyDuration: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 2 },
+    historyStatus: { fontSize: 11, fontWeight: '700' },
+  });
+}

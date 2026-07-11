@@ -5,6 +5,8 @@ import { ActionButton } from '../../components/ActionButton';
 import { InputField } from '../../components/InputField';
 import { startDrillOperation, signOffDrillStep, getMyDrillOperations } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type DrillOp = {
   id: number;
@@ -61,6 +63,10 @@ function formatTime(dateStr: string): string {
 }
 
 export function WorkerDrillScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [drills, setDrills] = useState<DrillOp[]>([]);
   const [zone, setZone] = useState('Zone A');
   const [drillType, setDrillType] = useState('Rotary');
@@ -219,48 +225,50 @@ export function WorkerDrillScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 16 },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 14 },
-  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-  pill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#ffffff' },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 12 },
-  drillCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, overflow: 'hidden' },
-  drillHeader: { alignItems: 'center', backgroundColor: '#17212b', flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
-  drillType: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
-  drillMeta: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  inProgressBadge: { backgroundColor: 'rgba(74,222,128,0.15)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  inProgressText: { color: '#4ade80', fontSize: 11, fontWeight: '800' },
-  drillStarted: { color: '#8fa3b8', fontSize: 11, fontWeight: '700', paddingHorizontal: 14, paddingVertical: 8 },
-  step: { borderTopColor: '#f4f6f8', borderTopWidth: 1, padding: 14 },
-  stepDone: { backgroundColor: '#f8fffe' },
-  stepLocked: { opacity: 0.45 },
-  stepLeft: { alignItems: 'flex-start', flexDirection: 'row', gap: 12 },
-  stepDot: { alignItems: 'center', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
-  stepDotDone: { backgroundColor: '#1f6f5b' },
-  stepDotActive: { backgroundColor: '#17212b' },
-  stepDotLocked: { backgroundColor: '#e5e9ef' },
-  stepDotText: { fontSize: 16 },
-  stepBody: { flex: 1 },
-  stepLabel: { color: '#17212b', fontSize: 14, fontWeight: '800', marginBottom: 2 },
-  stepLabelDone: { color: '#1f6f5b' },
-  stepLabelLocked: { color: '#8fa3b8' },
-  stepDesc: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
-  stepAction: { marginTop: 12 },
-  signOffBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 8, marginTop: 6, paddingVertical: 10 },
-  signOffBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
-  completedCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 8, padding: 12 },
-  completedLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
-  completedCheck: { alignItems: 'center', backgroundColor: '#e7f6ef', borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
-  completedCheckText: { color: '#1f6f5b', fontSize: 14, fontWeight: '900' },
-  emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 32 },
-  emptyIcon: { fontSize: 32, marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#ffffff' },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 12 },
+    drillCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, overflow: 'hidden' },
+    drillHeader: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
+    drillType: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
+    drillMeta: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+    inProgressBadge: { backgroundColor: 'rgba(74,222,128,0.15)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+    inProgressText: { color: '#4ade80', fontSize: 11, fontWeight: '800' },
+    drillStarted: { color: theme.textMuted, fontSize: 11, fontWeight: '700', paddingHorizontal: 14, paddingVertical: 8 },
+    step: { borderTopColor: theme.bg, borderTopWidth: 1, padding: 14 },
+    stepDone: { backgroundColor: theme.bgCard },
+    stepLocked: { opacity: 0.45 },
+    stepLeft: { alignItems: 'flex-start', flexDirection: 'row', gap: 12 },
+    stepDot: { alignItems: 'center', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
+    stepDotDone: { backgroundColor: theme.accent },
+    stepDotActive: { backgroundColor: theme.bgHero },
+    stepDotLocked: { backgroundColor: theme.border },
+    stepDotText: { fontSize: 16 },
+    stepBody: { flex: 1 },
+    stepLabel: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 2 },
+    stepLabelDone: { color: theme.accent },
+    stepLabelLocked: { color: theme.textMuted },
+    stepDesc: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    stepAction: { marginTop: 12 },
+    signOffBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, marginTop: 6, paddingVertical: 10 },
+    signOffBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
+    completedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 8, padding: 12 },
+    completedLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
+    completedCheck: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
+    completedCheckText: { color: theme.accent, fontSize: 14, fontWeight: '900' },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
+    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+  });
+}

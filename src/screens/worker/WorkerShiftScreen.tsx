@@ -7,6 +7,8 @@ import { enqueue } from '../../utils/offlineQueue';
 import NetInfo from '@react-native-community/netinfo';
 import type { ShiftLog } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -37,7 +39,7 @@ function formatLimit(unit: string): string {
 }
 
 function validateVolume(vol: string, unit: string): string | null {
-  if (!vol.trim()) return null; // empty is shown as placeholder, not error yet
+  if (!vol.trim()) return null;
   const n = parseFloat(vol);
   if (isNaN(n)) return 'Enter a valid number';
   if (n <= 0) return 'Volume must be greater than zero';
@@ -68,6 +70,10 @@ function formatDate(dateStr: string) {
 }
 
 export function WorkerShiftScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [logs, setLogs] = useState<ShiftLog[]>([]);
   const [zone, setZone] = useState('Zone A');
   const [shiftType, setShiftType] = useState('Morning');
@@ -96,7 +102,6 @@ export function WorkerShiftScreen({ session: _ }: Props) {
   const volumeError = volumeTouched ? validateVolume(volume, unit) : null;
   const isVolumeValid = volume.trim() !== '' && validateVolume(volume, unit) === null;
 
-  // When unit changes, re-validate the current volume
   function changeUnit(u: string) {
     setUnit(u);
   }
@@ -193,7 +198,7 @@ export function WorkerShiftScreen({ session: _ }: Props) {
         onChangeText={(v) => { setVolume(v); if (!volumeTouched) setVolumeTouched(true); }}
         onBlur={() => setVolumeTouched(true)}
         placeholder={`0.000 (max ${formatLimit(unit)})`}
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         style={[
           styles.volumeInput,
           volumeError ? styles.inputError : isVolumeValid ? styles.inputValid : null,
@@ -226,14 +231,14 @@ export function WorkerShiftScreen({ session: _ }: Props) {
           <TextInput
             onChangeText={setEquipmentCode}
             placeholder="Code (e.g. EX-01)"
-            placeholderTextColor="#9aa5b1"
+            placeholderTextColor={theme.textMuted}
             style={[styles.input, { flex: 1, marginRight: 8 }]}
             value={equipmentCode}
           />
           <TextInput
             onChangeText={setEquipmentName}
             placeholder="Name"
-            placeholderTextColor="#9aa5b1"
+            placeholderTextColor={theme.textMuted}
             style={[styles.input, { flex: 2 }]}
             value={equipmentName}
           />
@@ -244,7 +249,7 @@ export function WorkerShiftScreen({ session: _ }: Props) {
       <TextInput
         onChangeText={setShiftDate}
         placeholder="YYYY-MM-DD"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         style={styles.input}
         value={shiftDate}
         keyboardType="numbers-and-punctuation"
@@ -255,7 +260,7 @@ export function WorkerShiftScreen({ session: _ }: Props) {
         multiline
         onChangeText={setNotes}
         placeholder="Any observations for this shift..."
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         style={styles.textArea}
         value={notes}
       />
@@ -289,36 +294,38 @@ export function WorkerShiftScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 4 },
-  sectionTitle: { color: '#17212b', fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 12 },
-  label: { color: '#5d6875', fontSize: 13, fontWeight: '800', marginBottom: 6, marginTop: 4 },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  pill: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#5d6875', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#fff' },
-  volumeLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, marginTop: 4 },
-  maxHint: { color: '#1f6f5b', fontSize: 12, fontWeight: '700' },
-  volumeInput: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1.5, color: '#17212b', fontSize: 22, fontWeight: '800', marginBottom: 4, minHeight: 54, paddingHorizontal: 14 },
-  inputError: { borderColor: '#b42318', backgroundColor: '#fff5f5' },
-  inputValid: { borderColor: '#15803d' },
-  errorText: { color: '#b42318', fontSize: 12, fontWeight: '700', marginBottom: 8 },
-  validText: { color: '#15803d', fontSize: 12, fontWeight: '700', marginBottom: 8 },
-  equipRow: { flexDirection: 'row', marginBottom: 10 },
-  input: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, minHeight: 44, paddingHorizontal: 12, marginBottom: 10 },
-  textArea: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 12, minHeight: 80, padding: 12 },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  logCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
-  logHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  logMineral: { color: '#17212b', fontSize: 15, fontWeight: '900' },
-  logWorkerMeta: { color: '#5d6875', fontSize: 11, fontWeight: '700', marginTop: 2 },
-  logVolume: { color: '#1f6f5b', fontSize: 15, fontWeight: '900' },
-  statusBadge: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
-  statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
-  logMeta: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 1 },
-  logNotes: { color: '#17212b', fontSize: 13, fontWeight: '600', marginTop: 4 },
-  logTime: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 4 },
-  meta: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 4 },
+    sectionTitle: { color: theme.text, fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 12 },
+    label: { color: theme.textSub, fontSize: 13, fontWeight: '800', marginBottom: 6, marginTop: 4 },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#fff' },
+    volumeLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, marginTop: 4 },
+    maxHint: { color: theme.accent, fontSize: 12, fontWeight: '700' },
+    volumeInput: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1.5, color: theme.text, fontSize: 22, fontWeight: '800', marginBottom: 4, minHeight: 54, paddingHorizontal: 14 },
+    inputError: { borderColor: theme.danger, backgroundColor: theme.dangerLight },
+    inputValid: { borderColor: theme.success },
+    errorText: { color: theme.danger, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    validText: { color: theme.success, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    equipRow: { flexDirection: 'row', marginBottom: 10 },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, minHeight: 44, paddingHorizontal: 12, marginBottom: 10 },
+    textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 80, padding: 12 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    logCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
+    logHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    logMineral: { color: theme.text, fontSize: 15, fontWeight: '900' },
+    logWorkerMeta: { color: theme.textSub, fontSize: 11, fontWeight: '700', marginTop: 2 },
+    logVolume: { color: theme.accent, fontSize: 15, fontWeight: '900' },
+    statusBadge: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
+    statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
+    logMeta: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 1 },
+    logNotes: { color: theme.text, fontSize: 13, fontWeight: '600', marginTop: 4 },
+    logTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 4 },
+    meta: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
+  });
+}

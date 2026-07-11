@@ -6,6 +6,8 @@ import { ActionButton } from '../../components/ActionButton';
 import { getWorkerProfile, updateWorkerEquipmentStatus, reportEquipmentFault, requestEquipmentMaintenance, logEquipmentShift, getEquipmentShiftLogs, parseApiError } from '../../services/api';
 import type { WorkerProfile } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type EquipmentStatus = 'Operational' | 'Idle' | 'Maintenance' | 'Flagged';
 type ShiftCheckType = 'ShiftStart' | 'ShiftEnd' | 'MidShiftCheck';
@@ -35,6 +37,10 @@ const CHECK_LABELS: Record<ShiftCheckType, string> = {
 type Props = { session: AuthSession };
 
 export function WorkerEquipmentScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [profile, setProfile] = useState<WorkerProfile | null>(null);
   const [shiftLogs, setShiftLogs] = useState<ShiftLog[]>([]);
   const [shiftStatus, setShiftStatus] = useState<EquipmentStatus>('Operational');
@@ -51,7 +57,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
 
   const equipment = profile?.assignedEquipment[0];
   const currentStatus = equipment?.status ?? 'Unknown';
-  const statusConfig = STATUS_CONFIG[currentStatus as EquipmentStatus] ?? { color: '#5d6875', bg: '#f4f6f8', icon: '?' };
+  const statusConfig = STATUS_CONFIG[currentStatus as EquipmentStatus] ?? { color: theme.textSub, bg: theme.bgInput, icon: '?' };
 
   async function logShift() {
     if (!equipment) { Alert.alert('No equipment', 'No equipment assigned.'); return; }
@@ -96,7 +102,6 @@ export function WorkerEquipmentScreen({ session }: Props) {
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Equipment</Text>
 
-      {/* Equipment status card */}
       {equipment ? (
         <View style={[styles.equipCard, { backgroundColor: statusConfig.bg, borderColor: statusConfig.color }]}>
           <View style={styles.equipTop}>
@@ -114,7 +119,6 @@ export function WorkerEquipmentScreen({ session }: Props) {
         <View style={styles.loadingCard}><Text style={styles.loadingText}>Loading equipment...</Text></View>
       )}
 
-      {/* Shift check */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Shift Check</Text>
         <Text style={styles.fieldLabel}>Check Type</Text>
@@ -142,12 +146,11 @@ export function WorkerEquipmentScreen({ session }: Props) {
         <ActionButton label={submitting ? 'Saving...' : 'Log Shift Check'} onPress={logShift} disabled={submitting} />
       </View>
 
-      {/* Recent logs */}
       {shiftLogs.length > 0 ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Recent Checks</Text>
           {shiftLogs.slice(0, 5).map((log) => {
-            const cfg = STATUS_CONFIG[log.status as EquipmentStatus] ?? { color: '#5d6875', bg: '#f4f6f8', icon: '?' };
+            const cfg = STATUS_CONFIG[log.status as EquipmentStatus] ?? { color: theme.textSub, bg: theme.bgInput, icon: '?' };
             return (
               <View key={log.id} style={styles.logRow}>
                 <View style={[styles.logDot, { backgroundColor: cfg.color }]} />
@@ -162,52 +165,51 @@ export function WorkerEquipmentScreen({ session }: Props) {
         </View>
       ) : null}
 
-      {/* Fault report */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Report Fault</Text>
         <InputField label="Fault details" multiline onChangeText={setFaultDescription} value={faultDescription} placeholder="Describe the fault..." />
         <ActionButton label={submitting ? 'Submitting...' : 'Report Fault'} onPress={reportFault} tone="danger" disabled={submitting} />
       </View>
 
-      {/* Maintenance */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Request Maintenance</Text>
         <InputField label="Details" multiline onChangeText={setMaintenanceDetails} value={maintenanceDetails} placeholder="What maintenance is needed?" />
         <ActionButton label={submitting ? 'Submitting...' : 'Request Service'} onPress={requestMaintenance} disabled={submitting} />
       </View>
-
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 16 },
-  equipCard: { borderRadius: 12, borderWidth: 2, marginBottom: 16, padding: 16 },
-  equipTop: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  equipName: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 2 },
-  equipCode: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  statusPill: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
-  statusPillText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
-  equipInstructions: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 18 },
-  loadingCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  loadingText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 14 },
-  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
-  pillRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  pill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, flex: 1, alignItems: 'center', paddingVertical: 8 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#ffffff' },
-  statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  statusBtn: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, paddingVertical: 10, width: '48%' },
-  statusBtnIcon: { color: '#8fa3b8', fontSize: 16, marginBottom: 3 },
-  statusBtnText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  logRow: { alignItems: 'center', flexDirection: 'row', marginBottom: 10 },
-  logDot: { borderRadius: 5, height: 10, marginRight: 10, width: 10 },
-  logBody: { flex: 1 },
-  logCheck: { color: '#17212b', fontSize: 13, fontWeight: '800' },
-  logStatus: { fontSize: 12, fontWeight: '700' },
-  logTime: { color: '#8fa3b8', fontSize: 11, fontWeight: '700' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
+    equipCard: { borderRadius: 12, borderWidth: 2, marginBottom: 16, padding: 16 },
+    equipTop: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+    equipName: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 2 },
+    equipCode: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    statusPill: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
+    statusPillText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+    equipInstructions: { color: theme.textSub, fontSize: 12, fontWeight: '600', lineHeight: 18 },
+    loadingCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    loadingText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    pillRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, flex: 1, alignItems: 'center', paddingVertical: 8 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#ffffff' },
+    statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+    statusBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 10, borderWidth: 1, paddingVertical: 10, width: '48%' },
+    statusBtnIcon: { color: theme.textMuted, fontSize: 16, marginBottom: 3 },
+    statusBtnText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    logRow: { alignItems: 'center', flexDirection: 'row', marginBottom: 10 },
+    logDot: { borderRadius: 5, height: 10, marginRight: 10, width: 10 },
+    logBody: { flex: 1 },
+    logCheck: { color: theme.text, fontSize: 13, fontWeight: '800' },
+    logStatus: { fontSize: 12, fontWeight: '700' },
+    logTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+  });
+}

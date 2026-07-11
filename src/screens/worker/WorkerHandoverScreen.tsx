@@ -3,6 +3,8 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 
 import { getMyShiftLogs, getHazardReports, getNotices, getEquipmentShiftLogs } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -29,6 +31,10 @@ type EquipmentLog = {
 };
 
 export function WorkerHandoverScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [shiftLogs, setShiftLogs] = useState<ShiftLog[]>([]);
   const [hazards, setHazards] = useState<any[]>([]);
   const [notices, setNotices] = useState<any[]>([]);
@@ -66,7 +72,6 @@ export function WorkerHandoverScreen({ session }: Props) {
     catch { return dateStr; }
   }
 
-  // Get last 24h data
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const recentShifts = shiftLogs.filter((s) => new Date(s.submittedAt) > yesterday);
   const recentHazards = hazards.filter((h) => new Date(h.createdAt) > yesterday);
@@ -82,7 +87,6 @@ export function WorkerHandoverScreen({ session }: Props) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
     >
-      {/* Header */}
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Shift Handover</Text>
         <Text style={styles.pageDate}>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</Text>
@@ -90,15 +94,14 @@ export function WorkerHandoverScreen({ session }: Props) {
 
       <Text style={styles.handoverSub}>Summary of the last 24 hours for {session.user.fullName}</Text>
       {connectionError ? (
-  <View style={styles.errorBanner}>
-    <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
-  </View>
-) : null}
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+        </View>
+      ) : null}
       {loading ? (
         <View style={styles.loadingCard}><Text style={styles.loadingText}>Loading handover summary...</Text></View>
       ) : null}
 
-      {/* Production summary */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>📋</Text>
@@ -133,7 +136,6 @@ export function WorkerHandoverScreen({ session }: Props) {
         )}
       </View>
 
-      {/* Hazards */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>⚠</Text>
@@ -155,7 +157,6 @@ export function WorkerHandoverScreen({ session }: Props) {
         ))}
       </View>
 
-      {/* Equipment checks */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>⚙</Text>
@@ -166,7 +167,7 @@ export function WorkerHandoverScreen({ session }: Props) {
           <View style={styles.emptyRow}><Text style={styles.emptyText}>No equipment checks logged</Text></View>
         ) : recentEquipment.slice(0, 3).map((e) => (
           <View key={e.id} style={styles.logRow}>
-            <View style={[styles.logDot, { backgroundColor: e.status === 'Flagged' ? '#b42318' : e.status === 'Maintenance' ? '#1d5f99' : '#1f6f5b' }]} />
+            <View style={[styles.logDot, { backgroundColor: e.status === 'Flagged' ? '#b42318' : e.status === 'Maintenance' ? '#1d5f99' : theme.accent }]} />
             <View style={styles.logBody}>
               <Text style={styles.logTitle}>{e.checkType} · {e.equipmentCode}</Text>
               <Text style={styles.logMeta}>{e.status}{e.notes ? ` — ${e.notes}` : ''}</Text>
@@ -176,7 +177,6 @@ export function WorkerHandoverScreen({ session }: Props) {
         ))}
       </View>
 
-      {/* Unread notices */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>📢</Text>
@@ -195,45 +195,45 @@ export function WorkerHandoverScreen({ session }: Props) {
           </View>
         ))}
       </View>
-
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  pageTitle: { color: '#17212b', flex: 1, fontSize: 22, fontWeight: '900' },
-  pageDate: { color: '#8fa3b8', fontSize: 12, fontWeight: '700' },
-  handoverSub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', marginBottom: 20 },
-  loadingCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  loadingText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  section: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
-  sectionHeader: { alignItems: 'center', borderBottomColor: '#f4f6f8', borderBottomWidth: 1, flexDirection: 'row', gap: 8, padding: 14 },
-  sectionIcon: { fontSize: 16 },
-  sectionTitle: { color: '#17212b', flex: 1, fontSize: 14, fontWeight: '900' },
-  sectionBadge: { backgroundColor: '#f4f6f8', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
-  sectionBadgeRed: { backgroundColor: '#fff5f5', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
-  sectionBadgeText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
-  summaryRow: { flexDirection: 'row', padding: 14, paddingBottom: 8 },
-  summaryItem: { flex: 1 },
-  summaryValue: { color: '#17212b', fontSize: 18, fontWeight: '900', marginBottom: 2 },
-  summaryLabel: { color: '#8fa3b8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  logRow: { alignItems: 'center', borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10 },
-  hazardRow: { alignItems: 'center', borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10 },
-  noticeRow: { alignItems: 'center', borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', overflow: 'hidden' },
-  noticeAccent: { backgroundColor: '#1f6f5b', alignSelf: 'stretch', width: 3 },
-  logDot: { backgroundColor: '#1f6f5b', borderRadius: 5, height: 10, marginRight: 10, width: 10 },
-  severityDot: { borderRadius: 5, height: 10, marginRight: 10, width: 10 },
-  logBody: { flex: 1, paddingLeft: 4 },
-  logTitle: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 1 },
-  logMeta: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
-  logTime: { color: '#8fa3b8', fontSize: 11, fontWeight: '700', marginLeft: 8 },
-  emptyRow: { padding: 14 },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  clearRow: { padding: 14 },
-  clearRowText: { color: '#1f6f5b', fontSize: 13, fontWeight: '700' },
-
-  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, marginBottom: 16, padding: 12 },
-errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+    pageTitle: { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
+    pageDate: { color: theme.textMuted, fontSize: 12, fontWeight: '700' },
+    handoverSub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', marginBottom: 20 },
+    loadingCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    loadingText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    section: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
+    sectionHeader: { alignItems: 'center', borderBottomColor: theme.bgInput, borderBottomWidth: 1, flexDirection: 'row', gap: 8, padding: 14 },
+    sectionIcon: { fontSize: 16 },
+    sectionTitle: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '900' },
+    sectionBadge: { backgroundColor: theme.bgInput, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+    sectionBadgeRed: { backgroundColor: theme.dangerLight, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+    sectionBadgeText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+    summaryRow: { flexDirection: 'row', padding: 14, paddingBottom: 8 },
+    summaryItem: { flex: 1 },
+    summaryValue: { color: theme.text, fontSize: 18, fontWeight: '900', marginBottom: 2 },
+    summaryLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+    logRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10 },
+    hazardRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10 },
+    noticeRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', overflow: 'hidden' },
+    noticeAccent: { backgroundColor: theme.accent, alignSelf: 'stretch', width: 3 },
+    logDot: { backgroundColor: theme.accent, borderRadius: 5, height: 10, marginRight: 10, width: 10 },
+    severityDot: { borderRadius: 5, height: 10, marginRight: 10, width: 10 },
+    logBody: { flex: 1, paddingLeft: 4 },
+    logTitle: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 1 },
+    logMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    logTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginLeft: 8 },
+    emptyRow: { padding: 14 },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    clearRow: { padding: 14 },
+    clearRowText: { color: theme.accent, fontSize: 13, fontWeight: '700' },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 16, padding: 12 },
+    errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  });
+}

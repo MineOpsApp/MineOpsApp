@@ -7,6 +7,8 @@ import { ActionButton } from '../../components/ActionButton';
 import { createIncident, getMyIncidents, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { useEffect } from 'react';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Incident = {
   id: number;
@@ -40,14 +42,16 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 function IncidentPhoto({ photoData }: { photoData: string }) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
   const [expanded, setExpanded] = useState(false);
   return (
     <Pressable onPress={() => setExpanded((e) => !e)} style={{ marginTop: 8 }}>
       {expanded ? (
         <Image source={{ uri: `data:image/jpeg;base64,${photoData}` }} style={{ borderRadius: 8, height: 180, width: '100%' }} resizeMode="cover" />
       ) : (
-        <View style={{ alignItems: 'center', backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
-          <Text style={{ color: '#5d6875', fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
+          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
         </View>
       )}
     </Pressable>
@@ -55,6 +59,10 @@ function IncidentPhoto({ photoData }: { photoData: string }) {
 }
 
 export function WorkerIncidentScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [zone, setZone] = useState('Zone A');
   const [category, setCategory] = useState('Injury');
@@ -161,20 +169,20 @@ export function WorkerIncidentScreen({ session }: Props) {
         </View>
 
         <Text style={styles.fieldLabel}>What Happened</Text>
-        <TextInput multiline onChangeText={setDescription} placeholder="Describe the incident in detail..." placeholderTextColor="#8fa3b8" style={styles.textArea} value={description} />
+        <TextInput multiline onChangeText={setDescription} placeholder="Describe the incident in detail..." placeholderTextColor={theme.textMuted} style={styles.textArea} value={description} />
 
         <Text style={styles.fieldLabel}>Persons Involved</Text>
-        <TextInput onChangeText={setInvolvedPersons} placeholder="Names of workers involved (optional)" placeholderTextColor="#8fa3b8" style={styles.input} value={involvedPersons} />
+        <TextInput onChangeText={setInvolvedPersons} placeholder="Names of workers involved (optional)" placeholderTextColor={theme.textMuted} style={styles.input} value={involvedPersons} />
 
         <Text style={styles.fieldLabel}>Immediate Action Taken</Text>
-        <TextInput multiline onChangeText={setImmediateAction} placeholder="What was done immediately after?" placeholderTextColor="#8fa3b8" style={styles.textArea} value={immediateAction} />
+        <TextInput multiline onChangeText={setImmediateAction} placeholder="What was done immediately after?" placeholderTextColor={theme.textMuted} style={styles.textArea} value={immediateAction} />
 
         <View style={styles.toggleRow}>
           <View style={styles.toggleLeft}>
             <Text style={styles.toggleLabel}>First Aid Given</Text>
             <Text style={styles.toggleSub}>Was first aid administered?</Text>
           </View>
-          <Switch value={firstAidGiven} onValueChange={setFirstAidGiven} trackColor={{ true: '#1f6f5b' }} />
+          <Switch value={firstAidGiven} onValueChange={setFirstAidGiven} trackColor={{ true: theme.accent }} />
         </View>
 
         <View style={styles.toggleRow}>
@@ -182,7 +190,7 @@ export function WorkerIncidentScreen({ session }: Props) {
             <Text style={styles.toggleLabel}>Hospital Required</Text>
             <Text style={styles.toggleSub}>Did anyone need hospital treatment?</Text>
           </View>
-          <Switch value={hospitalRequired} onValueChange={setHospitalRequired} trackColor={{ true: '#b42318' }} />
+          <Switch value={hospitalRequired} onValueChange={setHospitalRequired} trackColor={{ true: theme.danger }} />
         </View>
 
         <Text style={styles.fieldLabel}>Photo Evidence</Text>
@@ -190,7 +198,7 @@ export function WorkerIncidentScreen({ session }: Props) {
           <View style={{ marginBottom: 12 }}>
             <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={{ borderRadius: 8, height: 160, width: '100%' }} resizeMode="cover" />
             <Pressable onPress={() => setPhoto(null)} style={{ alignItems: 'center', marginTop: 6 }}>
-              <Text style={{ color: '#b42318', fontSize: 13, fontWeight: '700' }}>Remove</Text>
+              <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>Remove</Text>
             </Pressable>
           </View>
         ) : (
@@ -219,7 +227,7 @@ export function WorkerIncidentScreen({ session }: Props) {
           </View>
           <View style={styles.incidentMedical}>
             {inc.firstAidGiven ? <Text style={styles.medicalTag}>🩹 First Aid</Text> : null}
-            {inc.hospitalRequired ? <Text style={[styles.medicalTag, { color: '#b42318' }]}>🏥 Hospital</Text> : null}
+            {inc.hospitalRequired ? <Text style={[styles.medicalTag, { color: theme.danger }]}>🏥 Hospital</Text> : null}
           </View>
           <View style={styles.incidentFooter}>
             <Text style={styles.incidentTime}>{formatDate(inc.reportedAt)}</Text>
@@ -233,41 +241,43 @@ export function WorkerIncidentScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 16 },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 14 },
-  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  pill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#ffffff' },
-  textArea: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 12, minHeight: 80, padding: 12 },
-  input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 12, minHeight: 44, paddingHorizontal: 12 },
-  toggleRow: { alignItems: 'center', borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
-  toggleLeft: { flex: 1 },
-  toggleLabel: { color: '#17212b', fontSize: 14, fontWeight: '700' },
-  toggleSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  photoBtn: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, marginBottom: 14, paddingVertical: 14 },
-  photoBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '700' },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 12 },
-  emptyCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, padding: 20 },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  incidentCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 8, padding: 12 },
-  incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  incidentCategory: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 2 },
-  incidentZone: { color: '#8fa3b8', fontSize: 11, fontWeight: '700' },
-  severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  severityText: { fontSize: 11, fontWeight: '900' },
-  incidentMedical: { flexDirection: 'row', gap: 8, marginBottom: 6 },
-  medicalTag: { color: '#1f6f5b', fontSize: 12, fontWeight: '700' },
-  incidentFooter: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  incidentTime: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  statusPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  statusOpen: { backgroundColor: '#fff5f5' },
-  statusInvestigating: { backgroundColor: '#fffbeb' },
-  statusClosed: { backgroundColor: '#f0fdf4' },
-  statusText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#ffffff' },
+    textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 80, padding: 12 },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 44, paddingHorizontal: 12 },
+    toggleRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
+    toggleLeft: { flex: 1 },
+    toggleLabel: { color: theme.text, fontSize: 14, fontWeight: '700' },
+    toggleSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+    photoBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, marginBottom: 14, paddingVertical: 14 },
+    photoBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '700' },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 12 },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 20 },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    incidentCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 8, padding: 12 },
+    incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    incidentCategory: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 2 },
+    incidentZone: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+    severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    severityText: { fontSize: 11, fontWeight: '900' },
+    incidentMedical: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+    medicalTag: { color: theme.accent, fontSize: 12, fontWeight: '700' },
+    incidentFooter: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+    incidentTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    statusPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+    statusOpen: { backgroundColor: '#fff5f5' },
+    statusInvestigating: { backgroundColor: '#fffbeb' },
+    statusClosed: { backgroundColor: '#f0fdf4' },
+    statusText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+  });
+}

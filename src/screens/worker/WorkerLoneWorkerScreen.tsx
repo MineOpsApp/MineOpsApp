@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { checkInLoneWorker, getLoneWorkerStatus, parseApiError, startLoneWorker, stopLoneWorker, type LoneWorkerStatus } from '../../services/api';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 const INTERVALS = [
   { label: '30 min', value: 30 },
@@ -24,6 +26,10 @@ function formatCountdown(ms: number): string {
 }
 
 export function WorkerLoneWorkerScreen() {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [status, setStatus] = useState<LoneWorkerStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -100,7 +106,7 @@ export function WorkerLoneWorkerScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#1f6f5b" />
+        <ActivityIndicator color={theme.accent} />
       </View>
     );
   }
@@ -120,9 +126,8 @@ export function WorkerLoneWorkerScreen() {
 
       {status?.active ? (
         <View style={styles.activeContainer}>
-          {/* Countdown ring area */}
           <View style={[styles.countdownRing, isOverdue && styles.countdownRingRed]}>
-            <Text style={[styles.countdownValue, isOverdue && { color: '#b42318' }]}>
+            <Text style={[styles.countdownValue, isOverdue && { color: theme.danger }]}>
               {countdown}
             </Text>
             <Text style={styles.countdownLabel}>
@@ -215,86 +220,86 @@ export function WorkerLoneWorkerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#f0f2f5' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: theme.bg },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  header: { backgroundColor: '#17212b', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '900' },
-  headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '500', marginTop: 4 },
+    header: { backgroundColor: theme.bgHero, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
+    headerTitle: { color: '#fff', fontSize: 20, fontWeight: '900' },
+    headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '500', marginTop: 4 },
 
-  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: 16, padding: 12 },
-  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: 16, padding: 12 },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
-  // Active state
-  activeContainer: { alignItems: 'center', flex: 1, padding: 24 },
+    activeContainer: { alignItems: 'center', flex: 1, padding: 24 },
 
-  countdownRing: {
-    alignItems: 'center', backgroundColor: '#fff', borderColor: '#1f6f5b',
-    borderRadius: 120, borderWidth: 4, height: 220, justifyContent: 'center',
-    marginVertical: 20, width: 220,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8,
-    elevation: 4,
-  },
-  countdownRingRed: { borderColor: '#b42318' },
-  countdownValue: { color: '#1f6f5b', fontSize: 42, fontWeight: '900', letterSpacing: -1 },
-  countdownLabel: { color: '#8fa3b8', fontSize: 11, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
+    countdownRing: {
+      alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.accent,
+      borderRadius: 120, borderWidth: 4, height: 220, justifyContent: 'center',
+      marginVertical: 20, width: 220,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8,
+      elevation: 4,
+    },
+    countdownRingRed: { borderColor: theme.danger },
+    countdownValue: { color: theme.accent, fontSize: 42, fontWeight: '900', letterSpacing: -1 },
+    countdownLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
 
-  overdueWarning: {
-    backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 10,
-    borderWidth: 1, marginBottom: 16, padding: 12, width: '100%',
-  },
-  overdueText: { color: '#b42318', fontSize: 13, fontWeight: '700', lineHeight: 18, textAlign: 'center' },
+    overdueWarning: {
+      backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 10,
+      borderWidth: 1, marginBottom: 16, padding: 12, width: '100%',
+    },
+    overdueText: { color: theme.danger, fontSize: 13, fontWeight: '700', lineHeight: 18, textAlign: 'center' },
 
-  checkInBtn: {
-    alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 16,
-    height: 56, justifyContent: 'center', width: '100%',
-  },
-  checkInBtnRed: { backgroundColor: '#b42318' },
-  checkInBtnText: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
+    checkInBtn: {
+      alignItems: 'center', backgroundColor: theme.accent, borderRadius: 16,
+      height: 56, justifyContent: 'center', width: '100%',
+    },
+    checkInBtnRed: { backgroundColor: theme.danger },
+    checkInBtnText: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
 
-  infoCard: {
-    backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12,
-    borderWidth: 1, marginTop: 20, width: '100%',
-  },
-  infoRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
-  infoDivider: { backgroundColor: '#f0f2f5', height: 1, marginHorizontal: 14 },
-  infoLabel: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
-  infoValue: { color: '#17212b', fontSize: 14, fontWeight: '800' },
+    infoCard: {
+      backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12,
+      borderWidth: 1, marginTop: 20, width: '100%',
+    },
+    infoRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
+    infoDivider: { backgroundColor: theme.bg, height: 1, marginHorizontal: 14 },
+    infoLabel: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
+    infoValue: { color: theme.text, fontSize: 14, fontWeight: '800' },
 
-  stopBtn: {
-    alignItems: 'center', backgroundColor: '#fff', borderColor: '#e5e9ef',
-    borderRadius: 12, borderWidth: 1, height: 48, justifyContent: 'center',
-    marginTop: 12, width: '100%',
-  },
-  stopBtnText: { color: '#b42318', fontSize: 14, fontWeight: '700' },
+    stopBtn: {
+      alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border,
+      borderRadius: 12, borderWidth: 1, height: 48, justifyContent: 'center',
+      marginTop: 12, width: '100%',
+    },
+    stopBtnText: { color: theme.danger, fontSize: 14, fontWeight: '700' },
 
-  btnDisabled: { opacity: 0.5 },
+    btnDisabled: { opacity: 0.5 },
 
-  // Inactive state
-  inactiveContainer: { flex: 1, padding: 20 },
+    inactiveContainer: { flex: 1, padding: 20 },
 
-  infoBox: {
-    alignItems: 'center', backgroundColor: '#fff', borderColor: '#e5e9ef',
-    borderRadius: 16, borderWidth: 1, marginBottom: 24, padding: 24,
-  },
-  infoBoxIcon: { fontSize: 40, marginBottom: 12 },
-  infoBoxTitle: { color: '#17212b', fontSize: 17, fontWeight: '900', marginBottom: 10 },
-  infoBoxBody: { color: '#5d6875', fontSize: 13, fontWeight: '500', lineHeight: 20, textAlign: 'center' },
+    infoBox: {
+      alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border,
+      borderRadius: 16, borderWidth: 1, marginBottom: 24, padding: 24,
+    },
+    infoBoxIcon: { fontSize: 40, marginBottom: 12 },
+    infoBoxTitle: { color: theme.text, fontSize: 17, fontWeight: '900', marginBottom: 10 },
+    infoBoxBody: { color: theme.textSub, fontSize: 13, fontWeight: '500', lineHeight: 20, textAlign: 'center' },
 
-  intervalTitle: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' },
-  intervalRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
-  intervalBtn: {
-    alignItems: 'center', backgroundColor: '#fff', borderColor: '#e5e9ef',
-    borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 14,
-  },
-  intervalBtnActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  intervalBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '700' },
-  intervalBtnTextActive: { color: '#fff' },
+    intervalTitle: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' },
+    intervalRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
+    intervalBtn: {
+      alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border,
+      borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 14,
+    },
+    intervalBtnActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    intervalBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '700' },
+    intervalBtnTextActive: { color: '#fff' },
 
-  startBtn: {
-    alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 14,
-    height: 56, justifyContent: 'center',
-  },
-  startBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
-});
+    startBtn: {
+      alignItems: 'center', backgroundColor: theme.accent, borderRadius: 14,
+      height: 56, justifyContent: 'center',
+    },
+    startBtnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  });
+}

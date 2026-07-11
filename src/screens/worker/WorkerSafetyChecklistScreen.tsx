@@ -4,6 +4,8 @@ import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleS
 import { getMyChecklistToday, submitSafetyChecklist } from '../../services/api';
 import type { ChecklistPayload, SafetyChecklist } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -37,6 +39,10 @@ function formatTime(dt: string) {
 }
 
 export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [existing, setExisting] = useState<SafetyChecklist | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,7 +76,7 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
   }
 
   function toggle(key: ItemKey) {
-    if (existing && !submitted) return; // read-only unless resubmitting
+    if (existing && !submitted) return;
     setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
@@ -109,7 +115,7 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
   }
 
   if (loading) {
-    return <View style={styles.centered}><ActivityIndicator color="#1f6f5b" /></View>;
+    return <View style={styles.centered}><ActivityIndicator color={theme.accent} /></View>;
   }
 
   const allChecked = Object.values(checks).every(Boolean);
@@ -120,7 +126,7 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />}
     >
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Shift Safety Check</Text>
@@ -184,34 +190,36 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { marginBottom: 16 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900' },
-  pageSub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  doneCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 16, padding: 14 },
-  doneIcon: { color: '#16a34a', fontSize: 26, fontWeight: '900' },
-  doneBody: { flex: 1 },
-  doneTitle: { color: '#15803d', fontSize: 14, fontWeight: '900' },
-  doneSub: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  updateBtn: { backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  updateBtnText: { color: '#15803d', fontSize: 12, fontWeight: '800' },
-  progressCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
-  progressText: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 10 },
-  progressBar: { backgroundColor: '#e5e9ef', borderRadius: 4, height: 6, overflow: 'hidden' },
-  progressFill: { backgroundColor: '#1f6f5b', borderRadius: 4, height: 6 },
-  itemsCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
-  item: { alignItems: 'center', flexDirection: 'row', gap: 14, padding: 14 },
-  itemBorder: { borderBottomColor: '#f0f2f5', borderBottomWidth: 1 },
-  checkbox: { alignItems: 'center', borderColor: '#d1d5db', borderRadius: 6, borderWidth: 2, height: 26, justifyContent: 'center', width: 26 },
-  checkboxDone: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  checkmark: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-  itemBody: { flex: 1 },
-  itemLabel: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-  itemLabelDone: { color: '#1f6f5b' },
-  itemSub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  submitBtn: { backgroundColor: '#1f6f5b', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
-  submitBtnDisabled: { backgroundColor: '#8fa3b8' },
-  submitBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageHeader: { marginBottom: 16 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    pageSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+    doneCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 16, padding: 14 },
+    doneIcon: { color: '#16a34a', fontSize: 26, fontWeight: '900' },
+    doneBody: { flex: 1 },
+    doneTitle: { color: '#15803d', fontSize: 14, fontWeight: '900' },
+    doneSub: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
+    updateBtn: { backgroundColor: '#dcfce7', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+    updateBtnText: { color: '#15803d', fontSize: 12, fontWeight: '800' },
+    progressCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
+    progressText: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 10 },
+    progressBar: { backgroundColor: theme.border, borderRadius: 4, height: 6, overflow: 'hidden' },
+    progressFill: { backgroundColor: theme.accent, borderRadius: 4, height: 6 },
+    itemsCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
+    item: { alignItems: 'center', flexDirection: 'row', gap: 14, padding: 14 },
+    itemBorder: { borderBottomColor: theme.bg, borderBottomWidth: 1 },
+    checkbox: { alignItems: 'center', borderColor: theme.border, borderRadius: 6, borderWidth: 2, height: 26, justifyContent: 'center', width: 26 },
+    checkboxDone: { backgroundColor: theme.accent, borderColor: theme.accent },
+    checkmark: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+    itemBody: { flex: 1 },
+    itemLabel: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    itemLabelDone: { color: theme.accent },
+    itemSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+    submitBtn: { backgroundColor: theme.accent, borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+    submitBtnDisabled: { backgroundColor: theme.textMuted },
+    submitBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
+  });
+}

@@ -19,11 +19,8 @@ type PhoneCheck = { valid: boolean; isForeign: boolean; error?: string };
 
 function validatePhone(raw: string): PhoneCheck {
   const p = normalizePhone(raw);
-  // Ghana local: 0 + 9 digits
   if (/^0\d{9}$/.test(p)) return { valid: true, isForeign: false };
-  // Ghana international: +233 + 9 digits
   if (/^\+233\d{9}$/.test(p)) return { valid: true, isForeign: false };
-  // Foreign international: + country code (not +233) + 7–14 digits
   if (/^\+(?!233)\d{7,14}$/.test(p)) return { valid: true, isForeign: true };
   return {
     valid: false,
@@ -35,6 +32,8 @@ function validatePhone(raw: string): PhoneCheck {
 import { getMyEmergencyContacts, saveEmergencyContact, deleteEmergencyContact } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -47,6 +46,10 @@ type FormState = {
 const EMPTY_FORM: FormState = { name: '', relationship: '', phone: '' };
 
 export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -151,7 +154,7 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color="#1f6f5b" />
+        <ActivityIndicator color={theme.accent} />
       </View>
     );
   }
@@ -163,7 +166,7 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />}
     >
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Emergency Contacts</Text>
@@ -201,7 +204,7 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
                   value={form.name}
                   onChangeText={(t) => setForm((f) => ({ ...f, name: t }))}
                   placeholder="e.g. Jane Doe"
-                  placeholderTextColor="#8fa3b8"
+                  placeholderTextColor={theme.textMuted}
                 />
                 <Text style={styles.formLabel}>Relationship *</Text>
                 <TextInput
@@ -209,7 +212,7 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
                   value={form.relationship}
                   onChangeText={(t) => setForm((f) => ({ ...f, relationship: t }))}
                   placeholder="e.g. Spouse, Parent, Sibling"
-                  placeholderTextColor="#8fa3b8"
+                  placeholderTextColor={theme.textMuted}
                 />
                 <Text style={styles.formLabel}>Phone Number *</Text>
                 <TextInput
@@ -217,7 +220,7 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
                   value={form.phone}
                   onChangeText={(t) => setForm((f) => ({ ...f, phone: t }))}
                   placeholder="e.g. 0244 123 456"
-                  placeholderTextColor="#8fa3b8"
+                  placeholderTextColor={theme.textMuted}
                   keyboardType="phone-pad"
                 />
                 <Text style={styles.inputHint}>Ghana: 0244 123 456 or +233 24 123 456 · 10 digits max</Text>
@@ -258,40 +261,42 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { marginBottom: 16 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900' },
-  pageSub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  infoCard: { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', borderRadius: 10, borderWidth: 1, marginBottom: 20, padding: 14 },
-  infoText: { color: '#1d4ed8', fontSize: 13, fontWeight: '600', lineHeight: 19 },
-  section: { marginBottom: 16 },
-  sectionHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 8 },
-  sectionTitle: { color: '#17212b', flex: 1, fontSize: 14, fontWeight: '900' },
-  editBtn: { backgroundColor: '#f4f6f8', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5 },
-  editBtnText: { color: '#1f6f5b', fontSize: 13, fontWeight: '800' },
-  contactCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 14 },
-  contactAvatar: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
-  contactAvatarText: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
-  contactBody: { flex: 1 },
-  contactName: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 2 },
-  contactMeta: { color: '#8fa3b8', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  contactPhone: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-  deleteBtn: { alignItems: 'center', backgroundColor: '#fff5f5', borderRadius: 16, height: 32, justifyContent: 'center', width: 32 },
-  deleteBtnText: { color: '#b42318', fontSize: 13, fontWeight: '900' },
-  addCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderStyle: 'dashed', borderWidth: 1.5, flexDirection: 'row', gap: 10, padding: 16 },
-  addIcon: { color: '#1f6f5b', fontSize: 22, fontWeight: '300' },
-  addLabel: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-  formCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 16 },
-  formLabel: { color: '#17212b', fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 10, textTransform: 'uppercase' },
-  input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 10 },
-  inputHint: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 4 },
-  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', marginTop: 10 },
-  formActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  cancelBtn: { backgroundColor: '#f4f6f8', borderRadius: 8, flex: 1, paddingVertical: 12, alignItems: 'center' },
-  cancelBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '800' },
-  saveBtn: { backgroundColor: '#1f6f5b', borderRadius: 8, flex: 2, paddingVertical: 12, alignItems: 'center' },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageHeader: { marginBottom: 16 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    pageSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+    infoCard: { backgroundColor: theme.infoLight, borderColor: theme.info, borderRadius: 10, borderWidth: 1, marginBottom: 20, padding: 14 },
+    infoText: { color: theme.info, fontSize: 13, fontWeight: '600', lineHeight: 19 },
+    section: { marginBottom: 16 },
+    sectionHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 8 },
+    sectionTitle: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '900' },
+    editBtn: { backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5 },
+    editBtnText: { color: theme.accent, fontSize: 13, fontWeight: '800' },
+    contactCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 14 },
+    contactAvatar: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
+    contactAvatarText: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
+    contactBody: { flex: 1 },
+    contactName: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
+    contactMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 2 },
+    contactPhone: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    deleteBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderRadius: 16, height: 32, justifyContent: 'center', width: 32 },
+    deleteBtnText: { color: theme.danger, fontSize: 13, fontWeight: '900' },
+    addCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderStyle: 'dashed', borderWidth: 1.5, flexDirection: 'row', gap: 10, padding: 16 },
+    addIcon: { color: theme.accent, fontSize: 22, fontWeight: '300' },
+    addLabel: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 16 },
+    formLabel: { color: theme.text, fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 10, textTransform: 'uppercase' },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 10 },
+    inputHint: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginTop: 10 },
+    formActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+    cancelBtn: { backgroundColor: theme.bgInput, borderRadius: 8, flex: 1, paddingVertical: 12, alignItems: 'center' },
+    cancelBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
+    saveBtn: { backgroundColor: theme.accent, borderRadius: 8, flex: 2, paddingVertical: 12, alignItems: 'center' },
+    saveBtnDisabled: { opacity: 0.6 },
+    saveBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+  });
+}

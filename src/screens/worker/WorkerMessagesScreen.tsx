@@ -17,10 +17,16 @@ import { getMyWorkerMessages, parseApiError, sendWorkerMessage } from '../../ser
 import type { WorkerMessage } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 import { formatAgo } from '../../utils/time';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function WorkerMessagesScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [messages, setMessages] = useState<WorkerMessage[]>([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -72,7 +78,7 @@ export function WorkerMessagesScreen({ session }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: theme.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
@@ -80,7 +86,7 @@ export function WorkerMessagesScreen({ session }: Props) {
         ref={scrollRef}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />}
       >
         <View style={styles.pageHeader}>
           <Text style={styles.pageTitle}>Message Supervisor</Text>
@@ -89,12 +95,11 @@ export function WorkerMessagesScreen({ session }: Props) {
           </Text>
         </View>
 
-        {/* Compose */}
         <View style={styles.composeCard}>
           <TextInput
             style={styles.composeInput}
             placeholder={`Send a message to your supervisor…\nE.g. "Equipment EX-01 making strange noise"`}
-            placeholderTextColor="#556878"
+            placeholderTextColor={theme.textMuted}
             value={text}
             onChangeText={setText}
             multiline
@@ -118,9 +123,8 @@ export function WorkerMessagesScreen({ session }: Props) {
           </View>
         </View>
 
-        {/* History */}
         {loading ? (
-          <ActivityIndicator color="#1f6f5b" style={{ marginTop: 24 }} />
+          <ActivityIndicator color={theme.accent} style={{ marginTop: 24 }} />
         ) : loadError && messages.length === 0 ? (
           <View style={styles.errorCard}>
             <Text style={styles.errorCardText}>Could not load messages. Pull to refresh.</Text>
@@ -164,102 +168,104 @@ export function WorkerMessagesScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 40 },
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 16, paddingBottom: 40 },
 
-  pageHeader: { marginBottom: 16 },
-  pageTitle: { color: '#e6edf3', fontSize: 20, fontWeight: '800' },
-  pageSub: { color: '#7d8590', fontSize: 13, marginTop: 2 },
+    pageHeader: { marginBottom: 16 },
+    pageTitle: { color: theme.text, fontSize: 20, fontWeight: '800' },
+    pageSub: { color: theme.textMuted, fontSize: 13, marginTop: 2 },
 
-  composeCard: {
-    backgroundColor: '#161b22',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 12,
-    marginBottom: 20,
-  },
-  composeInput: {
-    color: '#e6edf3',
-    fontSize: 15,
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  composeFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#21262d',
-  },
-  charCount: { color: '#7d8590', fontSize: 12 },
-  charCountWarn: { color: '#d29922' },
-  sendBtn: {
-    backgroundColor: '#1f6f5b',
-    borderRadius: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    minWidth: 90,
-    alignItems: 'center',
-  },
-  sendBtnDisabled: { opacity: 0.4 },
-  sendBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+    composeCard: {
+      backgroundColor: theme.bgCard,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 12,
+      marginBottom: 20,
+    },
+    composeInput: {
+      color: theme.text,
+      fontSize: 15,
+      minHeight: 80,
+      textAlignVertical: 'top',
+    },
+    composeFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 8,
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+    charCount: { color: theme.textMuted, fontSize: 12 },
+    charCountWarn: { color: theme.amber },
+    sendBtn: {
+      backgroundColor: theme.accent,
+      borderRadius: 8,
+      paddingHorizontal: 18,
+      paddingVertical: 8,
+      minWidth: 90,
+      alignItems: 'center',
+    },
+    sendBtnDisabled: { opacity: 0.4 },
+    sendBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 
-  errorCard: {
-    backgroundColor: '#2d1212',
-    borderColor: '#6e3333',
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 12,
-    padding: 14,
-  },
-  errorCardText: { color: '#f87171', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    errorCard: {
+      backgroundColor: theme.dangerLight,
+      borderColor: '#fca5a5',
+      borderRadius: 8,
+      borderWidth: 1,
+      marginBottom: 12,
+      padding: 14,
+    },
+    errorCardText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
-  emptyCard: {
-    alignItems: 'center',
-    backgroundColor: '#161b22',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 32,
-    gap: 8,
-  },
-  emptyIcon: { fontSize: 32 },
-  emptyTitle: { color: '#e6edf3', fontSize: 16, fontWeight: '700' },
-  emptySub: { color: '#7d8590', fontSize: 13, textAlign: 'center' },
+    emptyCard: {
+      alignItems: 'center',
+      backgroundColor: theme.bgCard,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 32,
+      gap: 8,
+    },
+    emptyIcon: { fontSize: 32 },
+    emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '700' },
+    emptySub: { color: theme.textMuted, fontSize: 13, textAlign: 'center' },
 
-  historyLabel: { color: '#7d8590', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 },
+    historyLabel: { color: theme.textMuted, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 },
 
-  msgCard: { marginBottom: 16 },
-  msgBubble: {
-    backgroundColor: '#1f3d2e',
-    borderRadius: 12,
-    borderBottomRightRadius: 2,
-    padding: 12,
-    alignSelf: 'flex-end',
-    maxWidth: '90%',
-  },
-  msgText: { color: '#e6edf3', fontSize: 15, lineHeight: 20 },
-  msgTime: { color: '#3fb950', fontSize: 11, marginTop: 4, textAlign: 'right' },
+    msgCard: { marginBottom: 16 },
+    msgBubble: {
+      backgroundColor: theme.bgHero,
+      borderRadius: 12,
+      borderBottomRightRadius: 2,
+      padding: 12,
+      alignSelf: 'flex-end',
+      maxWidth: '90%',
+    },
+    msgText: { color: '#ffffff', fontSize: 15, lineHeight: 20 },
+    msgTime: { color: '#3fb950', fontSize: 11, marginTop: 4, textAlign: 'right' },
 
-  replyBubble: {
-    backgroundColor: '#161b22',
-    borderRadius: 12,
-    borderBottomLeftRadius: 2,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 12,
-    marginTop: 6,
-    maxWidth: '90%',
-    alignSelf: 'flex-start',
-  },
-  replyLabel: { color: '#7d8590', fontSize: 11, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.3 },
-  replyText: { color: '#e6edf3', fontSize: 15, lineHeight: 20 },
-  replyTime: { color: '#7d8590', fontSize: 11, marginTop: 4 },
+    replyBubble: {
+      backgroundColor: theme.bgCard,
+      borderRadius: 12,
+      borderBottomLeftRadius: 2,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 12,
+      marginTop: 6,
+      maxWidth: '90%',
+      alignSelf: 'flex-start',
+    },
+    replyLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.3 },
+    replyText: { color: theme.text, fontSize: 15, lineHeight: 20 },
+    replyTime: { color: theme.textMuted, fontSize: 11, marginTop: 4 },
 
-  pendingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 },
-  pendingDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#d29922' },
-  pendingText: { color: '#7d8590', fontSize: 12 },
-});
+    pendingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 },
+    pendingDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.amber },
+    pendingText: { color: theme.textMuted, fontSize: 12 },
+  });
+}

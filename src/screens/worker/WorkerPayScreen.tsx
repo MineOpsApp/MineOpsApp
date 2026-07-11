@@ -19,6 +19,8 @@ import {
   type WorkerPayRecord,
 } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -40,6 +42,10 @@ function fmtDate(d: string) {
 }
 
 export function WorkerPayScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const s = makeStyles(theme);
+
   const [records, setRecords] = useState<WorkerPayRecord[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +102,7 @@ export function WorkerPayScreen({ session: _ }: Props) {
   };
 
   if (loading) {
-    return <View style={s.centered}><ActivityIndicator color="#1f6f5b" size="large" /></View>;
+    return <View style={s.centered}><ActivityIndicator color={theme.accent} size="large" /></View>;
   }
 
   return (
@@ -141,7 +147,7 @@ export function WorkerPayScreen({ session: _ }: Props) {
               keyboardType="numeric"
               maxLength={15}
               placeholder="e.g. 0241234567"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={theme.textMuted}
             />
 
             <Text style={s.inputLabel}>Network</Text>
@@ -198,7 +204,7 @@ export function WorkerPayScreen({ session: _ }: Props) {
             {r.insuranceDeduction > 0 && (
               <View style={s.row}>
                 <Text style={s.label}>Insurance Deduction</Text>
-                <Text style={[s.value, { color: '#b42318' }]}>− {fmt(r.insuranceDeduction)}</Text>
+                <Text style={[s.value, { color: theme.danger }]}>− {fmt(r.insuranceDeduction)}</Text>
               </View>
             )}
             <View style={[s.row, s.netRow]}>
@@ -228,56 +234,58 @@ export function WorkerPayScreen({ session: _ }: Props) {
   );
 }
 
-const s = StyleSheet.create({
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  container: { backgroundColor: '#f4f6f8', padding: 20, paddingBottom: 48 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  pageSub: { color: '#5d6875', fontSize: 13, fontWeight: '700', marginBottom: 20 },
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 48 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    pageSub: { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: 20 },
 
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: 16 },
-  sectionTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 12, textTransform: 'uppercase' },
-  sectionHeader: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 10 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: 16 },
+    sectionTitle: { color: theme.text, fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 12, textTransform: 'uppercase' },
+    sectionHeader: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 10 },
 
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderTopColor: '#f4f6f8', borderTopWidth: 1 },
-  label: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  value: { color: '#17212b', fontSize: 13, fontWeight: '700' },
+    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderTopColor: theme.bgInput, borderTopWidth: 1 },
+    label: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    value: { color: theme.text, fontSize: 13, fontWeight: '700' },
 
-  netRow: { borderTopColor: '#dde3ea', borderTopWidth: 1, marginTop: 4, paddingTop: 10 },
-  netLabel: { color: '#17212b', fontSize: 15, fontWeight: '900' },
-  netValue: { color: '#1f6f5b', fontSize: 17, fontWeight: '900' },
+    netRow: { borderTopColor: theme.border, borderTopWidth: 1, marginTop: 4, paddingTop: 10 },
+    netLabel: { color: theme.text, fontSize: 15, fontWeight: '900' },
+    netValue: { color: theme.accent, fontSize: 17, fontWeight: '900' },
 
-  recordHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  recordDate: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-  statusPill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  statusText: { fontSize: 11, fontWeight: '800' },
+    recordHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+    recordDate: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    statusPill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    statusText: { fontSize: 11, fontWeight: '800' },
 
-  failureReason: { color: '#b42318', fontSize: 12, fontWeight: '700', marginTop: 6 },
+    failureReason: { color: theme.danger, fontSize: 12, fontWeight: '700', marginTop: 6 },
 
-  inputLabel: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 4, textTransform: 'uppercase' },
-  input: { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, fontWeight: '700', padding: 10 },
+    inputLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 4, textTransform: 'uppercase' },
+    input: { borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '700', padding: 10 },
 
-  networkRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
-  networkBtn: { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-  networkBtnActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  networkBtnText: { color: '#5d6875', fontSize: 13, fontWeight: '800' },
-  networkBtnTextActive: { color: '#fff' },
+    networkRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
+    networkBtn: { borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+    networkBtnActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    networkBtnText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    networkBtnTextActive: { color: '#fff' },
 
-  actionRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  cancelBtn: { flex: 1, alignItems: 'center', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, padding: 12 },
-  cancelBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '800' },
-  saveBtn: { flex: 1, alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 8, padding: 12 },
-  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+    actionRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+    cancelBtn: { flex: 1, alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, padding: 12 },
+    cancelBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
+    saveBtn: { flex: 1, alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, padding: 12 },
+    saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
 
-  editBtn: { marginTop: 12, alignSelf: 'flex-start', borderColor: '#1f6f5b', borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-  editBtnText: { color: '#1f6f5b', fontSize: 13, fontWeight: '800' },
+    editBtn: { marginTop: 12, alignSelf: 'flex-start', borderColor: theme.accent, borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+    editBtnText: { color: theme.accent, fontSize: 13, fontWeight: '800' },
 
-  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', marginTop: 8 },
-  successText: { color: '#15803d', fontSize: 13, fontWeight: '700', marginBottom: 8 },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginTop: 8 },
+    successText: { color: theme.success, fontSize: 13, fontWeight: '700', marginBottom: 8 },
 
-  emptyCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32, marginBottom: 14 },
-  emptyIcon: { fontSize: 36, marginBottom: 10 },
-  emptyText: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  emptySubText: { color: '#5d6875', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 14 },
-  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-});
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32, marginBottom: 14 },
+    emptyIcon: { fontSize: 36, marginBottom: 10 },
+    emptyText: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    emptySubText: { color: theme.textSub, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 14 },
+    errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  });
+}
