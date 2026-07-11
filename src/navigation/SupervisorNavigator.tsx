@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, Text, View } from 'react-native';
 
@@ -15,7 +15,6 @@ import { useThemeMode } from '../theme/ThemeContext';
 import { SupervisorRosterScreen } from '../screens/supervisor/SupervisorRosterScreen';
 import { SupervisorBlastScreen } from '../screens/supervisor/SupervisorBlastScreen';
 import { SupervisorEquipmentRegistryScreen } from '../screens/supervisor/SupervisorEquipmentRegistryScreen';
-
 import { SupervisorDrillScreen } from '../screens/supervisor/SupervisorDrillScreen';
 import { SupervisorGuestScreen } from '../screens/supervisor/SupervisorGuestScreen';
 import { SupervisorIncidentScreen } from '../screens/supervisor/SupervisorIncidentScreen';
@@ -26,7 +25,6 @@ import { SupervisorSafetyChecklistScreen } from '../screens/supervisor/Superviso
 import { SupervisorFirstAidKitScreen } from '../screens/supervisor/SupervisorFirstAidKitScreen';
 import { SupervisorMineralInventoryScreen } from '../screens/supervisor/SupervisorMineralInventoryScreen';
 import { SupervisorCertificationsScreen } from '../screens/supervisor/SupervisorCertificationsScreen';
-import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerProfileViewScreen } from '../screens/supervisor/WorkerProfileViewScreen';
 import { SupervisorMessagesScreen } from '../screens/supervisor/SupervisorMessagesScreen';
 import { SupervisorAnnouncementsScreen } from '../screens/supervisor/SupervisorAnnouncementsScreen';
@@ -65,11 +63,29 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
+type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription';
+
 type Props = { session: AuthSession; onLogout: () => void };
 
-function SupervisorMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'profile' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription'>('menu');
+function SupervisorMoreStack({
+  session,
+  pendingRef,
+  onRegisterSetter,
+}: {
+  session: AuthSession;
+  pendingRef: React.MutableRefObject<SupervisorMoreSubScreen | null>;
+  onRegisterSetter: (setter: (s: SupervisorMoreSubScreen) => void) => void;
+}) {
+  const [screen, setScreen] = useState<SupervisorMoreSubScreen>(() => {
+    const pending = pendingRef.current;
+    pendingRef.current = null;
+    return pending ?? 'menu';
+  });
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
+
+  useEffect(() => {
+    onRegisterSetter(setScreen);
+  }, [onRegisterSetter]);
 
   const backBtn = (
     <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -100,7 +116,6 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'firstAid') return <View style={{ flex: 1 }}>{backBtn}<SupervisorFirstAidKitScreen session={session} /></View>;
   if (screen === 'mineralInventory') return <View style={{ flex: 1 }}>{backBtn}<SupervisorMineralInventoryScreen session={session} /></View>;
   if (screen === 'certifications') return <View style={{ flex: 1 }}>{backBtn}<SupervisorCertificationsScreen session={session} /></View>;
-  if (screen === 'profile') return <View style={{ flex: 1 }}>{backBtn}<WorkerProfileScreen session={session} /></View>;
   if (screen === 'workerProfile') return (
     <View style={{ flex: 1 }}>
       <Pressable onPress={() => setScreen('workerContacts')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -109,12 +124,7 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
       <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
     </View>
   );
-  if (screen === 'messages') return (
-    <View style={{ flex: 1 }}>
-      {backBtn}
-      <SupervisorMessagesScreen session={session} />
-    </View>
-  );
+  if (screen === 'messages') return <View style={{ flex: 1 }}>{backBtn}<SupervisorMessagesScreen session={session} /></View>;
   if (screen === 'announcements') return <View style={{ flex: 1 }}>{backBtn}<SupervisorAnnouncementsScreen session={session} /></View>;
   if (screen === 'payRuns') return <View style={{ flex: 1 }}>{backBtn}<SupervisorPayRunsScreen session={session} /></View>;
   if (screen === 'guestCodes') return <View style={{ flex: 1 }}>{backBtn}<SupervisorGuestCodesScreen session={session} /></View>;
@@ -131,42 +141,81 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
   if (screen === 'bulkPurchase') return <View style={{ flex: 1 }}>{backBtn}<SupervisorBulkPurchaseScreen session={session} /></View>;
   if (screen === 'illegalReport') return <View style={{ flex: 1 }}>{backBtn}<IllegalMineReportScreen /></View>;
   if (screen === 'subscription') return <View style={{ flex: 1 }}>{backBtn}<SupervisorSubscriptionScreen session={session} /></View>;
+
   return (
     <MoreScreen
-      items={[
-        { icon: '📋', label: 'Shift Logs', description: 'View all site shift production logs', onPress: () => setScreen('shifts') },
-        { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
-        { icon: '⛏', label: 'Drill Operations', description: 'Active and completed drill sign-offs', onPress: () => setScreen('drills') },
-        { icon: '👤', label: 'Guest Access', description: 'Create and manage guest accounts', onPress: () => setScreen('guests') },
-        { icon: '👷', label: 'Site Roster', description: 'Live headcount — who is on site now', onPress: () => setScreen('roster') },
-        { icon: '💥', label: 'Blast Management', description: 'Schedule and notify blast operations', onPress: () => setScreen('blast') },
-        { icon: '🚨', label: 'Incident Reports', description: 'View and manage site incident reports', onPress: () => setScreen('incidents') },
-        { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for locked out worker', onPress: () => setScreen('reset') },
-        { icon: '🔧', label: 'Equipment Registry', description: 'Manage site equipment list and status', onPress: () => setScreen('equipment') },
-        { icon: '✅', label: 'Worker Approvals', description: 'Approve or reject new worker registrations', onPress: () => setScreen('approvals') },
-        { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts for all site personnel', onPress: () => setScreen('workerContacts') },
-        { icon: '✅', label: 'Safety Checklists', description: "Today's shift checklist — who has and hasn't submitted", onPress: () => setScreen('checklist') },
-        { icon: '🩺', label: 'First Aid Kits', description: 'Per-zone kit inventory and weekly check status', onPress: () => setScreen('firstAid') },
-        { icon: '⛏', label: 'Mineral Inventory', description: 'Live stock totals and transaction history from approved shift logs', onPress: () => setScreen('mineralInventory') },
-        { icon: '🎓', label: 'Certifications', description: 'Track worker certifications, expiry dates, and renewal history', onPress: () => setScreen('certifications') },
-        { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
-        { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
-        { icon: '📢', label: 'Announcements', description: 'Broadcast a quick update to all workers on site', onPress: () => setScreen('announcements') },
-        { icon: '💰', label: 'Pay Runs', description: 'Generate, approve, and disburse worker pay cycles', onPress: () => setScreen('payRuns') },
-        { icon: '🎟', label: 'Guest Codes', description: 'Generate QR / PIN codes for site visitors and inspectors', onPress: () => setScreen('guestCodes') },
-        { icon: '🗺', label: 'Site Map', description: 'Upload the site floor plan for the interactive zone map', onPress: () => setScreen('siteMap') },
-        { icon: '🛡', label: 'Insurance Settings', description: 'Configure worker insurance enrolment and premium deduction', onPress: () => setScreen('insurance') },
-        { icon: '🧠', label: 'Safety Intelligence', description: 'Hotspots, trending hazard types, and recommendations from the last 30 days', onPress: () => setScreen('safetyIntelligence') },
-        { icon: '📋', label: 'Listings', description: 'Create and manage mineral listings for verified buyers', onPress: () => setScreen('listings') },
-        { icon: '🤝', label: 'Buyer Offers', description: 'Review, counter, accept or reject incoming offers', onPress: () => setScreen('offers') },
-        { icon: '📦', label: 'Transactions', description: 'Track batch dispatch status for sold mineral orders', onPress: () => setScreen('transactions') },
-        { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
-        { icon: '🔍', label: 'Search', description: 'Find hazards, incidents, workers, listings, and forum posts', onPress: () => setScreen('search') },
-        { icon: '🏭', label: 'Site Access', description: 'Grant or revoke multi-site access for supervisors', onPress: () => setScreen('siteAccess') },
-        { icon: '📋', label: 'Permit Status', description: 'Self-report Minerals Commission permit progress for this site', onPress: () => setScreen('permitStatus') },
-        { icon: '💰', label: 'GoldBod Bulk Purchase', description: 'Flag site inventory as available for GoldBod acquisition', onPress: () => setScreen('bulkPurchase') },
-        { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
-        { icon: '💳', label: 'Subscription', description: 'View subscription status, plan details, and record payments', onPress: () => setScreen('subscription') },
+      sections={[
+        {
+          title: 'Approvals & Access',
+          items: [
+            { icon: '✅', label: 'Worker Approvals', description: 'Approve or reject new worker registrations', onPress: () => setScreen('approvals') },
+            { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for locked out worker', onPress: () => setScreen('reset') },
+            { icon: '👤', label: 'Guest Access', description: 'Create and manage guest accounts', onPress: () => setScreen('guests') },
+            { icon: '🎟', label: 'Guest Codes', description: 'Generate QR / PIN codes for site visitors and inspectors', onPress: () => setScreen('guestCodes') },
+            { icon: '🏭', label: 'Site Access', description: 'Grant or revoke multi-site access for supervisors', onPress: () => setScreen('siteAccess') },
+          ],
+        },
+        {
+          title: 'People',
+          items: [
+            { icon: '👷', label: 'Site Roster', description: 'Live headcount — who is on site now', onPress: () => setScreen('roster') },
+            { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts for all site personnel', onPress: () => setScreen('workerContacts') },
+            { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
+          ],
+        },
+        {
+          title: 'Safety & Compliance',
+          items: [
+            { icon: '🚑', label: 'Incident Reports', description: 'View and manage site incident reports', onPress: () => setScreen('incidents') },
+            { icon: '✅', label: 'Safety Checklists', description: "Today's shift checklist — who has and hasn't submitted", onPress: () => setScreen('checklist') },
+            { icon: '🧠', label: 'Safety Intelligence', description: 'Hotspots, trending hazard types, and recommendations from the last 30 days', onPress: () => setScreen('safetyIntelligence') },
+            { icon: '🩺', label: 'First Aid Kits', description: 'Per-zone kit inventory and weekly check status', onPress: () => setScreen('firstAid') },
+            { icon: '🎓', label: 'Certifications', description: 'Track worker certifications, expiry dates, and renewal history', onPress: () => setScreen('certifications') },
+            { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
+          ],
+        },
+        {
+          title: 'Site Operations',
+          items: [
+            { icon: '📋', label: 'Shift Logs', description: 'View all site shift production logs', onPress: () => setScreen('shifts') },
+            { icon: '🔧', label: 'Equipment Registry', description: 'Manage site equipment list and status', onPress: () => setScreen('equipment') },
+            { icon: '⛏', label: 'Drill Operations', description: 'Active and completed drill sign-offs', onPress: () => setScreen('drills') },
+            { icon: '💥', label: 'Blast Management', description: 'Schedule and notify blast operations', onPress: () => setScreen('blast') },
+            { icon: '⛏', label: 'Mineral Inventory', description: 'Live stock totals and transaction history from approved shift logs', onPress: () => setScreen('mineralInventory') },
+            { icon: '🗺', label: 'Site Map', description: 'Upload the site floor plan for the interactive zone map', onPress: () => setScreen('siteMap') },
+            { icon: '📢', label: 'Announcements', description: 'Broadcast a quick update to all workers on site', onPress: () => setScreen('announcements') },
+          ],
+        },
+        {
+          title: 'Pay & Billing',
+          items: [
+            { icon: '💰', label: 'Pay Runs', description: 'Generate, approve, and disburse worker pay cycles', onPress: () => setScreen('payRuns') },
+            { icon: '🛡', label: 'Insurance Settings', description: 'Configure worker insurance enrolment and premium deduction', onPress: () => setScreen('insurance') },
+            { icon: '💳', label: 'Subscription', description: 'View subscription status, plan details, and record payments', onPress: () => setScreen('subscription') },
+          ],
+        },
+        {
+          title: 'Marketplace',
+          items: [
+            { icon: '📋', label: 'Listings', description: 'Create and manage mineral listings for verified buyers', onPress: () => setScreen('listings') },
+            { icon: '🤝', label: 'Buyer Offers', description: 'Review, counter, accept or reject incoming offers', onPress: () => setScreen('offers') },
+            { icon: '📦', label: 'Transactions', description: 'Track batch dispatch status for sold mineral orders', onPress: () => setScreen('transactions') },
+          ],
+        },
+        {
+          title: 'Regulatory',
+          items: [
+            { icon: '📋', label: 'Permit Status', description: 'Self-report Minerals Commission permit progress for this site', onPress: () => setScreen('permitStatus') },
+            { icon: '💰', label: 'GoldBod Bulk Purchase', description: 'Flag site inventory as available for GoldBod acquisition', onPress: () => setScreen('bulkPurchase') },
+            { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
+          ],
+        },
+        {
+          title: 'Connect',
+          items: [
+            { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
+          ],
+        },
       ]}
     />
   );
@@ -175,6 +224,8 @@ function SupervisorMoreStack({ session }: { session: AuthSession }) {
 export function SupervisorNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
+  const moreSetterRef = useRef<((s: SupervisorMoreSubScreen) => void) | null>(null);
+  const pendingMoreScreenRef = useRef<SupervisorMoreSubScreen | null>(null);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -193,11 +244,33 @@ export function SupervisorNavigator({ session, onLogout }: Props) {
           ),
         })}
       >
-        <Tab.Screen name="Home" children={() => <SupervisorHomeScreen session={session} />} />
+        <Tab.Screen name="Home">
+          {({ navigation }) => (
+            <SupervisorHomeScreen
+              session={session}
+              onGoToSearch={() => {
+                if (moreSetterRef.current) {
+                  moreSetterRef.current('search');
+                } else {
+                  pendingMoreScreenRef.current = 'search';
+                }
+                navigation.navigate('More');
+              }}
+            />
+          )}
+        </Tab.Screen>
         <Tab.Screen name="Hazards" children={() => <SupervisorHazardsScreen session={session} />} />
         <Tab.Screen name="SOS" children={() => <SupervisorSosScreen session={session} />} />
         <Tab.Screen name="Notices" children={() => <SupervisorNoticesScreen session={session} />} />
-        <Tab.Screen name="More" children={() => <SupervisorMoreStack session={session} />} />
+        <Tab.Screen name="More">
+          {() => (
+            <SupervisorMoreStack
+              session={session}
+              pendingRef={pendingMoreScreenRef}
+              onRegisterSetter={(setter) => { moreSetterRef.current = setter; }}
+            />
+          )}
+        </Tab.Screen>
       </Tab.Navigator>
     </View>
   );

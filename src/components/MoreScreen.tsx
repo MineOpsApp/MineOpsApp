@@ -7,33 +7,65 @@ type MoreItem = {
   onPress: () => void;
 };
 
-type Props = {
+type MoreSection = {
+  title: string;
   items: MoreItem[];
+};
+
+type Props = {
+  items?: MoreItem[];
+  sections?: MoreSection[];
   title?: string;
 };
 
-export function MoreScreen({ items, title = 'More' }: Props) {
+export function MoreScreen({ items, sections, title = 'More' }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>{title}</Text>
-      <View style={styles.list}>
-        {items.map((item, i) => (
-          <Pressable
-            key={item.label}
-            onPress={item.onPress}
-            style={[styles.row, i < items.length - 1 && styles.rowBorder]}
-          >
-            <View style={styles.iconWrap}>
-              <Text style={styles.icon}>{item.icon}</Text>
+      {sections ? (
+        sections.map((section) => (
+          <View key={section.title} style={styles.section}>
+            <Text style={styles.sectionHeader}>{section.title.toUpperCase()}</Text>
+            <View style={styles.list}>
+              {section.items.map((item, i) => (
+                <Pressable
+                  key={item.label}
+                  onPress={item.onPress}
+                  style={[styles.row, i < section.items.length - 1 && styles.rowBorder]}
+                >
+                  <View style={styles.iconWrap}>
+                    <Text style={styles.icon}>{item.icon}</Text>
+                  </View>
+                  <View style={styles.body}>
+                    <Text style={styles.label}>{item.label}</Text>
+                    <Text style={styles.description}>{item.description}</Text>
+                  </View>
+                  <Text style={styles.arrow}>›</Text>
+                </Pressable>
+              ))}
             </View>
-            <View style={styles.body}>
-              <Text style={styles.label}>{item.label}</Text>
-              <Text style={styles.description}>{item.description}</Text>
-            </View>
-            <Text style={styles.arrow}>›</Text>
-          </Pressable>
-        ))}
-      </View>
+          </View>
+        ))
+      ) : (
+        <View style={styles.list}>
+          {(items ?? []).map((item, i) => (
+            <Pressable
+              key={item.label}
+              onPress={item.onPress}
+              style={[styles.row, i < (items ?? []).length - 1 && styles.rowBorder]}
+            >
+              <View style={styles.iconWrap}>
+                <Text style={styles.icon}>{item.icon}</Text>
+              </View>
+              <View style={styles.body}>
+                <Text style={styles.label}>{item.label}</Text>
+                <Text style={styles.description}>{item.description}</Text>
+              </View>
+              <Text style={styles.arrow}>›</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -41,6 +73,8 @@ export function MoreScreen({ items, title = 'More' }: Props) {
 const styles = StyleSheet.create({
   container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
   pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 20 },
+  section: { marginBottom: 20 },
+  sectionHeader: { color: '#8fa3b8', fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 },
   list: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
   row: { alignItems: 'center', flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 14 },
   rowBorder: { borderBottomColor: '#f4f6f8', borderBottomWidth: 1 },

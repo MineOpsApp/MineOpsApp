@@ -7,6 +7,7 @@ import type { AuthSession } from '../types/auth';
 import { getUnreadNotificationCount, getMySites, switchSite, type SiteAccess } from '../services/api';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { getQueue } from '../utils/offlineQueue';
+import { ProfileHubModal } from './ProfileHubModal';
 
 type AppHeaderProps = {
   session: AuthSession;
@@ -18,79 +19,66 @@ const ROLE_LABELS: Record<string, string> = {
   supervisor: 'Supervisor',
   safetyOfficer: 'Safety Officer',
   guest: 'Guest',
+  buyer: 'Mineral Buyer',
+  government: 'Government',
 };
 
 export function AppHeader({ session, onLogout }: AppHeaderProps) {
-  const { mode, setMode } = useThemeMode();
+  const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const [serverDown, setServerDown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifVisible, setNotifVisible] = useState(false);
   const [queueLength, setQueueLength] = useState(0);
   const [sitePickerVisible, setSitePickerVisible] = useState(false);
   const [accessibleSites, setAccessibleSites] = useState<SiteAccess[]>([]);
   const [switching, setSwitching] = useState(false);
+  const [profileHubVisible, setProfileHubVisible] = useState(false);
 
   const isSupervisor = session.user.role === 'supervisor';
 
-useEffect(() => {
-  const check = async () => {
-    try {
-      setServerDown(false);
-    } catch {
-      setServerDown(true);
-    }
-  };
-  check();
-  const interval = setInterval(check, 30000);
-  return () => clearInterval(interval);
-}, []);
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await getUnreadNotificationCount();
+        setUnreadCount(res.count);
+      } catch { /* best-effort */ }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
-useEffect(() => {
-  const fetchUnread = async () => {
-    try {
-      const res = await getUnreadNotificationCount();
-      setUnreadCount(res.count);
-    } catch { /* best-effort */ }
-  };
-  fetchUnread();
-  const interval = setInterval(fetchUnread, 30000);
-  return () => clearInterval(interval);
-}, []);
+  useEffect(() => {
+    const checkQueue = async () => {
+      try {
+        const q = await getQueue();
+        setQueueLength(q.length);
+      } catch { /* best-effort */ }
+    };
+    checkQueue();
+    const interval = setInterval(checkQueue, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-useEffect(() => {
-  const checkQueue = async () => {
-    try {
-      const q = await getQueue();
-      setQueueLength(q.length);
-    } catch { /* best-effort */ }
-  };
-  checkQueue();
-  const interval = setInterval(checkQueue, 10000);
-  return () => clearInterval(interval);
-}, []);
+  useEffect(() => {
+    if (!isSupervisor) return;
+    getMySites().then(setAccessibleSites).catch(() => {});
+  }, [isSupervisor]);
 
-useEffect(() => {
-  if (!isSupervisor) return;
-  getMySites().then(setAccessibleSites).catch(() => {});
-}, [isSupervisor]);
-
-  function cycleTheme() {
-    if (mode === 'system') setMode('light');
-    else if (mode === 'light') setMode('dark');
-    else setMode('system');
-  }
-
-  const themeLabel = mode === 'dark' ? 'Dark' : mode === 'light' ? 'Light' : 'Auto';
-  const themeIcon = mode === 'dark' ? '🌙' : mode === 'light' ? '☀️' : '⚙️';
-  const isDark = mode === 'dark' || (mode === 'system');
-
+  const isDark = mode === 'dark' || mode === 'system';
   const headerBg = isDark ? '#0d1117' : '#17212b';
   const accentLine = isDark ? '#3fb950' : '#4ade80';
 
+  const initials = session.user.fullName
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: headerBg }]}>
-      {/* Green accent line at very top */}
       <View style={[styles.accentLine, { backgroundColor: accentLine }]} />
       {queueLength > 0 && (
         <View style={styles.syncBanner}>
@@ -100,19 +88,23 @@ useEffect(() => {
         </View>
       )}
       <View style={styles.header}>
-        {/* Left: brand + user info */}
-        <View style={styles.left}>
-          <Text style={styles.brand}>MineOps</Text>
-          <View style={styles.userRow}>
-            <View style={[styles.statusDot, { backgroundColor: accentLine }]} />
-            <Text style={styles.userName}>{session.user.fullName}</Text>
+        {/* Left: avatar + name — taps open Profile Hub */}
+        <Pressable style={styles.left} onPress={() => setProfileHubVisible(true)} hitSlop={8}>
+          <View style={styles.avatarRow}>
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarInitials}>{initials}</Text>
+            </View>
+            <View>
+              <Text style={styles.userName}>{session.user.fullName}</Text>
+              <Text style={styles.userRole}>
+                {ROLE_LABELS[session.user.role] ?? session.user.role}
+                {session.user.assignedSite ? ` · ${session.user.assignedSite}` : ''}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.userRole}>
-            {ROLE_LABELS[session.user.role] ?? session.user.role} · {session.user.assignedSite ?? 'Obuasi Mine'}
-          </Text>
-        </View>
+        </Pressable>
 
-        {/* Right: actions */}
+        {/* Right: sites (supervisor only) + alerts */}
         <View style={styles.actions}>
           {isSupervisor && accessibleSites.length > 1 && (
             <>
@@ -134,19 +126,10 @@ useEffect(() => {
             </View>
             <Text style={styles.actionLabel}>Alerts</Text>
           </Pressable>
-          <View style={styles.divider} />
-          <Pressable onPress={cycleTheme} style={styles.actionBtn} hitSlop={10}>
-            <Text style={styles.actionIcon}>{themeIcon}</Text>
-            <Text style={styles.actionLabel}>{themeLabel}</Text>
-          </Pressable>
-          <View style={styles.divider} />
-          <Pressable onPress={onLogout} style={styles.actionBtn} hitSlop={10}>
-            <Text style={styles.actionIcon}>↩</Text>
-            <Text style={styles.actionLabel}>Out</Text>
-          </Pressable>
         </View>
       </View>
 
+      {/* Site picker */}
       <Modal
         visible={sitePickerVisible}
         animationType="slide"
@@ -175,10 +158,7 @@ useEffect(() => {
                   } catch { /* ignore */ }
                   setSwitching(false);
                 }}
-                style={[
-                  styles.siteRow,
-                  s.isCurrent && styles.siteRowActive,
-                ]}
+                style={[styles.siteRow, s.isCurrent && styles.siteRowActive]}
               >
                 <View style={{ flex: 1 }}>
                   <Text style={styles.siteName}>{s.site}</Text>
@@ -194,6 +174,7 @@ useEffect(() => {
         </SafeAreaView>
       </Modal>
 
+      {/* Notifications */}
       <Modal
         visible={notifVisible}
         animationType="slide"
@@ -210,12 +191,20 @@ useEffect(() => {
           <NotificationsScreen onUnreadChange={setUnreadCount} />
         </SafeAreaView>
       </Modal>
+
+      {/* Profile Hub */}
+      <ProfileHubModal
+        visible={profileHubVisible}
+        session={session}
+        onClose={() => setProfileHubVisible(false)}
+        onLogout={onLogout}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { },
+  safeArea: {},
   accentLine: { height: 3, width: '100%' },
   header: {
     alignItems: 'center',
@@ -226,19 +215,11 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   left: { flex: 1 },
-  brand: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 2,
-    marginBottom: 6,
-    opacity: 0.5,
-    textTransform: 'uppercase',
-  },
-  userRow: { alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 2 },
-  statusDot: { borderRadius: 4, height: 8, width: 8 },
-  userName: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
-  userRole: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginLeft: 14 },
+  avatarRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
+  avatarCircle: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 20, height: 38, justifyContent: 'center', width: 38 },
+  avatarInitials: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+  userName: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
+  userRole: { color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '600', marginTop: 1 },
   actions: { alignItems: 'center', flexDirection: 'row', gap: 4 },
   actionBtn: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
   actionIcon: { color: '#ffffff', fontSize: 16, textAlign: 'center' },
@@ -256,6 +237,8 @@ const styles = StyleSheet.create({
     top: -4,
   },
   badgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
+  syncBanner: { alignItems: 'center', backgroundColor: '#7c4f00', paddingHorizontal: 16, paddingVertical: 5 },
+  syncBannerText: { color: '#fde68a', fontSize: 12, fontWeight: '700' },
   modalSafe: { flex: 1 },
   modalHeader: {
     alignItems: 'center',
@@ -268,20 +251,7 @@ const styles = StyleSheet.create({
   modalTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
   closeBtn: { padding: 4 },
   closeIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '700' },
-  syncBanner: {
-    alignItems: 'center',
-    backgroundColor: '#7c4f00',
-    paddingHorizontal: 16,
-    paddingVertical: 5,
-  },
-  syncBannerText: { color: '#fde68a', fontSize: 12, fontWeight: '700' },
-  siteRow: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-  },
+  siteRow: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, flexDirection: 'row', padding: 14 },
   siteRowActive: { backgroundColor: 'rgba(63,185,80,0.15)', borderColor: '#3fb950', borderWidth: 1 },
   siteName: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
   siteTag: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },

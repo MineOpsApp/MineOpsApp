@@ -1053,6 +1053,9 @@ export type UserProfile = {
   momoNumber: string | null;
   momoNetwork: string | null;
   insuranceStatus?: string;
+  businessName?: string | null;
+  goldbodLicenseNumber?: string | null;
+  buyerVerificationStatus?: string | null;
 };
 
 export function getMyProfile() {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, Text, View } from 'react-native';
 
@@ -8,9 +8,10 @@ import { SafetyDangerZonesScreen } from '../screens/safety/SafetyDangerZonesScre
 import { SafetyNoticesScreen } from '../screens/safety/SafetyNoticesScreen';
 import { SafetyAuditScreen } from '../screens/safety/SafetyAuditScreen';
 import { SupervisorWorkerContactsScreen } from '../screens/supervisor/SupervisorWorkerContactsScreen';
-import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerProfileViewScreen } from '../screens/supervisor/WorkerProfileViewScreen';
 import { SupervisorMessagesScreen } from '../screens/supervisor/SupervisorMessagesScreen';
+import { SupervisorIncidentScreen } from '../screens/supervisor/SupervisorIncidentScreen';
+import { SupervisorResetPasswordScreen } from '../screens/supervisor/SupervisorResetPasswordScreen';
 import { SafetyIntelligenceScreen } from '../screens/supervisor/SafetyIntelligenceScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import { SearchScreen } from '../screens/SearchScreen';
@@ -39,11 +40,29 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
+type SafetyMoreSubScreen = 'menu' | 'audit' | 'incidents' | 'safetyIntelligence' | 'workerContacts' | 'workerProfile' | 'messages' | 'community' | 'search' | 'illegalReport' | 'reset';
+
 type Props = { session: AuthSession; onLogout: () => void };
 
-function SafetyMoreStack({ session }: { session: AuthSession }) {
-  const [screen, setScreen] = useState<'menu' | 'audit' | 'profile' | 'workerContacts' | 'workerProfile' | 'messages' | 'safetyIntelligence' | 'community' | 'search' | 'illegalReport'>('menu');
+function SafetyMoreStack({
+  session,
+  pendingRef,
+  onRegisterSetter,
+}: {
+  session: AuthSession;
+  pendingRef: React.MutableRefObject<SafetyMoreSubScreen | null>;
+  onRegisterSetter: (setter: (s: SafetyMoreSubScreen) => void) => void;
+}) {
+  const [screen, setScreen] = useState<SafetyMoreSubScreen>(() => {
+    const pending = pendingRef.current;
+    pendingRef.current = null;
+    return pending ?? 'menu';
+  });
   const [viewingWorkerEmail, setViewingWorkerEmail] = useState('');
+
+  useEffect(() => {
+    onRegisterSetter(setScreen);
+  }, [onRegisterSetter]);
 
   const backBtn = (
     <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
@@ -51,9 +70,10 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
     </Pressable>
   );
 
+  if (screen === 'incidents') return <View style={{ flex: 1 }}>{backBtn}<SupervisorIncidentScreen session={session} /></View>;
   if (screen === 'safetyIntelligence') return <View style={{ flex: 1 }}>{backBtn}<SafetyIntelligenceScreen session={session} /></View>;
   if (screen === 'audit') return <View style={{ flex: 1 }}>{backBtn}<SafetyAuditScreen session={session} /></View>;
-  if (screen === 'profile') return <View style={{ flex: 1 }}>{backBtn}<WorkerProfileScreen session={session} /></View>;
+  if (screen === 'reset') return <View style={{ flex: 1 }}>{backBtn}<SupervisorResetPasswordScreen session={session} /></View>;
   if (screen === 'workerContacts') return (
     <View style={{ flex: 1 }}>
       {backBtn}
@@ -78,15 +98,30 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
 
   return (
     <MoreScreen
-      items={[
-        { icon: '🧠', label: 'Safety Intelligence', description: 'Hotspots, trending hazard types, and recommendations from the last 30 days', onPress: () => setScreen('safetyIntelligence') },
-        { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
-        { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts and profiles for all site personnel', onPress: () => setScreen('workerContacts') },
-        { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
-        { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
-        { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
-        { icon: '🔍', label: 'Search', description: 'Find hazards, incidents, workers, listings, and forum posts', onPress: () => setScreen('search') },
-        { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
+      sections={[
+        {
+          title: 'Safety Ops',
+          items: [
+            { icon: '🧠', label: 'Safety Intelligence', description: 'Hotspots, trending hazard types, and recommendations from the last 30 days', onPress: () => setScreen('safetyIntelligence') },
+            { icon: '🚑', label: 'Incident Reports', description: 'Review, investigate, and close incident reports for your site', onPress: () => setScreen('incidents') },
+            { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
+          ],
+        },
+        {
+          title: 'Team',
+          items: [
+            { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts and profiles for all site personnel', onPress: () => setScreen('workerContacts') },
+            { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
+            { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for a locked out worker', onPress: () => setScreen('reset') },
+          ],
+        },
+        {
+          title: 'Connect',
+          items: [
+            { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
+            { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
+          ],
+        },
       ]}
     />
   );
@@ -95,6 +130,8 @@ function SafetyMoreStack({ session }: { session: AuthSession }) {
 export function SafetyOfficerNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
+  const moreSetterRef = useRef<((s: SafetyMoreSubScreen) => void) | null>(null);
+  const pendingMoreScreenRef = useRef<SafetyMoreSubScreen | null>(null);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -113,11 +150,33 @@ export function SafetyOfficerNavigator({ session, onLogout }: Props) {
           ),
         })}
       >
-        <Tab.Screen name="Home" children={() => <SafetyHomeScreen session={session} />} />
+        <Tab.Screen name="Home">
+          {({ navigation }) => (
+            <SafetyHomeScreen
+              session={session}
+              onGoToSearch={() => {
+                if (moreSetterRef.current) {
+                  moreSetterRef.current('search');
+                } else {
+                  pendingMoreScreenRef.current = 'search';
+                }
+                navigation.navigate('More');
+              }}
+            />
+          )}
+        </Tab.Screen>
         <Tab.Screen name="Hazards" children={() => <SafetyHazardsScreen session={session} />} />
         <Tab.Screen name="Zones" children={() => <SafetyDangerZonesScreen session={session} />} />
         <Tab.Screen name="Notices" children={() => <SafetyNoticesScreen session={session} />} />
-        <Tab.Screen name="More" children={() => <SafetyMoreStack session={session} />} />
+        <Tab.Screen name="More">
+          {() => (
+            <SafetyMoreStack
+              session={session}
+              pendingRef={pendingMoreScreenRef}
+              onRegisterSetter={(setter) => { moreSetterRef.current = setter; }}
+            />
+          )}
+        </Tab.Screen>
       </Tab.Navigator>
     </View>
   );

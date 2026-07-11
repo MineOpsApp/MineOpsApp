@@ -15,13 +15,9 @@ import { useThemeMode } from '../theme/ThemeContext';
 import { WorkerDrillScreen } from '../screens/worker/WorkerDrillScreen';
 import { WorkerAttendanceScreen } from '../screens/worker/WorkerAttendanceScreen';
 import { WorkerIncidentScreen } from '../screens/worker/WorkerIncidentScreen';
-import { WorkerEmergencyContactsScreen } from '../screens/worker/WorkerEmergencyContactsScreen';
 import { WorkerSafetyChecklistScreen } from '../screens/worker/WorkerSafetyChecklistScreen';
-import { WorkerCertificationsScreen } from '../screens/worker/WorkerCertificationsScreen';
-import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerMessagesScreen } from '../screens/worker/WorkerMessagesScreen';
 import { WorkerLoneWorkerScreen } from '../screens/worker/WorkerLoneWorkerScreen';
-import { WorkerPayScreen } from '../screens/worker/WorkerPayScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
@@ -46,7 +42,7 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
-type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'emergencyContacts' | 'checklist' | 'certifications' | 'profile' | 'messages' | 'loneWorker' | 'pay' | 'community' | 'search' | 'illegalReport';
+type MoreSubScreen = 'menu' | 'shift' | 'handover' | 'drill' | 'attendance' | 'incident' | 'checklist' | 'messages' | 'loneWorker' | 'community' | 'search' | 'illegalReport';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -69,158 +65,52 @@ function WorkerMoreStack({
     onRegisterSetter(setScreen);
   }, [onRegisterSetter]);
 
-  if (screen === 'shift') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerShiftScreen session={session} />
-    </View>
+  const backBtn = (
+    <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
+      <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+    </Pressable>
   );
 
-  if (screen === 'handover') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerHandoverScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'drill') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerDrillScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'attendance') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerAttendanceScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'incident') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerIncidentScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'emergencyContacts') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerEmergencyContactsScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'checklist') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerSafetyChecklistScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'certifications') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerCertificationsScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'profile') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerProfileScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'messages') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerMessagesScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'loneWorker') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerLoneWorkerScreen />
-    </View>
-  );
-
-  if (screen === 'pay') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <WorkerPayScreen session={session} />
-    </View>
-  );
-
-  if (screen === 'community') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <CommunityScreen isSupervisor={false} userEmail={session.user.email} />
-    </View>
-  );
-
-  if (screen === 'search') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <SearchScreen session={session} />
-    </View>
-  );
-  if (screen === 'illegalReport') return (
-    <View style={{ flex: 1 }}>
-      <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
-      </Pressable>
-      <IllegalMineReportScreen />
-    </View>
-  );
+  if (screen === 'shift') return <View style={{ flex: 1 }}>{backBtn}<WorkerShiftScreen session={session} /></View>;
+  if (screen === 'handover') return <View style={{ flex: 1 }}>{backBtn}<WorkerHandoverScreen session={session} /></View>;
+  if (screen === 'drill') return <View style={{ flex: 1 }}>{backBtn}<WorkerDrillScreen session={session} /></View>;
+  if (screen === 'attendance') return <View style={{ flex: 1 }}>{backBtn}<WorkerAttendanceScreen session={session} /></View>;
+  if (screen === 'incident') return <View style={{ flex: 1 }}>{backBtn}<WorkerIncidentScreen session={session} /></View>;
+  if (screen === 'checklist') return <View style={{ flex: 1 }}>{backBtn}<WorkerSafetyChecklistScreen session={session} /></View>;
+  if (screen === 'messages') return <View style={{ flex: 1 }}>{backBtn}<WorkerMessagesScreen session={session} /></View>;
+  if (screen === 'loneWorker') return <View style={{ flex: 1 }}>{backBtn}<WorkerLoneWorkerScreen /></View>;
+  if (screen === 'community') return <View style={{ flex: 1 }}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></View>;
+  if (screen === 'search') return <View style={{ flex: 1 }}>{backBtn}<SearchScreen session={session} /></View>;
+  if (screen === 'illegalReport') return <View style={{ flex: 1 }}>{backBtn}<IllegalMineReportScreen /></View>;
 
   return (
     <MoreScreen
-      items={[
-        { icon: '📋', label: 'Shift Production', description: 'Log minerals extracted this shift', onPress: () => setScreen('shift') },
-        { icon: '🔄', label: 'Shift Handover', description: 'View last 24h summary for handover', onPress: () => setScreen('handover') },
-        { icon: '⛏', label: 'Drill Operations', description: 'Step-by-step drill sign-off', onPress: () => setScreen('drill') },
-        { icon: '🕐', label: 'Attendance', description: 'Clock in and out of site', onPress: () => setScreen('attendance') },
-        { icon: '🚨', label: 'Report Incident', description: 'Log injuries, near misses, equipment damage', onPress: () => setScreen('incident') },
-        { icon: '📞', label: 'Emergency Contacts', description: 'Add contacts for supervisors to reach in emergencies', onPress: () => setScreen('emergencyContacts') },
-        { icon: '✅', label: 'Safety Checklist', description: 'Complete your shift safety check before starting work', onPress: () => setScreen('checklist') },
-        { icon: '🎓', label: 'My Certifications', description: 'View your certifications, expiry dates, and renewal history', onPress: () => setScreen('certifications') },
-        { icon: '🪪', label: 'My Profile & ID', description: 'Your digital ID card, profile photo, bio, and account info', onPress: () => setScreen('profile') },
-        { icon: '💬', label: 'Message Supervisor', description: 'Send a quick message to your site supervisor', onPress: () => setScreen('messages') },
-        { icon: '🛡', label: 'Lone Worker', description: 'Enable check-in timer when working alone or underground', onPress: () => setScreen('loneWorker') },
-        { icon: '💰', label: 'My Pay', description: 'View pay history and manage your MoMo disbursement details', onPress: () => setScreen('pay') },
-        { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
-        { icon: '🔍', label: 'Search', description: 'Find hazards, workers, listings, and forum posts', onPress: () => setScreen('search') },
-        { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
+      sections={[
+        {
+          title: 'Work & Shifts',
+          items: [
+            { icon: '📋', label: 'Shift Production', description: 'Log minerals extracted this shift', onPress: () => setScreen('shift') },
+            { icon: '🔄', label: 'Shift Handover', description: 'View last 24h summary for handover', onPress: () => setScreen('handover') },
+            { icon: '⛏', label: 'Drill Operations', description: 'Step-by-step drill sign-off', onPress: () => setScreen('drill') },
+            { icon: '🕐', label: 'Attendance', description: 'Clock in and out of site', onPress: () => setScreen('attendance') },
+          ],
+        },
+        {
+          title: 'Safety',
+          items: [
+            { icon: '🚨', label: 'Report Incident', description: 'Log injuries, near misses, equipment damage', onPress: () => setScreen('incident') },
+            { icon: '✅', label: 'Safety Checklist', description: 'Complete your shift safety check before starting work', onPress: () => setScreen('checklist') },
+            { icon: '🛡', label: 'Lone Worker', description: 'Enable check-in timer when working alone or underground', onPress: () => setScreen('loneWorker') },
+            { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
+          ],
+        },
+        {
+          title: 'Connect',
+          items: [
+            { icon: '💬', label: 'Message Supervisor', description: 'Send a quick message to your site supervisor', onPress: () => setScreen('messages') },
+            { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
+          ],
+        },
       ]}
     />
   );
@@ -253,19 +143,19 @@ export function WorkerNavigator({ session, onLogout }: Props) {
           {({ navigation }) => (
             <WorkerHomeScreen
               session={session}
-              onGoToEmergencyContacts={() => {
-                if (moreSetterRef.current) {
-                  moreSetterRef.current('emergencyContacts');
-                } else {
-                  pendingMoreScreenRef.current = 'emergencyContacts';
-                }
-                navigation.navigate('More');
-              }}
               onGoToLoneWorker={() => {
                 if (moreSetterRef.current) {
                   moreSetterRef.current('loneWorker');
                 } else {
                   pendingMoreScreenRef.current = 'loneWorker';
+                }
+                navigation.navigate('More');
+              }}
+              onGoToSearch={() => {
+                if (moreSetterRef.current) {
+                  moreSetterRef.current('search');
+                } else {
+                  pendingMoreScreenRef.current = 'search';
                 }
                 navigation.navigate('More');
               }}

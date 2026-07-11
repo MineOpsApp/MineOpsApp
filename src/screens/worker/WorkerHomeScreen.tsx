@@ -10,7 +10,7 @@ import type { HazardReport, Notice, ShiftAnnouncement } from '../../types/action
 import { formatAgo, formatDateTime } from '../../utils/time';
 import type { AuthSession } from '../../types/auth';
 
-type Props = { session: AuthSession; onGoToEmergencyContacts?: () => void; onGoToLoneWorker?: () => void };
+type Props = { session: AuthSession; onGoToLoneWorker?: () => void; onGoToSearch?: () => void };
 
 const SEVERITY_COLOR: Record<string, string> = {
   Critical: '#7f1d1d',
@@ -19,7 +19,7 @@ const SEVERITY_COLOR: Record<string, string> = {
   Low: '#1f6f5b',
 };
 
-export function WorkerHomeScreen({ session, onGoToEmergencyContacts, onGoToLoneWorker }: Props) {
+export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [announcements, setAnnouncements] = useState<ShiftAnnouncement[]>([]);
@@ -75,6 +75,14 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts, onGoToLoneW
           </View>
         </View>
 
+        {onGoToSearch ? (
+          <Pressable onPress={onGoToSearch} style={styles.searchPill}>
+            <Text style={styles.searchPillIcon}>🔍</Text>
+            <Text style={styles.searchPillText}>Search workers, hazards, incidents...</Text>
+            <Text style={styles.searchPillArrow}>›</Text>
+          </Pressable>
+        ) : null}
+
         {loneWorker?.active && (
           <Pressable
             style={[
@@ -113,13 +121,13 @@ export function WorkerHomeScreen({ session, onGoToEmergencyContacts, onGoToLoneW
         ) : null}
 
         {!hasContacts && !loadingCore ? (
-          <Pressable style={styles.contactsWarning} onPress={onGoToEmergencyContacts}>
+          <View style={styles.contactsWarning}>
             <Text style={styles.contactsWarningIcon}>📞</Text>
             <View style={styles.contactsWarningBody}>
               <Text style={styles.contactsWarningTitle}>No emergency contacts set</Text>
-              <Text style={styles.contactsWarningSub}>Add contacts so supervisors can reach someone if you're in danger {onGoToEmergencyContacts ? '→ Tap to add' : '→ More · Emergency Contacts'}</Text>
+              <Text style={styles.contactsWarningSub}>Add contacts so supervisors can reach someone if you're in danger → My Account · Emergency Contacts</Text>
             </View>
-          </Pressable>
+          </View>
         ) : null}
 
         {/* Status strip */}
@@ -301,6 +309,10 @@ const styles = StyleSheet.create({
   noticeBody: { flex: 1, padding: 12 },
   noticeTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 3 },
   noticeMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 17 },
+  searchPill: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: 16, marginBottom: 0, paddingHorizontal: 14, paddingVertical: 12 },
+  searchPillIcon: { fontSize: 15 },
+  searchPillText: { color: '#8fa3b8', flex: 1, fontSize: 13, fontWeight: '600' },
+  searchPillArrow: { color: '#8fa3b8', fontSize: 18 },
   loneWorkerBanner: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 16, marginBottom: 0, padding: 14 },
   loneWorkerBannerGreen: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
   loneWorkerBannerRed: { backgroundColor: '#fff5f5', borderColor: '#fca5a5' },

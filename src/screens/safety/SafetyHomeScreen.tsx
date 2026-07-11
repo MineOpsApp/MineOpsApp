@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { SosButton } from '../../components/SosButton';
 import { getSiteHazardAlerts, getDangerZones, getSupervisorDashboard, type SupervisorDashboard } from '../../services/api';
 import type { HazardReport, DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
-type Props = { session: AuthSession };
+type Props = { session: AuthSession; onGoToSearch?: () => void };
 
-export function SafetyHomeScreen({ session }: Props) {
+export function SafetyHomeScreen({ session, onGoToSearch }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [zones, setZones] = useState<DangerZone[]>([]);
   const [dash, setDash] = useState<SupervisorDashboard | null>(null);
@@ -70,6 +70,13 @@ export function SafetyHomeScreen({ session }: Props) {
             </View>
           </View>
         </View>
+        {onGoToSearch ? (
+          <Pressable onPress={onGoToSearch} style={styles.searchPill}>
+            <Text style={styles.searchPillIcon}>🔍</Text>
+            <Text style={styles.searchPillText}>Search workers, hazards, incidents...</Text>
+            <Text style={styles.searchPillArrow}>›</Text>
+          </Pressable>
+        ) : null}
            {connectionError ? (
           <View style={styles.errorBanner}>
             <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
@@ -196,7 +203,11 @@ const styles = StyleSheet.create({
   riskMed: { backgroundColor: '#a15c00' },
   riskLow: { backgroundColor: '#1f6f5b' },
   riskPillText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
+  searchPill: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: 16, marginBottom: 0, paddingHorizontal: 14, paddingVertical: 12 },
+  searchPillIcon: { fontSize: 15 },
+  searchPillText: { color: '#8fa3b8', flex: 1, fontSize: 13, fontWeight: '600' },
+  searchPillArrow: { color: '#8fa3b8', fontSize: 18 },
   errorBanner: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
-errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { SosButton } from '../../components/SosButton';
 import { BlastAlert } from '../../components/BlastAlert';
@@ -9,10 +9,10 @@ import { formatAgo } from '../../utils/time';
 import type { DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 
-type Props = { session: AuthSession };
+type Props = { session: AuthSession; onGoToSearch?: () => void };
 type Dashboard = SupervisorDashboard;
 
-export function SupervisorHomeScreen({ session }: Props) {
+export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -71,6 +71,14 @@ export function SupervisorHomeScreen({ session }: Props) {
             </View>
           </View>
         </View>
+
+        {onGoToSearch ? (
+          <Pressable onPress={onGoToSearch} style={styles.searchPill}>
+            <Text style={styles.searchPillIcon}>🔍</Text>
+            <Text style={styles.searchPillText}>Search workers, hazards, incidents...</Text>
+            <Text style={styles.searchPillArrow}>›</Text>
+          </Pressable>
+        ) : null}
 
         {error && (
           <View style={styles.errorBanner}>
@@ -288,6 +296,10 @@ const styles = StyleSheet.create({
   liveDot: { backgroundColor: '#4ade80', borderRadius: 4, height: 7, width: 7 },
   liveText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
+  searchPill: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: 16, marginBottom: 0, paddingHorizontal: 14, paddingVertical: 12 },
+  searchPillIcon: { fontSize: 15 },
+  searchPillText: { color: '#8fa3b8', flex: 1, fontSize: 13, fontWeight: '600' },
+  searchPillArrow: { color: '#8fa3b8', fontSize: 18 },
   errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: 16, padding: 12 },
   errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
