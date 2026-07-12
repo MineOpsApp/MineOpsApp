@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getGovernmentPermits, type MiningPermitStatus } from '../../services/api';
+import { InputField } from '../../components/InputField';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
@@ -22,6 +23,7 @@ export function GovernmentPermitsScreen() {
 
   const [permits, setPermits] = useState<MiningPermitStatus[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
 
   async function load() {
     try { setPermits(await getGovernmentPermits()); } catch { /* best-effort */ }
@@ -30,12 +32,27 @@ export function GovernmentPermitsScreen() {
   useEffect(() => { load(); }, []);
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
+  const visible = search.trim()
+    ? permits.filter(p => p.site.toLowerCase().includes(search.trim().toLowerCase()))
+    : permits;
+
   return (
     <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.title}>Mining Permit Status</Text>
       <Text style={styles.sub}>Self-reported Minerals Commission permit progress per site</Text>
+
+      <InputField
+        label=""
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search by site name..."
+      />
+
       {permits.length === 0 && <Text style={styles.empty}>No sites have reported permit status yet.</Text>}
-      {permits.map(p => (
+      {permits.length > 0 && visible.length === 0 && (
+        <Text style={styles.empty}>No sites match "{search.trim()}"</Text>
+      )}
+      {visible.map(p => (
         <View key={p.id ?? p.site} style={styles.card}>
           <Text style={styles.siteName}>{p.site}</Text>
           <View style={styles.grid}>
@@ -62,7 +79,7 @@ function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
     title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
-    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 12 },
     empty: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 40 },
     card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 14 },
     siteName: { color: theme.accent, fontSize: 14, fontWeight: '900', marginBottom: 10 },

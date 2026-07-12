@@ -4,6 +4,15 @@ import { getGovernmentBulkPurchaseRequests, fulfillBulkPurchaseRequest, type Bul
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
+type StatusFilter = 'all' | 'AVAILABLE' | 'FULFILLED' | 'WITHDRAWN';
+
+const STATUS_CHIPS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'AVAILABLE', label: 'Available' },
+  { key: 'FULFILLED', label: 'Fulfilled' },
+  { key: 'WITHDRAWN', label: 'Withdrawn' },
+];
+
 export function GovernmentBulkPurchaseScreen() {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
@@ -12,6 +21,7 @@ export function GovernmentBulkPurchaseScreen() {
   const [requests, setRequests] = useState<BulkPurchaseRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   async function load() {
     try { setRequests(await getGovernmentBulkPurchaseRequests()); } catch { /* best-effort */ }
@@ -43,12 +53,34 @@ export function GovernmentBulkPurchaseScreen() {
     return '#1d5f99';
   }
 
+  const visible = statusFilter === 'all'
+    ? requests
+    : requests.filter(r => r.status === statusFilter);
+
+  const emptyLabel = statusFilter === 'all'
+    ? 'No requests yet.'
+    : `No ${STATUS_CHIPS.find(c => c.key === statusFilter)?.label.toLowerCase()} requests.`;
+
   return (
     <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.title}>Bulk Purchase Requests</Text>
       <Text style={styles.sub}>Sites flagging inventory for GoldBod acquisition</Text>
-      {requests.length === 0 && <Text style={styles.empty}>No requests yet.</Text>}
-      {requests.map(req => (
+
+      <Text style={styles.filterLabel}>Status</Text>
+      <View style={styles.chipRow}>
+        {STATUS_CHIPS.map(c => (
+          <Pressable
+            key={c.key}
+            onPress={() => setStatusFilter(c.key)}
+            style={[styles.chip, statusFilter === c.key && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, statusFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {visible.length === 0 && <Text style={styles.empty}>{emptyLabel}</Text>}
+      {visible.map(req => (
         <View key={req.id} style={styles.card}>
           <View style={styles.cardRow}>
             <View style={{ flex: 1 }}>
@@ -76,7 +108,13 @@ function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
     title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
-    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 14 },
+    filterLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+    chip: { borderColor: theme.border, borderRadius: 20, borderWidth: 1.5, backgroundColor: theme.bgCard, paddingHorizontal: 14, paddingVertical: 6 },
+    chipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    chipText: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    chipTextActive: { color: '#ffffff' },
     empty: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 40 },
     card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 10, padding: 14 },
     cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
