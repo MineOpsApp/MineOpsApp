@@ -10,6 +10,8 @@ import {
 } from '../../services/api';
 import type { Certification, CertificationHistory, CertificationPayload, WorkerDirectoryEntry } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type StatusFilter = 'ALL' | 'EXPIRING_SOON' | 'EXPIRED';
 
@@ -65,6 +67,10 @@ const EMPTY_FORM: FormState = {
 type Props = { session: AuthSession };
 
 export function SupervisorCertificationsScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [certs, setCerts] = useState<Certification[]>([]);
   const [workers, setWorkers] = useState<WorkerDirectoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,11 +235,11 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
   );
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#1f6f5b" /></View>;
+    return <View style={styles.center}><ActivityIndicator size="large" color={theme.accent} /></View>;
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f4f6f8' }}>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
       {/* Stats strip */}
       <View style={styles.strip}>
         <View style={styles.stripItem}>
@@ -242,17 +248,17 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#15803d' }]}>{validCount}</Text>
+          <Text style={[styles.stripValue, { color: theme.success }]}>{validCount}</Text>
           <Text style={styles.stripLabel}>Valid</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#92400e' }]}>{expiringCount}</Text>
+          <Text style={[styles.stripValue, { color: theme.amber }]}>{expiringCount}</Text>
           <Text style={styles.stripLabel}>Expiring</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#b42318' }]}>{expiredCount}</Text>
+          <Text style={[styles.stripValue, { color: theme.danger }]}>{expiredCount}</Text>
           <Text style={styles.stripLabel}>Expired</Text>
         </View>
       </View>
@@ -275,7 +281,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
         <TextInput
           style={styles.searchInput}
           placeholder="Filter by cert type..."
-          placeholderTextColor="#9aa5b1"
+          placeholderTextColor={theme.textMuted}
           value={typeSearch}
           onChangeText={setTypeSearch}
         />
@@ -356,7 +362,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
                           </TouchableOpacity>
                           <TouchableOpacity style={styles.histBtn} onPress={() => toggleHistory(cert)}>
                             {loadingHistory === cert.id
-                              ? <ActivityIndicator size="small" color="#5d6875" />
+                              ? <ActivityIndicator size="small" color={theme.textSub} />
                               : <Text style={styles.histBtnText}>{histExpanded ? 'Hide History' : 'History'}</Text>}
                           </TouchableOpacity>
                           <TouchableOpacity style={styles.delBtn} onPress={() => handleDelete(cert)}>
@@ -418,7 +424,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
                       <TextInput
                         style={styles.input}
                         placeholder="Search workers..."
-                        placeholderTextColor="#9aa5b1"
+                        placeholderTextColor={theme.textMuted}
                         value={workerSearch}
                         onChangeText={setWorkerSearch}
                       />
@@ -467,7 +473,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
                 <TextInput
                   style={styles.input}
                   placeholder="Certification name"
-                  placeholderTextColor="#9aa5b1"
+                  placeholderTextColor={theme.textMuted}
                   value={form.customCertName}
                   onChangeText={(v) => setForm((f) => ({ ...f, customCertName: v }))}
                 />
@@ -477,7 +483,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Minerals Commission Ghana"
-                placeholderTextColor="#9aa5b1"
+                placeholderTextColor={theme.textMuted}
                 value={form.issuingAuthority}
                 onChangeText={(v) => setForm((f) => ({ ...f, issuingAuthority: v }))}
               />
@@ -486,7 +492,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
               <TextInput
                 style={styles.input}
                 placeholder="2025-01-15"
-                placeholderTextColor="#9aa5b1"
+                placeholderTextColor={theme.textMuted}
                 value={form.issueDate}
                 onChangeText={(v) => setForm((f) => ({ ...f, issueDate: v }))}
                 keyboardType="numbers-and-punctuation"
@@ -496,7 +502,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
               <TextInput
                 style={styles.input}
                 placeholder="2027-01-15"
-                placeholderTextColor="#9aa5b1"
+                placeholderTextColor={theme.textMuted}
                 value={form.expiryDate}
                 onChangeText={(v) => setForm((f) => ({ ...f, expiryDate: v }))}
                 keyboardType="numbers-and-punctuation"
@@ -506,7 +512,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
               <TextInput
                 style={[styles.input, { minHeight: 72, textAlignVertical: 'top' }]}
                 placeholder="Optional notes..."
-                placeholderTextColor="#9aa5b1"
+                placeholderTextColor={theme.textMuted}
                 value={form.notes}
                 onChangeText={(v) => setForm((f) => ({ ...f, notes: v }))}
                 multiline
@@ -530,77 +536,79 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  strip: { backgroundColor: '#fff', borderBottomColor: '#dde3ea', borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 12 },
-  stripItem: { flex: 1, alignItems: 'center' },
-  stripValue: { color: '#17212b', fontSize: 20, fontWeight: '900' },
-  stripLabel: { color: '#9aa5b1', fontSize: 10, fontWeight: '700', marginTop: 2 },
-  stripDivider: { width: 1, backgroundColor: '#dde3ea' },
-  filterArea: { backgroundColor: '#fff', borderBottomColor: '#dde3ea', borderBottomWidth: 1, padding: 12, gap: 8 },
-  filterTabs: { flexDirection: 'row', gap: 6 },
-  filterTab: { borderRadius: 20, borderWidth: 1.5, borderColor: '#dde3ea', paddingHorizontal: 14, paddingVertical: 5 },
-  filterTabActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  filterTabText: { color: '#5d6875', fontSize: 12, fontWeight: '700' },
-  filterTabTextActive: { color: '#fff' },
-  searchInput: { backgroundColor: '#f4f6f8', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', color: '#17212b', fontSize: 13, paddingHorizontal: 12, paddingVertical: 8 },
-  container: { padding: 14, paddingBottom: 40 },
-  addBtn: { backgroundColor: '#1f6f5b', borderRadius: 8, padding: 14, alignItems: 'center', marginBottom: 14 },
-  addBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  emptyCard: { backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', padding: 20, alignItems: 'center' },
-  emptyText: { color: '#9aa5b1', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  workerSection: { backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#dde3ea', marginBottom: 10, overflow: 'hidden' },
-  workerHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
-  workerDot: { width: 10, height: 10, borderRadius: 5 },
-  workerName: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-  workerEmail: { color: '#9aa5b1', fontSize: 11, fontWeight: '600' },
-  certCountBadge: { backgroundColor: '#f4f6f8', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
-  certCountText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
-  addWorkerBtn: { backgroundColor: '#e8f5f0', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  addWorkerBtnText: { color: '#1f6f5b', fontSize: 16, fontWeight: '900' },
-  chevron: { color: '#9aa5b1', fontSize: 11, fontWeight: '700' },
-  certsContainer: { borderTopColor: '#f4f6f8', borderTopWidth: 1, padding: 10, gap: 8 },
-  certCard: { borderRadius: 8, padding: 12 },
-  certTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },
-  certName: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 1 },
-  certAuth: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
-  statusPill: { borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  statusPillText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.4 },
-  certDates: { color: '#5d6875', fontSize: 11, fontWeight: '700', marginBottom: 2 },
-  certDays: { fontSize: 11, fontWeight: '800', marginBottom: 4 },
-  certNotes: { color: '#5d6875', fontSize: 11, fontWeight: '600', fontStyle: 'italic', marginBottom: 6 },
-  certActions: { flexDirection: 'row', gap: 6, marginTop: 6 },
-  editBtn: { backgroundColor: '#1f6f5b', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
-  editBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  histBtn: { backgroundColor: '#f4f6f8', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
-  histBtnText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
-  delBtn: { backgroundColor: '#fff5f5', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
-  delBtnText: { color: '#b42318', fontSize: 11, fontWeight: '800' },
-  noHistory: { color: '#9aa5b1', fontSize: 11, fontWeight: '600', marginTop: 4 },
-  historyRow: { backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 6, marginTop: 4, padding: 8 },
-  historyDate: { color: '#17212b', fontSize: 11, fontWeight: '800', marginBottom: 2 },
-  historyDetail: { color: '#5d6875', fontSize: 10, fontWeight: '700' },
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalBox: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', padding: 20 },
-  modalTitle: { color: '#17212b', fontSize: 20, fontWeight: '900', marginBottom: 16 },
-  fieldLabel: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 10 },
-  input: { backgroundColor: '#f4f6f8', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', color: '#17212b', fontSize: 14, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 2 },
-  lockedField: { backgroundColor: '#f4f6f8', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', paddingHorizontal: 12, paddingVertical: 10, marginBottom: 2 },
-  lockedFieldText: { color: '#17212b', fontSize: 14, fontWeight: '700' },
-  selectedWorker: { backgroundColor: '#e8f5f0', borderRadius: 8, padding: 10, marginBottom: 4 },
-  selectedWorkerText: { color: '#1f6f5b', fontSize: 13, fontWeight: '800' },
-  workerPickerList: { backgroundColor: '#f4f6f8', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', marginBottom: 4 },
-  workerPickerRow: { padding: 10, borderBottomColor: '#dde3ea', borderBottomWidth: 1 },
-  workerPickerName: { color: '#17212b', fontSize: 13, fontWeight: '800' },
-  workerPickerEmail: { color: '#9aa5b1', fontSize: 11, fontWeight: '600' },
-  typePill: { borderRadius: 16, borderWidth: 1.5, borderColor: '#dde3ea', paddingHorizontal: 12, paddingVertical: 5, backgroundColor: '#fff' },
-  typePillActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  typePillText: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
-  typePillTextActive: { color: '#fff' },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 16, paddingBottom: 8 },
-  cancelBtn: { flex: 1, backgroundColor: '#f4f6f8', borderRadius: 8, padding: 14, alignItems: 'center' },
-  cancelBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '800' },
-  saveBtn: { flex: 2, backgroundColor: '#1f6f5b', borderRadius: 8, padding: 14, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    strip: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 12 },
+    stripItem: { flex: 1, alignItems: 'center' },
+    stripValue: { color: theme.text, fontSize: 20, fontWeight: '900' },
+    stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2 },
+    stripDivider: { width: 1, backgroundColor: theme.border },
+    filterArea: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, padding: 12, gap: 8 },
+    filterTabs: { flexDirection: 'row', gap: 6 },
+    filterTab: { borderRadius: 20, borderWidth: 1.5, borderColor: theme.border, paddingHorizontal: 14, paddingVertical: 5 },
+    filterTabActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    filterTabText: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
+    filterTabTextActive: { color: '#fff' },
+    searchInput: { backgroundColor: theme.bgInput, borderRadius: 8, borderWidth: 1, borderColor: theme.border, color: theme.text, fontSize: 13, paddingHorizontal: 12, paddingVertical: 8 },
+    container: { padding: 14, paddingBottom: 40 },
+    addBtn: { backgroundColor: theme.accent, borderRadius: 8, padding: 14, alignItems: 'center', marginBottom: 14 },
+    addBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+    emptyCard: { backgroundColor: theme.bgCard, borderRadius: 8, borderWidth: 1, borderColor: theme.border, padding: 20, alignItems: 'center' },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    workerSection: { backgroundColor: theme.bgCard, borderRadius: 10, borderWidth: 1, borderColor: theme.border, marginBottom: 10, overflow: 'hidden' },
+    workerHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
+    workerDot: { width: 10, height: 10, borderRadius: 5 },
+    workerName: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    workerEmail: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    certCountBadge: { backgroundColor: theme.bgInput, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+    certCountText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+    addWorkerBtn: { backgroundColor: theme.accentLight, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+    addWorkerBtnText: { color: theme.accent, fontSize: 16, fontWeight: '900' },
+    chevron: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+    certsContainer: { borderTopColor: theme.bgInput, borderTopWidth: 1, padding: 10, gap: 8 },
+    certCard: { borderRadius: 8, padding: 12 },
+    certTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },
+    certName: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 1 },
+    certAuth: { color: theme.textSub, fontSize: 11, fontWeight: '700' },
+    statusPill: { borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+    statusPillText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.4 },
+    certDates: { color: theme.textSub, fontSize: 11, fontWeight: '700', marginBottom: 2 },
+    certDays: { fontSize: 11, fontWeight: '800', marginBottom: 4 },
+    certNotes: { color: theme.textSub, fontSize: 11, fontWeight: '600', fontStyle: 'italic', marginBottom: 6 },
+    certActions: { flexDirection: 'row', gap: 6, marginTop: 6 },
+    editBtn: { backgroundColor: theme.accent, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
+    editBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    histBtn: { backgroundColor: theme.bgInput, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
+    histBtnText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+    delBtn: { backgroundColor: theme.dangerLight, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
+    delBtnText: { color: theme.danger, fontSize: 11, fontWeight: '800' },
+    noHistory: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
+    historyRow: { backgroundColor: theme.bgCard, borderRadius: 6, marginTop: 4, padding: 8 },
+    historyDate: { color: theme.text, fontSize: 11, fontWeight: '800', marginBottom: 2 },
+    historyDetail: { color: theme.textSub, fontSize: 10, fontWeight: '700' },
+    // Modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    modalBox: { backgroundColor: theme.bgCard, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', padding: 20 },
+    modalTitle: { color: theme.text, fontSize: 20, fontWeight: '900', marginBottom: 16 },
+    fieldLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 10 },
+    input: { backgroundColor: theme.bgInput, borderRadius: 8, borderWidth: 1, borderColor: theme.border, color: theme.text, fontSize: 14, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 2 },
+    lockedField: { backgroundColor: theme.bgInput, borderRadius: 8, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 2 },
+    lockedFieldText: { color: theme.text, fontSize: 14, fontWeight: '700' },
+    selectedWorker: { backgroundColor: theme.accentLight, borderRadius: 8, padding: 10, marginBottom: 4 },
+    selectedWorkerText: { color: theme.accent, fontSize: 13, fontWeight: '800' },
+    workerPickerList: { backgroundColor: theme.bgInput, borderRadius: 8, borderWidth: 1, borderColor: theme.border, marginBottom: 4 },
+    workerPickerRow: { padding: 10, borderBottomColor: theme.border, borderBottomWidth: 1 },
+    workerPickerName: { color: theme.text, fontSize: 13, fontWeight: '800' },
+    workerPickerEmail: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    typePill: { borderRadius: 16, borderWidth: 1.5, borderColor: theme.border, paddingHorizontal: 12, paddingVertical: 5, backgroundColor: theme.bgCard },
+    typePillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    typePillText: { color: theme.textSub, fontSize: 11, fontWeight: '700' },
+    typePillTextActive: { color: '#fff' },
+    modalActions: { flexDirection: 'row', gap: 10, marginTop: 16, paddingBottom: 8 },
+    cancelBtn: { flex: 1, backgroundColor: theme.bgInput, borderRadius: 8, padding: 14, alignItems: 'center' },
+    cancelBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
+    saveBtn: { flex: 2, backgroundColor: theme.accent, borderRadius: 8, padding: 14, alignItems: 'center' },
+    saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  });
+}

@@ -3,6 +3,8 @@ import { getSiteIncidents, updateIncidentStatus, exportIncidentsCsv } from '../.
 import { exportAndShareCsv } from '../../utils/exportCsv';
 import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Incident = {
   id: number;
@@ -63,14 +65,16 @@ const CATEGORY_ICONS: Record<string, string> = {
 const STATUSES = ['Open', 'Under Investigation', 'Closed'];
 
 function IncidentPhoto({ photoData }: { photoData: string }) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
   const [expanded, setExpanded] = useState(false);
   return (
     <Pressable onPress={() => setExpanded((e) => !e)} style={{ marginBottom: 10 }}>
       {expanded ? (
         <Image source={{ uri: `data:image/jpeg;base64,${photoData}` }} style={{ borderRadius: 8, height: 180, width: '100%' }} resizeMode="cover" />
       ) : (
-        <View style={{ alignItems: 'center', backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
-          <Text style={{ color: '#5d6875', fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
+          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
         </View>
       )}
     </Pressable>
@@ -78,6 +82,10 @@ function IncidentPhoto({ photoData }: { photoData: string }) {
 }
 
 export function SupervisorIncidentScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -142,17 +150,17 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
       {/* Summary strip — always uses unfiltered totals */}
       <View style={styles.strip}>
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, open.length > 0 && { color: '#b42318' }]}>{open.length}</Text>
+          <Text style={[styles.stripValue, open.length > 0 && { color: theme.danger }]}>{open.length}</Text>
           <Text style={styles.stripLabel}>Open</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#a15c00' }]}>{investigating.length}</Text>
+          <Text style={[styles.stripValue, { color: theme.amber }]}>{investigating.length}</Text>
           <Text style={styles.stripLabel}>Investigating</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#1f6f5b' }]}>{closed.length}</Text>
+          <Text style={[styles.stripValue, { color: theme.accent }]}>{closed.length}</Text>
           <Text style={styles.stripLabel}>Closed</Text>
         </View>
       </View>
@@ -231,14 +239,14 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
               {inc.immediateAction ? <Text style={styles.detailText}>⚡ {inc.immediateAction}</Text> : null}
               <View style={styles.medicalRow}>
                 {inc.firstAidGiven ? <Text style={styles.medicalTag}>🩹 First Aid Given</Text> : null}
-                {inc.hospitalRequired ? <Text style={[styles.medicalTag, { color: '#b42318' }]}>🏥 Hospital Required</Text> : null}
+                {inc.hospitalRequired ? <Text style={[styles.medicalTag, { color: theme.danger }]}>🏥 Hospital Required</Text> : null}
               </View>
 
               <TextInput
                 multiline
                 onChangeText={(text) => setInvestigationNotes((c) => ({ ...c, [inc.id]: text }))}
                 placeholder="Investigation notes or corrective actions..."
-                placeholderTextColor="#8fa3b8"
+                placeholderTextColor={theme.textMuted}
                 style={styles.notesInput}
                 value={investigationNotes[inc.id] ?? ''}
               />
@@ -265,51 +273,53 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  pageSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
-  strip: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
-  stripItem: { alignItems: 'center', flex: 1 },
-  stripValue: { color: '#17212b', fontSize: 22, fontWeight: '900' },
-  stripLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
-  filterLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  chip: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1.5, backgroundColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 6 },
-  chipActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  chipText: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  chipTextActive: { color: '#ffffff' },
-  resultCount: { color: '#8fa3b8', fontSize: 12, fontWeight: '700', marginBottom: 8 },
-  emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 32 },
-  emptyIcon: { color: '#1f6f5b', fontSize: 28, marginBottom: 8 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
-  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  incidentCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 8, padding: 14 },
-  incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
-  incidentLeft: { flex: 1 },
-  incidentCategory: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 2 },
-  incidentMeta: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  incidentTime: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  incidentRight: { alignItems: 'flex-end', gap: 6 },
-  severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  severityText: { fontSize: 11, fontWeight: '900' },
-  expandHint: { color: '#8fa3b8', fontSize: 12 },
-  expandedBody: { borderTopColor: '#f4f6f8', borderTopWidth: 1, marginTop: 12, paddingTop: 12 },
-  descriptionText: { color: '#17212b', fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  detailText: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginBottom: 4 },
-  medicalRow: { flexDirection: 'row', gap: 10, marginBottom: 12, marginTop: 4 },
-  medicalTag: { color: '#1f6f5b', fontSize: 12, fontWeight: '700' },
-  statusLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
-  statusRow: { flexDirection: 'row', gap: 6 },
-  statusBtn: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 8 },
-  statusBtnActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  statusBtnText: { color: '#8fa3b8', fontSize: 11, fontWeight: '800' },
-  statusBtnTextActive: { color: '#ffffff' },
-  notesInput: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 13, marginBottom: 10, minHeight: 70, padding: 10 },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    exportBtn: { backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    pageSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
+    stripItem: { alignItems: 'center', flex: 1 },
+    stripValue: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+    stripDivider: { backgroundColor: theme.border, width: 1 },
+    filterLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+    chip: { borderColor: theme.border, borderRadius: 20, borderWidth: 1.5, backgroundColor: theme.bgCard, paddingHorizontal: 14, paddingVertical: 6 },
+    chipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    chipText: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    chipTextActive: { color: '#ffffff' },
+    resultCount: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
+    emptyIcon: { color: theme.accent, fontSize: 28, marginBottom: 8 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+    errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    incidentCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 8, padding: 14 },
+    incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
+    incidentLeft: { flex: 1 },
+    incidentCategory: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 2 },
+    incidentMeta: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 2 },
+    incidentTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    incidentRight: { alignItems: 'flex-end', gap: 6 },
+    severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    severityText: { fontSize: 11, fontWeight: '900' },
+    expandHint: { color: theme.textMuted, fontSize: 12 },
+    expandedBody: { borderTopColor: theme.bgInput, borderTopWidth: 1, marginTop: 12, paddingTop: 12 },
+    descriptionText: { color: theme.text, fontSize: 13, fontWeight: '600', marginBottom: 8 },
+    detailText: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 4 },
+    medicalRow: { flexDirection: 'row', gap: 10, marginBottom: 12, marginTop: 4 },
+    medicalTag: { color: theme.accent, fontSize: 12, fontWeight: '700' },
+    statusLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    statusRow: { flexDirection: 'row', gap: 6 },
+    statusBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 8 },
+    statusBtnActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    statusBtnText: { color: theme.textMuted, fontSize: 11, fontWeight: '800' },
+    statusBtnTextActive: { color: '#ffffff' },
+    notesInput: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, marginBottom: 10, minHeight: 70, padding: 10 },
+  });
+}

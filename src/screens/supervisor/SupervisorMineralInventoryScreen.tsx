@@ -4,12 +4,18 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Switch, Text
 import { getSiteInventory, getSiteInventoryHistory, getSites, updateInventoryVisibility } from '../../services/api';
 import type { InventoryTransaction, MineralInventory } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Tab = 'summary' | 'history';
 
 type Props = { session: AuthSession };
 
 export function SupervisorMineralInventoryScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [tab, setTab] = useState<Tab>('summary');
   const [inventory, setInventory] = useState<MineralInventory[]>([]);
   const [history, setHistory] = useState<InventoryTransaction[]>([]);
@@ -52,7 +58,6 @@ export function SupervisorMineralInventoryScreen({ session }: Props) {
       const updated = await updateInventoryVisibility(value);
       setVisibilityOn(updated.inventoryVisibleToGuests ?? value);
     } catch {
-      // revert optimistic UI if call fails
     } finally {
       setTogglingVisibility(false);
     }
@@ -102,13 +107,13 @@ export function SupervisorMineralInventoryScreen({ session }: Props) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1f6f5b" />
+        <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f4f6f8' }}>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <View style={styles.header}>
         <Text style={styles.title}>Mineral Inventory</Text>
         <Text style={styles.subtitle}>Live inventory from approved shift logs</Text>
@@ -143,7 +148,7 @@ export function SupervisorMineralInventoryScreen({ session }: Props) {
                 value={visibilityOn}
                 onValueChange={toggleVisibility}
                 disabled={togglingVisibility}
-                trackColor={{ false: '#dde3ea', true: '#1f6f5b' }}
+                trackColor={{ false: theme.border, true: theme.accent }}
                 thumbColor="#fff"
               />
             </View>
@@ -233,7 +238,7 @@ export function SupervisorMineralInventoryScreen({ session }: Props) {
           {history.length < totalElements ? (
             <TouchableOpacity style={styles.loadMoreBtn} onPress={loadMore} disabled={loadingHistory}>
               {loadingHistory
-                ? <ActivityIndicator size="small" color="#1f6f5b" />
+                ? <ActivityIndicator size="small" color={theme.accent} />
                 : <Text style={styles.loadMoreText}>Load more</Text>}
             </TouchableOpacity>
           ) : null}
@@ -243,45 +248,47 @@ export function SupervisorMineralInventoryScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  header: { backgroundColor: '#fff', borderBottomColor: '#dde3ea', borderBottomWidth: 1, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 },
-  title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 2 },
-  subtitle: { color: '#9aa5b1', fontSize: 12, fontWeight: '600', marginBottom: 12 },
-  tabRow: { flexDirection: 'row', gap: 0 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: '#1f6f5b' },
-  tabText: { color: '#9aa5b1', fontSize: 14, fontWeight: '700' },
-  tabTextActive: { color: '#1f6f5b' },
-  container: { padding: 16, paddingBottom: 40 },
-  stripRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  stripCard: { flex: 1, backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, alignItems: 'center', padding: 12 },
-  stripValue: { color: '#17212b', fontSize: 20, fontWeight: '900', marginBottom: 2 },
-  stripLabel: { color: '#9aa5b1', fontSize: 10, fontWeight: '700', textAlign: 'center' },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '800', marginBottom: 8, marginTop: 4 },
-  todayCard: { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 12 },
-  todayRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  todayMineral: { color: '#17212b', fontSize: 13, fontWeight: '700' },
-  todayVol: { color: '#15803d', fontSize: 13, fontWeight: '900' },
-  emptyCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 16 },
-  emptyText: { color: '#9aa5b1', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  mineralCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, marginBottom: 10, padding: 14 },
-  mineralHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  mineralName: { color: '#17212b', fontSize: 16, fontWeight: '900', flex: 1 },
-  mineralVolume: { color: '#1f6f5b', fontSize: 20, fontWeight: '900', textAlign: 'right' },
-  mineralUnit: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  mineralMeta: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  mineralTime: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 2 },
-  txCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
-  txHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  txMineral: { color: '#17212b', fontSize: 14, fontWeight: '900' },
-  txVolume: { color: '#15803d', fontSize: 14, fontWeight: '900' },
-  txMeta: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 1 },
-  txTime: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 3 },
-  loadMoreBtn: { alignItems: 'center', padding: 14, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', marginTop: 4 },
-  loadMoreText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-  visibilityCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, marginBottom: 14, padding: 14 },
-  visibilityRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  visibilityLabel: { color: '#17212b', fontSize: 14, fontWeight: '800', marginBottom: 2 },
-  visibilityHint: { color: '#9aa5b1', fontSize: 12, fontWeight: '600' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    header: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 },
+    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 2 },
+    subtitle: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 12 },
+    tabRow: { flexDirection: 'row', gap: 0 },
+    tab: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+    tabActive: { borderBottomColor: theme.accent },
+    tabText: { color: theme.textMuted, fontSize: 14, fontWeight: '700' },
+    tabTextActive: { color: theme.accent },
+    container: { padding: 16, paddingBottom: 40 },
+    stripRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    stripCard: { flex: 1, backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, alignItems: 'center', padding: 12 },
+    stripValue: { color: theme.text, fontSize: 20, fontWeight: '900', marginBottom: 2 },
+    stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', textAlign: 'center' },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '800', marginBottom: 8, marginTop: 4 },
+    todayCard: { backgroundColor: theme.successLight, borderColor: theme.successLight, borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 12 },
+    todayRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+    todayMineral: { color: theme.text, fontSize: 13, fontWeight: '700' },
+    todayVol: { color: theme.success, fontSize: 13, fontWeight: '900' },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 16 },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    mineralCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 10, padding: 14 },
+    mineralHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    mineralName: { color: theme.text, fontSize: 16, fontWeight: '900', flex: 1 },
+    mineralVolume: { color: theme.accent, fontSize: 20, fontWeight: '900', textAlign: 'right' },
+    mineralUnit: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    mineralMeta: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 2 },
+    mineralTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 2 },
+    txCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
+    txHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    txMineral: { color: theme.text, fontSize: 14, fontWeight: '900' },
+    txVolume: { color: theme.success, fontSize: 14, fontWeight: '900' },
+    txMeta: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 1 },
+    txTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 3 },
+    loadMoreBtn: { alignItems: 'center', padding: 14, backgroundColor: theme.bgCard, borderRadius: 8, borderWidth: 1, borderColor: theme.border, marginTop: 4 },
+    loadMoreText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    visibilityCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 14, padding: 14 },
+    visibilityRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    visibilityLabel: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 2 },
+    visibilityHint: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+  });
+}

@@ -7,6 +7,8 @@ import { getSiteHazardReports, reviewHazardReport, closeHazardReport, exportHaza
 import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { HazardReport } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -37,6 +39,10 @@ function applyFilters(hazards: HazardReport[], status: StatusFilter, severity: S
 }
 
 export function SupervisorHazardsScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [actionTaken, setActionTaken] = useState('Area isolated and assigned for follow-up');
   const [loading, setLoading] = useState(true);
@@ -114,17 +120,17 @@ export function SupervisorHazardsScreen({ session }: Props) {
       {/* Summary strip — always uses unfiltered totals */}
       <View style={styles.strip}>
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, open.length > 0 && { color: '#b42318' }]}>{open.length}</Text>
+          <Text style={[styles.stripValue, open.length > 0 && { color: theme.danger }]}>{open.length}</Text>
           <Text style={styles.stripLabel}>Open</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#a15c00' }]}>{reviewed.length}</Text>
+          <Text style={[styles.stripValue, { color: theme.amber }]}>{reviewed.length}</Text>
           <Text style={styles.stripLabel}>Reviewed</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#1f6f5b' }]}>{cleared.length}</Text>
+          <Text style={[styles.stripValue, { color: theme.accent }]}>{cleared.length}</Text>
           <Text style={styles.stripLabel}>Cleared</Text>
         </View>
       </View>
@@ -193,33 +199,35 @@ export function SupervisorHazardsScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
-  pageTitle: { color: '#17212b', flex: 1, fontSize: 22, fontWeight: '900' },
-  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  urgentBadge: { backgroundColor: '#b42318', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  urgentBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-  strip: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
-  stripItem: { alignItems: 'center', flex: 1 },
-  stripValue: { color: '#17212b', fontSize: 20, fontWeight: '900' },
-  stripLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
-  filterLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  chip: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1.5, backgroundColor: '#ffffff', paddingHorizontal: 14, paddingVertical: 6 },
-  chipActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  chipText: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  chipTextActive: { color: '#ffffff' },
-  resultCount: { color: '#8fa3b8', fontSize: 12, fontWeight: '700', marginBottom: 8 },
-  actionCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
-  actionLabel: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 8 },
-  emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 32 },
-  emptyIcon: { color: '#1f6f5b', fontSize: 28, marginBottom: 8 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  loadMoreBtn: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginTop: 8, paddingVertical: 12 },
-  loadMoreText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
+    pageTitle: { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
+    exportBtn: { backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    urgentBadge: { backgroundColor: theme.danger, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+    urgentBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
+    stripItem: { alignItems: 'center', flex: 1 },
+    stripValue: { color: theme.text, fontSize: 20, fontWeight: '900' },
+    stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+    stripDivider: { backgroundColor: theme.border, width: 1 },
+    filterLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+    chip: { borderColor: theme.border, borderRadius: 20, borderWidth: 1.5, backgroundColor: theme.bgCard, paddingHorizontal: 14, paddingVertical: 6 },
+    chipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    chipText: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    chipTextActive: { color: '#ffffff' },
+    resultCount: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    actionCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
+    actionLabel: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
+    emptyIcon: { color: theme.accent, fontSize: 28, marginBottom: 8 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    loadMoreBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginTop: 8, paddingVertical: 12 },
+    loadMoreText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+  });
+}

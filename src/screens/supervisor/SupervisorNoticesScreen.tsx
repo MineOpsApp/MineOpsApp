@@ -7,10 +7,16 @@ import { getNotices, createNotice, createSupervisorMessage } from '../../service
 import { deleteNotice } from '../../services/api';
 import type { Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function SupervisorNoticesScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [notices, setNotices] = useState<Notice[]>([]);
   const [title, setTitle] = useState('Zone B restriction');
   const [message, setMessage] = useState('Zone B is restricted until clearance.');
@@ -21,23 +27,23 @@ export function SupervisorNoticesScreen({ session }: Props) {
   useEffect(() => { getNotices().then(setNotices).catch(() => {}); }, []);
 
   async function post() {
-  try {
-    const expiresAt = expiryDays
-      ? new Date(Date.now() + expiryDays * 86400000).toISOString().slice(0, 19)
-      : undefined;
-    const notice = await createNotice({
-      title: title.trim() || 'Site Notice',
-      message: message.trim() || 'New notice',
-      postedByRole: session.user.role,
-      actorName: session.user.fullName,
-      actorEmail: session.user.email,
-      category,
-      expiresAt,
-    });
-    setNotices((c) => [notice, ...c]);
-    Alert.alert('Posted', `Notice #${notice.id} posted.`);
-  } catch { Alert.alert('Failed', 'Could not post notice.'); }
-}
+    try {
+      const expiresAt = expiryDays
+        ? new Date(Date.now() + expiryDays * 86400000).toISOString().slice(0, 19)
+        : undefined;
+      const notice = await createNotice({
+        title: title.trim() || 'Site Notice',
+        message: message.trim() || 'New notice',
+        postedByRole: session.user.role,
+        actorName: session.user.fullName,
+        actorEmail: session.user.email,
+        category,
+        expiresAt,
+      });
+      setNotices((c) => [notice, ...c]);
+      Alert.alert('Posted', `Notice #${notice.id} posted.`);
+    } catch { Alert.alert('Failed', 'Could not post notice.'); }
+  }
 
   async function sendBriefing() {
     try {
@@ -47,16 +53,16 @@ export function SupervisorNoticesScreen({ session }: Props) {
   }
 
   async function handleDelete(id: number) {
-  Alert.alert('Delete notice?', 'This cannot be undone.', [
-    { text: 'Cancel', style: 'cancel' },
-    { text: 'Delete', style: 'destructive', onPress: async () => {
-      try {
-        await deleteNotice(id);
-        setNotices((c) => c.filter((n) => n.id !== id));
-      } catch { Alert.alert('Failed', 'Could not delete notice.'); }
-    }}
-  ]);
-}
+    Alert.alert('Delete notice?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try {
+          await deleteNotice(id);
+          setNotices((c) => c.filter((n) => n.id !== id));
+        } catch { Alert.alert('Failed', 'Could not delete notice.'); }
+      }}
+    ]);
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -68,28 +74,28 @@ export function SupervisorNoticesScreen({ session }: Props) {
         <InputField label="Message" multiline onChangeText={setBriefing} value={briefing} />
 
         <Text style={styles.fieldLabel}>Category</Text>
-<View style={styles.pillRow}>
-  {['Safety', 'Operational', 'Administrative'].map((c) => (
-    <Pressable key={c} onPress={() => setCategory(c)} style={[styles.pill, category === c && styles.pillActive]}>
-      <Text style={[styles.pillText, category === c && styles.pillActiveText]}>{c}</Text>
-    </Pressable>
-  ))}
-</View>
+        <View style={styles.pillRow}>
+          {['Safety', 'Operational', 'Administrative'].map((c) => (
+            <Pressable key={c} onPress={() => setCategory(c)} style={[styles.pill, category === c && styles.pillActive]}>
+              <Text style={[styles.pillText, category === c && styles.pillActiveText]}>{c}</Text>
+            </Pressable>
+          ))}
+        </View>
 
-<Text style={styles.cardSub}>Expiry (optional)</Text>
-<View style={styles.pillRow}>
-  {[
-    { label: 'No expiry', value: null },
-    { label: '1 day', value: 1 },
-    { label: '3 days', value: 3 },
-    { label: '7 days', value: 7 },
-    { label: '30 days', value: 30 },
-  ].map((opt) => (
-    <Pressable key={String(opt.value)} onPress={() => setExpiryDays(opt.value)} style={[styles.pill, expiryDays === opt.value && styles.pillActive]}>
-      <Text style={[styles.pillText, expiryDays === opt.value && styles.pillActiveText]}>{opt.label}</Text>
-    </Pressable>
-  ))}
-</View>
+        <Text style={styles.cardSub}>Expiry (optional)</Text>
+        <View style={styles.pillRow}>
+          {[
+            { label: 'No expiry', value: null },
+            { label: '1 day', value: 1 },
+            { label: '3 days', value: 3 },
+            { label: '7 days', value: 7 },
+            { label: '30 days', value: 30 },
+          ].map((opt) => (
+            <Pressable key={String(opt.value)} onPress={() => setExpiryDays(opt.value)} style={[styles.pill, expiryDays === opt.value && styles.pillActive]}>
+              <Text style={[styles.pillText, expiryDays === opt.value && styles.pillActiveText]}>{opt.label}</Text>
+            </Pressable>
+          ))}
+        </View>
 
         <ActionButton label="Send Briefing to Workers" onPress={sendBriefing} />
       </View>
@@ -117,16 +123,16 @@ export function SupervisorNoticesScreen({ session }: Props) {
                 <Text style={styles.noticeMessage}>{n.message}</Text>
                 <Text style={styles.noticeRole}>Posted by {n.postedByRole}</Text>
                 <Pressable onPress={() => handleDelete(n.id)} style={styles.deleteBtn}>
-  <Text style={styles.deleteBtnText}>Delete</Text>
-</Pressable>
+                  <Text style={styles.deleteBtnText}>Delete</Text>
+                </Pressable>
 
                 {n.category ? (
-  <View style={[styles.categoryBadge,
-    n.category === 'Safety' ? styles.badgeSafety :
-    n.category === 'Administrative' ? styles.badgeAdmin : styles.badgeOps]}>
-    <Text style={styles.categoryText}>{n.category}</Text>
-  </View>
-) : null}
+                  <View style={[styles.categoryBadge,
+                    n.category === 'Safety' ? styles.badgeSafety :
+                    n.category === 'Administrative' ? styles.badgeAdmin : styles.badgeOps]}>
+                    <Text style={styles.categoryText}>{n.category}</Text>
+                  </View>
+                ) : null}
               </View>
               <View style={[styles.ackBadge, ackCount > 0 ? styles.ackBadgeGreen : styles.ackBadgeGrey]}>
                 <Text style={[styles.ackBadgeText, ackCount > 0 ? styles.ackBadgeTextGreen : styles.ackBadgeTextGrey]}>{ackCount} ✓</Text>
@@ -149,43 +155,45 @@ export function SupervisorNoticesScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 16 },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  cardSub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 14 },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 12 },
-  noticeCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 10, overflow: 'hidden' },
-  noticeTop: { flexDirection: 'row', alignItems: 'flex-start' },
-  noticeAccent: { backgroundColor: '#1f6f5b', width: 3, alignSelf: 'stretch' },
-  noticeBody: { flex: 1, padding: 12 },
-  noticeTitle: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 3 },
-  noticeMessage: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 17, marginBottom: 4 },
-  noticeRole: { color: '#8fa3b8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  ackBadge: { borderRadius: 12, margin: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  ackBadgeGreen: { backgroundColor: '#e7f6ef' },
-  ackBadgeGrey: { backgroundColor: '#f4f6f8' },
-  ackBadgeText: { fontSize: 12, fontWeight: '900' },
-  ackBadgeTextGreen: { color: '#1f7a4d' },
-  ackBadgeTextGrey: { color: '#8fa3b8' },
-  ackList: { borderTopColor: '#f4f6f8', borderTopWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-  ackName: { color: '#1f6f5b', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  ackMore: { color: '#8fa3b8', fontSize: 11, fontWeight: '700' },
-  noAckText: { borderTopColor: '#f4f6f8', borderTopWidth: 1, color: '#b42318', fontSize: 12, fontWeight: '700', padding: 10 },
-  emptyCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 20 },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
-pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-pill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-pillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-pillActiveText: { color: '#ffffff' },
-categoryBadge: { alignSelf: 'flex-start', borderRadius: 6, borderWidth: 1, marginTop: 4, paddingHorizontal: 8, paddingVertical: 3 },
-badgeSafety: { backgroundColor: '#fff5f5', borderColor: '#b42318' },
-badgeOps: { backgroundColor: '#fffbeb', borderColor: '#d29922' },
-badgeAdmin: { backgroundColor: '#f0f4ff', borderColor: '#4a6fa5' },
-categoryText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
-deleteBtn: { alignSelf: 'flex-start', marginTop: 4 },
-deleteBtnText: { color: '#b42318', fontSize: 11, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    cardSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 14 },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 12 },
+    noticeCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 10, overflow: 'hidden' },
+    noticeTop: { flexDirection: 'row', alignItems: 'flex-start' },
+    noticeAccent: { backgroundColor: theme.accent, width: 3, alignSelf: 'stretch' },
+    noticeBody: { flex: 1, padding: 12 },
+    noticeTitle: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 3 },
+    noticeMessage: { color: theme.textSub, fontSize: 12, fontWeight: '600', lineHeight: 17, marginBottom: 4 },
+    noticeRole: { color: theme.textMuted, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+    ackBadge: { borderRadius: 12, margin: 12, paddingHorizontal: 10, paddingVertical: 4 },
+    ackBadgeGreen: { backgroundColor: theme.accentLight },
+    ackBadgeGrey: { backgroundColor: theme.bgInput },
+    ackBadgeText: { fontSize: 12, fontWeight: '900' },
+    ackBadgeTextGreen: { color: theme.accent },
+    ackBadgeTextGrey: { color: theme.textMuted },
+    ackList: { borderTopColor: theme.bgInput, borderTopWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+    ackName: { color: theme.accent, fontSize: 12, fontWeight: '700', marginBottom: 2 },
+    ackMore: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+    noAckText: { borderTopColor: theme.bgInput, borderTopWidth: 1, color: theme.danger, fontSize: 12, fontWeight: '700', padding: 10 },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 20 },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#ffffff' },
+    categoryBadge: { alignSelf: 'flex-start', borderRadius: 6, borderWidth: 1, marginTop: 4, paddingHorizontal: 8, paddingVertical: 3 },
+    badgeSafety: { backgroundColor: '#fff5f5', borderColor: '#b42318' },
+    badgeOps: { backgroundColor: '#fffbeb', borderColor: '#d29922' },
+    badgeAdmin: { backgroundColor: '#f0f4ff', borderColor: '#4a6fa5' },
+    categoryText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+    deleteBtn: { alignSelf: 'flex-start', marginTop: 4 },
+    deleteBtnText: { color: theme.danger, fontSize: 11, fontWeight: '800' },
+  });
+}

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { getSiteBulkPurchaseRequests, flagForBulkPurchase, withdrawBulkPurchaseRequest, type BulkPurchaseRequest, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -9,6 +11,10 @@ const MINERALS = ['Gold', 'Silver', 'Copper', 'Cobalt', 'Lithium', 'Manganese', 
 const UNITS = ['kg', 'tonnes', 'oz', 'g'];
 
 export function SupervisorBulkPurchaseScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [requests, setRequests] = useState<BulkPurchaseRequest[]>([]);
   const [mineral, setMineral] = useState('Gold');
   const [qty, setQty] = useState('');
@@ -83,7 +89,7 @@ export function SupervisorBulkPurchaseScreen({ session: _ }: Props) {
         value={qty}
         onChangeText={setQty}
         placeholder="0.000"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         keyboardType="decimal-pad"
       />
       <Pressable onPress={handleFlag} disabled={submitting} style={[styles.flagBtn, submitting && { opacity: 0.6 }]}>
@@ -114,26 +120,28 @@ export function SupervisorBulkPurchaseScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  sub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 16 },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginTop: 12, marginBottom: 8 },
-  label: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 4 },
-  meta: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  pill: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#5d6875', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#fff' },
-  input: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 16, fontWeight: '800', marginBottom: 12, minHeight: 48, paddingHorizontal: 14 },
-  flagBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 10, paddingVertical: 14, marginBottom: 4 },
-  flagBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
-  cardMineral: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 2 },
-  cardQty: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  cardStatus: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-  withdrawBtn: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
-  withdrawBtnText: { color: '#dc2626', fontSize: 11, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginTop: 12, marginBottom: 8 },
+    label: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 4 },
+    meta: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#fff' },
+    input: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 16, fontWeight: '800', marginBottom: 12, minHeight: 48, paddingHorizontal: 14 },
+    flagBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, paddingVertical: 14, marginBottom: 4 },
+    flagBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
+    cardRow: { flexDirection: 'row', alignItems: 'center' },
+    cardMineral: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 2 },
+    cardQty: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    cardStatus: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+    withdrawBtn: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+    withdrawBtnText: { color: theme.danger, fontSize: 11, fontWeight: '800' },
+  });
+}

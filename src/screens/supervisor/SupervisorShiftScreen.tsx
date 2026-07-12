@@ -8,6 +8,8 @@ import { approveShiftLog, getSiteShiftLogs, rejectShiftLog, exportShiftLogsCsv }
 import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { ShiftLog } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 // Session-persistent filter state — survives tab switches within the session
 type DatePreset = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
@@ -104,6 +106,10 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 ];
 
 export function SupervisorShiftScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [filters, setFilters] = useState<FilterState>({ ...sessionFilters });
   const [logs, setLogs] = useState<ShiftLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -221,11 +227,11 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
   }
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#1f6f5b" /></View>;
+    return <View style={styles.center}><ActivityIndicator size="large" color={theme.accent} /></View>;
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f4f6f8' }}>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
       {/* Filter Panel */}
       <View style={styles.filterPanel}>
         {/* Date presets */}
@@ -251,7 +257,7 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
             <TextInput
               style={[styles.dateInput, { flex: 1 }]}
               placeholder="From (YYYY-MM-DD)"
-              placeholderTextColor="#9aa5b1"
+              placeholderTextColor={theme.textMuted}
               value={filters.dateFrom}
               onChangeText={(v) => updateFilter('dateFrom', v)}
               keyboardType="numbers-and-punctuation"
@@ -260,7 +266,7 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
             <TextInput
               style={[styles.dateInput, { flex: 1 }]}
               placeholder="To (YYYY-MM-DD)"
-              placeholderTextColor="#9aa5b1"
+              placeholderTextColor={theme.textMuted}
               value={filters.dateTo}
               onChangeText={(v) => updateFilter('dateTo', v)}
               keyboardType="numbers-and-punctuation"
@@ -288,14 +294,14 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
           <TextInput
             style={[styles.textFilter, { flex: 1 }]}
             placeholder="⛏ Mineral type..."
-            placeholderTextColor="#9aa5b1"
+            placeholderTextColor={theme.textMuted}
             value={filters.mineralType}
             onChangeText={(v) => updateFilter('mineralType', v)}
           />
           <TextInput
             style={[styles.textFilter, { flex: 1 }]}
             placeholder="👷 Worker name..."
-            placeholderTextColor="#9aa5b1"
+            placeholderTextColor={theme.textMuted}
             value={filters.workerName}
             onChangeText={(v) => updateFilter('workerName', v)}
           />
@@ -389,7 +395,7 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
             {log.status === 'SUBMITTED' ? (
               <View style={styles.actionRow}>
                 {actioning[log.id] ? (
-                  <ActivityIndicator size="small" color="#1f6f5b" />
+                  <ActivityIndicator size="small" color={theme.accent} />
                 ) : (
                   <>
                     <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(log)}>
@@ -409,54 +415,56 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  filterPanel: { backgroundColor: '#fff', borderBottomColor: '#dde3ea', borderBottomWidth: 1, padding: 12, gap: 0 },
-  chip: { borderRadius: 20, borderWidth: 1.5, borderColor: '#dde3ea', paddingHorizontal: 14, paddingVertical: 6 },
-  chipActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  chipText: { color: '#5d6875', fontSize: 12, fontWeight: '700' },
-  chipTextActive: { color: '#fff' },
-  dateRangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  dateInput: { backgroundColor: '#f4f6f8', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', color: '#17212b', fontSize: 13, paddingHorizontal: 10, paddingVertical: 8 },
-  dateArrow: { color: '#9aa5b1', fontSize: 16, fontWeight: '700' },
-  statusRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
-  statusChip: { borderRadius: 20, borderWidth: 1.5, borderColor: '#dde3ea', paddingHorizontal: 12, paddingVertical: 5 },
-  statusChipActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  statusChipText: { color: '#5d6875', fontSize: 12, fontWeight: '700' },
-  statusChipTextActive: { color: '#fff' },
-  textFilterRow: { flexDirection: 'row', gap: 8 },
-  textFilter: { backgroundColor: '#f4f6f8', borderRadius: 8, borderWidth: 1, borderColor: '#dde3ea', color: '#17212b', fontSize: 13, paddingHorizontal: 10, paddingVertical: 8 },
-  clearBtn: { alignSelf: 'flex-start', marginTop: 6 },
-  clearBtnText: { color: '#b42318', fontSize: 12, fontWeight: '700' },
-  container: { padding: 14, paddingBottom: 40 },
-  summaryCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  summaryTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 8 },
-  summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomColor: '#f4f6f8', borderBottomWidth: 1 },
-  summaryMineral: { color: '#17212b', fontSize: 13, fontWeight: '800' },
-  summaryTotal: { color: '#1f6f5b', fontSize: 14, fontWeight: '900' },
-  summaryFootnote: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 8 },
-  pendingBanner: { backgroundColor: '#fef3c7', borderColor: '#f59e0b', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 10 },
-  pendingBannerText: { color: '#92400e', fontSize: 13, fontWeight: '700' },
-  resultCount: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginBottom: 8 },
-  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  emptyCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, padding: 16, alignItems: 'center' },
-  emptyText: { color: '#9aa5b1', fontSize: 13, fontWeight: '600' },
-  logCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
-  logHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  logMineral: { color: '#17212b', fontSize: 15, fontWeight: '900' },
-  logWorker: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginTop: 2 },
-  logVolume: { color: '#1f6f5b', fontSize: 16, fontWeight: '900' },
-  statusBadge: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
-  statusBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  logMeta: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 1 },
-  logNotes: { color: '#17212b', fontSize: 13, fontWeight: '600', marginTop: 4 },
-  logTime: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 4 },
-  approvedBy: { color: '#15803d', fontSize: 11, fontWeight: '700', marginTop: 4 },
-  rejectedBy: { color: '#9aa5b1', fontSize: 11, fontWeight: '700', marginTop: 4 },
-  actionRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  approveBtn: { flex: 1, backgroundColor: '#1f6f5b', borderRadius: 6, paddingVertical: 8, alignItems: 'center' },
-  approveBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  rejectBtn: { flex: 1, backgroundColor: '#fff', borderColor: '#b42318', borderWidth: 1.5, borderRadius: 6, paddingVertical: 8, alignItems: 'center' },
-  rejectBtnText: { color: '#b42318', fontSize: 13, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    filterPanel: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, padding: 12, gap: 0 },
+    chip: { borderRadius: 20, borderWidth: 1.5, borderColor: theme.border, paddingHorizontal: 14, paddingVertical: 6 },
+    chipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    chipText: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
+    chipTextActive: { color: '#fff' },
+    dateRangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    dateInput: { backgroundColor: theme.bgInput, borderRadius: 8, borderWidth: 1, borderColor: theme.border, color: theme.text, fontSize: 13, paddingHorizontal: 10, paddingVertical: 8 },
+    dateArrow: { color: theme.textMuted, fontSize: 16, fontWeight: '700' },
+    statusRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+    statusChip: { borderRadius: 20, borderWidth: 1.5, borderColor: theme.border, paddingHorizontal: 12, paddingVertical: 5 },
+    statusChipActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    statusChipText: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
+    statusChipTextActive: { color: '#fff' },
+    textFilterRow: { flexDirection: 'row', gap: 8 },
+    textFilter: { backgroundColor: theme.bgInput, borderRadius: 8, borderWidth: 1, borderColor: theme.border, color: theme.text, fontSize: 13, paddingHorizontal: 10, paddingVertical: 8 },
+    clearBtn: { alignSelf: 'flex-start', marginTop: 6 },
+    clearBtnText: { color: theme.danger, fontSize: 12, fontWeight: '700' },
+    container: { padding: 14, paddingBottom: 40 },
+    summaryCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    summaryTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 8 },
+    summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomColor: theme.bg, borderBottomWidth: 1 },
+    summaryMineral: { color: theme.text, fontSize: 13, fontWeight: '800' },
+    summaryTotal: { color: theme.accent, fontSize: 14, fontWeight: '900' },
+    summaryFootnote: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 8 },
+    pendingBanner: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 10 },
+    pendingBannerText: { color: theme.amber, fontSize: 13, fontWeight: '700' },
+    resultCount: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 8 },
+    exportBtn: { backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, padding: 16, alignItems: 'center' },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    logCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
+    logHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    logMineral: { color: theme.text, fontSize: 15, fontWeight: '900' },
+    logWorker: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginTop: 2 },
+    logVolume: { color: theme.accent, fontSize: 16, fontWeight: '900' },
+    statusBadge: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
+    statusBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+    logMeta: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 1 },
+    logNotes: { color: theme.text, fontSize: 13, fontWeight: '600', marginTop: 4 },
+    logTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 4 },
+    approvedBy: { color: theme.success, fontSize: 11, fontWeight: '700', marginTop: 4 },
+    rejectedBy: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 4 },
+    actionRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+    approveBtn: { flex: 1, backgroundColor: theme.accent, borderRadius: 6, paddingVertical: 8, alignItems: 'center' },
+    approveBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+    rejectBtn: { flex: 1, backgroundColor: theme.bgCard, borderColor: theme.danger, borderWidth: 1.5, borderRadius: 6, paddingVertical: 8, alignItems: 'center' },
+    rejectBtnText: { color: theme.danger, fontSize: 13, fontWeight: '800' },
+  });
+}

@@ -3,6 +3,8 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 
 import { getSiteDrillOperations } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type DrillOp = {
   id: number;
@@ -36,6 +38,10 @@ function formatTime(dateStr: string): string {
 }
 
 export function SupervisorDrillScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [drills, setDrills] = useState<DrillOp[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -65,12 +71,12 @@ export function SupervisorDrillScreen({ session: _ }: Props) {
       {/* Stats */}
       <View style={styles.strip}>
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, active.length > 0 && { color: '#a15c00' }]}>{active.length}</Text>
+          <Text style={[styles.stripValue, active.length > 0 && { color: theme.amber }]}>{active.length}</Text>
           <Text style={styles.stripLabel}>Active</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#1f6f5b' }]}>{completed.length}</Text>
+          <Text style={[styles.stripValue, { color: theme.accent }]}>{completed.length}</Text>
           <Text style={styles.stripLabel}>Completed</Text>
         </View>
         <View style={styles.stripDivider} />
@@ -158,45 +164,47 @@ export function SupervisorDrillScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { marginBottom: 16 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900' },
-  pageSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  strip: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 20, paddingVertical: 14 },
-  stripItem: { alignItems: 'center', flex: 1 },
-  stripValue: { color: '#17212b', fontSize: 20, fontWeight: '900' },
-  stripLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 12 },
-  drillCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
-  drillHeader: { alignItems: 'center', backgroundColor: '#17212b', flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
-  drillType: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
-  drillMeta: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  progressBadge: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  progressText: { color: '#ffffff', fontSize: 11, fontWeight: '800' },
-  drillWorker: { color: '#17212b', fontSize: 13, fontWeight: '700', paddingHorizontal: 14, paddingTop: 12 },
-  drillStarted: { color: '#8fa3b8', fontSize: 11, fontWeight: '700', paddingBottom: 10, paddingHorizontal: 14 },
-  stepRow: { borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', padding: 14 },
-  stepItem: { alignItems: 'center', flex: 1 },
-  stepDot: { borderRadius: 8, height: 16, marginBottom: 4, width: 16 },
-  stepDotDone: { backgroundColor: '#1f6f5b' },
-  stepDotPending: { backgroundColor: '#e5e9ef' },
-  stepLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', textAlign: 'center' },
-  stepLabelDone: { color: '#1f6f5b' },
-  clearCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 16, padding: 16 },
-  clearIcon: { color: '#16a34a', fontSize: 22 },
-  clearTitle: { color: '#15803d', fontSize: 14, fontWeight: '900' },
-  clearSub: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  completedCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 8, padding: 12 },
-  completedLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
-  completedCheck: { alignItems: 'center', backgroundColor: '#e7f6ef', borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
-  completedCheckText: { color: '#1f6f5b', fontSize: 14, fontWeight: '900' },
-  completedBody: { flex: 1 },
-  completedType: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
-  completedMeta: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
-  emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 32 },
-  emptyIcon: { fontSize: 32, marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageHeader: { marginBottom: 16 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    pageSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 20, paddingVertical: 14 },
+    stripItem: { alignItems: 'center', flex: 1 },
+    stripValue: { color: theme.text, fontSize: 20, fontWeight: '900' },
+    stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+    stripDivider: { backgroundColor: theme.border, width: 1 },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 12 },
+    drillCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
+    drillHeader: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
+    drillType: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
+    drillMeta: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+    progressBadge: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+    progressText: { color: '#ffffff', fontSize: 11, fontWeight: '800' },
+    drillWorker: { color: theme.text, fontSize: 13, fontWeight: '700', paddingHorizontal: 14, paddingTop: 12 },
+    drillStarted: { color: theme.textMuted, fontSize: 11, fontWeight: '700', paddingBottom: 10, paddingHorizontal: 14 },
+    stepRow: { borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', padding: 14 },
+    stepItem: { alignItems: 'center', flex: 1 },
+    stepDot: { borderRadius: 8, height: 16, marginBottom: 4, width: 16 },
+    stepDotDone: { backgroundColor: theme.accent },
+    stepDotPending: { backgroundColor: theme.border },
+    stepLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', textAlign: 'center' },
+    stepLabelDone: { color: theme.accent },
+    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 16, padding: 16 },
+    clearIcon: { color: theme.success, fontSize: 22 },
+    clearTitle: { color: theme.success, fontSize: 14, fontWeight: '900' },
+    clearSub: { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 2 },
+    completedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 8, padding: 12 },
+    completedLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
+    completedCheck: { alignItems: 'center', backgroundColor: theme.accentLight, borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
+    completedCheckText: { color: theme.accent, fontSize: 14, fontWeight: '900' },
+    completedBody: { flex: 1 },
+    completedType: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    completedMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
+    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  });
+}

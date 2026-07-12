@@ -17,10 +17,16 @@ import { getSiteAnnouncements, parseApiError, postAnnouncement } from '../../ser
 import type { ShiftAnnouncement } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 import { formatAgo } from '../../utils/time';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function SupervisorAnnouncementsScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [announcements, setAnnouncements] = useState<ShiftAnnouncement[]>([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -69,7 +75,7 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />}
       >
         <View style={styles.pageHeader}>
           <Text style={styles.pageTitle}>Shift Announcements</Text>
@@ -83,7 +89,7 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
           <TextInput
             style={styles.composeInput}
             placeholder={`Broadcast a quick update…\nE.g. "Meeting at 3pm in Zone B" or "Water supply restored"`}
-            placeholderTextColor="#556878"
+            placeholderTextColor={theme.textMuted}
             value={text}
             onChangeText={setText}
             multiline
@@ -113,7 +119,7 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
 
         {/* History */}
         {loading ? (
-          <ActivityIndicator color="#1f6f5b" style={{ marginTop: 24 }} />
+          <ActivityIndicator color={theme.accent} style={{ marginTop: 24 }} />
         ) : announcements.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyIcon}>📢</Text>
@@ -142,78 +148,80 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 40 },
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 16, paddingBottom: 40 },
 
-  pageHeader: { marginBottom: 16 },
-  pageTitle: { color: '#e6edf3', fontSize: 20, fontWeight: '800' },
-  pageSub: { color: '#7d8590', fontSize: 13, marginTop: 2, lineHeight: 18 },
+    pageHeader: { marginBottom: 16 },
+    pageTitle: { color: theme.text, fontSize: 20, fontWeight: '800' },
+    pageSub: { color: theme.textSub, fontSize: 13, marginTop: 2, lineHeight: 18 },
 
-  composeCard: {
-    backgroundColor: '#161b22',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 12,
-    marginBottom: 10,
-  },
-  composeInput: {
-    color: '#e6edf3',
-    fontSize: 15,
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-  composeFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#21262d',
-  },
-  charCount: { color: '#7d8590', fontSize: 12 },
-  charCountWarn: { color: '#d29922' },
-  sendBtn: {
-    backgroundColor: '#1f6f5b',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  sendBtnDisabled: { opacity: 0.4 },
-  sendBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+    composeCard: {
+      backgroundColor: theme.bgCard,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 12,
+      marginBottom: 10,
+    },
+    composeInput: {
+      color: theme.text,
+      fontSize: 15,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    composeFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 8,
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: theme.bgInput,
+    },
+    charCount: { color: theme.textSub, fontSize: 12 },
+    charCountWarn: { color: theme.amber },
+    sendBtn: {
+      backgroundColor: theme.accent,
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      alignItems: 'center',
+    },
+    sendBtnDisabled: { opacity: 0.4 },
+    sendBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 
-  infoRow: { marginBottom: 20 },
-  infoText: { color: '#556878', fontSize: 12, lineHeight: 17 },
+    infoRow: { marginBottom: 20 },
+    infoText: { color: theme.textMuted, fontSize: 12, lineHeight: 17 },
 
-  emptyCard: {
-    alignItems: 'center',
-    backgroundColor: '#161b22',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 32,
-    gap: 8,
-  },
-  emptyIcon: { fontSize: 32 },
-  emptyTitle: { color: '#e6edf3', fontSize: 16, fontWeight: '700' },
-  emptySub: { color: '#7d8590', fontSize: 13, textAlign: 'center' },
+    emptyCard: {
+      alignItems: 'center',
+      backgroundColor: theme.bgCard,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 32,
+      gap: 8,
+    },
+    emptyIcon: { fontSize: 32 },
+    emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '700' },
+    emptySub: { color: theme.textSub, fontSize: 13, textAlign: 'center' },
 
-  historyLabel: { color: '#7d8590', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 },
+    historyLabel: { color: theme.textSub, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 },
 
-  announcementCard: {
-    backgroundColor: '#161b22',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    padding: 12,
-    marginBottom: 8,
-  },
-  announcementTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  announcementIcon: { fontSize: 16 },
-  announcementMeta: {},
-  announcementBy: { color: '#e6edf3', fontSize: 13, fontWeight: '700' },
-  announcementTime: { color: '#7d8590', fontSize: 12 },
-  announcementContent: { color: '#c9d1d9', fontSize: 15, lineHeight: 21 },
-});
+    announcementCard: {
+      backgroundColor: theme.bgCard,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 12,
+      marginBottom: 8,
+    },
+    announcementTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    announcementIcon: { fontSize: 16 },
+    announcementMeta: {},
+    announcementBy: { color: theme.text, fontSize: 13, fontWeight: '700' },
+    announcementTime: { color: theme.textSub, fontSize: 12 },
+    announcementContent: { color: theme.textSub, fontSize: 15, lineHeight: 21 },
+  });
+}

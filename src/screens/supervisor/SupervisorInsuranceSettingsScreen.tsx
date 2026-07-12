@@ -12,12 +12,18 @@ import {
 
 import { getSites, updateInsuranceConfig } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type DeductionMode = 'DEDUCT_FROM_PAY' | 'BILL_TO_MINE';
 
 type Props = { session: AuthSession };
 
 export function SupervisorInsuranceSettingsScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -72,7 +78,7 @@ export function SupervisorInsuranceSettingsScreen({ session }: Props) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1f6f5b" />
+        <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
   }
@@ -91,7 +97,7 @@ export function SupervisorInsuranceSettingsScreen({ session }: Props) {
           <Switch
             value={enabled}
             onValueChange={setEnabled}
-            trackColor={{ false: '#dde3ea', true: '#1f6f5b' }}
+            trackColor={{ false: theme.border, true: theme.accent }}
             thumbColor="#fff"
           />
         </View>
@@ -106,7 +112,7 @@ export function SupervisorInsuranceSettingsScreen({ session }: Props) {
               value={providerName}
               onChangeText={setProviderName}
               placeholder="e.g. SafeMine Insurance Ltd"
-              placeholderTextColor="#9aa5b1"
+              placeholderTextColor={theme.textMuted}
             />
           </View>
 
@@ -117,7 +123,7 @@ export function SupervisorInsuranceSettingsScreen({ session }: Props) {
               value={premium}
               onChangeText={setPremium}
               placeholder="e.g. 25.00"
-              placeholderTextColor="#9aa5b1"
+              placeholderTextColor={theme.textMuted}
               keyboardType="decimal-pad"
             />
           </View>
@@ -144,7 +150,7 @@ export function SupervisorInsuranceSettingsScreen({ session }: Props) {
             </View>
             <Text style={styles.modeHint}>
               {deductionMode === 'DEDUCT_FROM_PAY'
-                ? 'Premium is deducted from each enrolled worker\'s net pay each cycle.'
+                ? "Premium is deducted from each enrolled worker's net pay each cycle."
                 : 'Mine covers the premium — no deduction from worker pay.'}
             </Text>
           </View>
@@ -165,27 +171,29 @@ export function SupervisorInsuranceSettingsScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  container: { padding: 20, paddingBottom: 48, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 24, fontWeight: '900', marginBottom: 4 },
-  subtitle: { color: '#5d6875', fontSize: 13, fontWeight: '600', marginBottom: 20 },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 16 },
-  toggleRow: { alignItems: 'center', flexDirection: 'row', gap: 12 },
-  toggleLabel: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 2 },
-  toggleHint: { color: '#9aa5b1', fontSize: 12, fontWeight: '600' },
-  fieldCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 16 },
-  fieldLabel: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 8 },
-  input: { backgroundColor: '#f4f6f8', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, padding: 12 },
-  modeRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  modeBtn: { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 10, alignItems: 'center', backgroundColor: '#f4f6f8' },
-  modeBtnActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  modeBtnText: { color: '#5d6875', fontSize: 13, fontWeight: '800' },
-  modeBtnTextActive: { color: '#fff' },
-  modeHint: { color: '#9aa5b1', fontSize: 12, fontWeight: '600' },
-  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', marginBottom: 8 },
-  successText: { color: '#1f7a4d', fontSize: 13, fontWeight: '700', marginBottom: 8 },
-  saveBtn: { backgroundColor: '#1f6f5b', borderRadius: 10, padding: 16, alignItems: 'center', marginTop: 4 },
-  saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    container: { padding: 20, paddingBottom: 48, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 24, fontWeight: '900', marginBottom: 4 },
+    subtitle: { color: theme.textSub, fontSize: 13, fontWeight: '600', marginBottom: 20 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 16 },
+    toggleRow: { alignItems: 'center', flexDirection: 'row', gap: 12 },
+    toggleLabel: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 2 },
+    toggleHint: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    fieldCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 16 },
+    fieldLabel: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 8 },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, padding: 12 },
+    modeRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+    modeBtn: { borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 10, alignItems: 'center', backgroundColor: theme.bgInput },
+    modeBtnActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    modeBtnText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    modeBtnTextActive: { color: '#fff' },
+    modeHint: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: 8 },
+    successText: { color: theme.success, fontSize: 13, fontWeight: '700', marginBottom: 8 },
+    saveBtn: { backgroundColor: theme.accent, borderRadius: 10, padding: 16, alignItems: 'center', marginTop: 4 },
+    saveBtnDisabled: { opacity: 0.5 },
+    saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+  });
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +22,8 @@ import {
   type GuestRosterEntry,
 } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 type ScreenView = 'list' | 'generate' | 'detail';
@@ -48,10 +50,14 @@ function defaultExpiresAt(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   d.setMinutes(0, 0, 0);
-  return d.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
+  return d.toISOString().slice(0, 16);
 }
 
 export function SupervisorGuestCodesScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const s = makeStyles(theme);
+
   const [view, setView]       = useState<ScreenView>('list');
   const [codes, setCodes]     = useState<GuestAccessCode[]>([]);
   const [detail, setDetail]   = useState<GuestAccessCode | null>(null);
@@ -60,7 +66,6 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError]     = useState('');
 
-  // Generate form
   const [subRole, setSubRole]           = useState('visitor');
   const [sessionHours, setSessionHours] = useState(24);
   const [maxRed, setMaxRed]             = useState('1');
@@ -142,12 +147,12 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
           <Text style={s.pinLabel}>PIN</Text>
           <Text style={s.pin}>{detail.code}</Text>
 
-          <Row label="Sub-role"    value={detail.guestSubRole} />
-          <Row label="Session"     value={`${detail.sessionHours}h per guest`} />
-          <Row label="Joined"      value={`${detail.redemptionCount} / ${detail.maxRedemptions}`} />
-          <Row label="Expires"     value={fmtDate(detail.expiresAt)} />
-          <Row label="Status"      value={!detail.active ? 'Revoked' : expired ? 'Expired' : full ? 'Full' : 'Active'} />
-          <Row label="Created by"  value={detail.createdBy} />
+          <Row label="Sub-role"    value={detail.guestSubRole} styles={s} />
+          <Row label="Session"     value={`${detail.sessionHours}h per guest`} styles={s} />
+          <Row label="Joined"      value={`${detail.redemptionCount} / ${detail.maxRedemptions}`} styles={s} />
+          <Row label="Expires"     value={fmtDate(detail.expiresAt)} styles={s} />
+          <Row label="Status"      value={!detail.active ? 'Revoked' : expired ? 'Expired' : full ? 'Full' : 'Active'} styles={s} />
+          <Row label="Created by"  value={detail.createdBy} styles={s} />
         </View>
 
         {error ? <Text style={s.errorText}>{error}</Text> : null}
@@ -163,7 +168,7 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
         </Text>
 
         {roster == null ? (
-          <ActivityIndicator color="#1f6f5b" style={{ marginTop: 16 }} />
+          <ActivityIndicator color={theme.accent} style={{ marginTop: 16 }} />
         ) : roster.length === 0 ? (
           <View style={s.emptyCard}>
             <Text style={s.emptyText}>No one has joined yet.</Text>
@@ -172,10 +177,10 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
           roster.map(r => (
             <View key={r.id} style={s.card}>
               <Text style={s.workerName}>{r.fullName}</Text>
-              <Row label="Phone"     value={r.phone} />
-              <Row label="Joined"    value={fmtDate(r.joinedAt)} />
-              <Row label="Induction" value={r.inductionCompleted ? '✓ Completed' : '✗ Not yet'} />
-              <Row label="Session"   value={r.sessionExpired ? 'Expired' : 'Active'} />
+              <Row label="Phone"     value={r.phone} styles={s} />
+              <Row label="Joined"    value={fmtDate(r.joinedAt)} styles={s} />
+              <Row label="Induction" value={r.inductionCompleted ? '✓ Completed' : '✗ Not yet'} styles={s} />
+              <Row label="Session"   value={r.sessionExpired ? 'Expired' : 'Active'} styles={s} />
             </View>
           ))
         )}
@@ -217,11 +222,11 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
           <Text style={s.inputLabel}>Max Guests</Text>
           <TextInput style={s.input} value={maxRed} onChangeText={setMaxRed}
             keyboardType="number-pad" placeholder="e.g. 1 for single, 50 for group tour"
-            placeholderTextColor="#9ca3af" />
+            placeholderTextColor={theme.textMuted} />
 
           <Text style={s.inputLabel}>Code Expires At (YYYY-MM-DDTHH:mm)</Text>
           <TextInput style={s.input} value={expiresAt} onChangeText={setExpiresAt}
-            placeholder="e.g. 2026-07-04T17:00" placeholderTextColor="#9ca3af"
+            placeholder="e.g. 2026-07-04T17:00" placeholderTextColor={theme.textMuted}
             autoCapitalize="none" />
 
           {genError ? <Text style={s.errorText}>{genError}</Text> : null}
@@ -236,7 +241,7 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
 
   // ── LIST VIEW ────────────────────────────────────────────────────────────────
   if (loading) {
-    return <View style={s.centered}><ActivityIndicator color="#1f6f5b" size="large" /></View>;
+    return <View style={s.centered}><ActivityIndicator color={theme.accent} size="large" /></View>;
   }
 
   return (
@@ -260,7 +265,7 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
           const expired = new Date(c.expiresAt) < new Date();
           const full    = c.redemptionCount >= c.maxRedemptions;
           const status  = !c.active ? 'Revoked' : expired ? 'Expired' : full ? 'Full' : 'Active';
-          const statusColor = !c.active || expired ? '#b42318' : full ? '#92400e' : '#15803d';
+          const statusColor = !c.active || expired ? theme.danger : full ? theme.amber : theme.success;
           return (
             <TouchableOpacity key={c.id} style={s.card} onPress={() => openDetail(c)} activeOpacity={0.75}>
               <View style={s.codeRow}>
@@ -281,7 +286,7 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, styles: s }: { label: string; value: string; styles: ReturnType<typeof makeStyles> }) {
   return (
     <View style={s.row}>
       <Text style={s.label}>{label}</Text>
@@ -290,54 +295,56 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-const s = StyleSheet.create({
-  centered:  { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  container: { backgroundColor: '#f4f6f8', padding: 20, paddingBottom: 48 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  pageSub:   { color: '#5d6875', fontSize: 13, fontWeight: '700', marginBottom: 16 },
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    centered:  { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 48 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    pageSub:   { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: 16 },
 
-  backBtn:     { marginBottom: 12 },
-  backBtnText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
+    backBtn:     { marginBottom: 12 },
+    backBtnText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
 
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: 16 },
 
-  qrWrap:   { alignItems: 'center', marginBottom: 16 },
-  pinLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 1 },
-  pin:      { color: '#17212b', fontSize: 36, fontWeight: '900', textAlign: 'center', letterSpacing: 6, marginBottom: 12 },
+    qrWrap:   { alignItems: 'center', marginBottom: 16 },
+    pinLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 1 },
+    pin:      { color: theme.text, fontSize: 36, fontWeight: '900', textAlign: 'center', letterSpacing: 6, marginBottom: 12 },
 
-  row:   { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopColor: '#f4f6f8', borderTopWidth: 1 },
-  label: { color: '#5d6875', fontSize: 13, fontWeight: '700', flex: 1 },
-  value: { color: '#17212b', fontSize: 13, fontWeight: '700', maxWidth: '55%', textAlign: 'right' },
+    row:   { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopColor: theme.bgInput, borderTopWidth: 1 },
+    label: { color: theme.textSub, fontSize: 13, fontWeight: '700', flex: 1 },
+    value: { color: theme.text, fontSize: 13, fontWeight: '700', maxWidth: '55%', textAlign: 'right' },
 
-  sectionHeader: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 10, marginTop: 4 },
+    sectionHeader: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 10, marginTop: 4 },
 
-  workerName: { color: '#17212b', fontSize: 14, fontWeight: '800', marginBottom: 6 },
+    workerName: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 6 },
 
-  codeRow:        { flexDirection: 'row', alignItems: 'center' },
-  codePin:        { color: '#17212b', fontSize: 22, fontWeight: '900', letterSpacing: 3, marginBottom: 2 },
-  codeSub:        { color: '#5d6875', fontSize: 12, fontWeight: '600' },
-  statusBadge:    { fontSize: 12, fontWeight: '800', textAlign: 'right', marginBottom: 2 },
-  redemptionCount:{ color: '#5d6875', fontSize: 11, fontWeight: '700', textAlign: 'right' },
+    codeRow:        { flexDirection: 'row', alignItems: 'center' },
+    codePin:        { color: theme.text, fontSize: 22, fontWeight: '900', letterSpacing: 3, marginBottom: 2 },
+    codeSub:        { color: theme.textSub, fontSize: 12, fontWeight: '600' },
+    statusBadge:    { fontSize: 12, fontWeight: '800', textAlign: 'right', marginBottom: 2 },
+    redemptionCount:{ color: theme.textSub, fontSize: 11, fontWeight: '700', textAlign: 'right' },
 
-  primaryBtn:     { backgroundColor: '#1f6f5b', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 16 },
-  primaryBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+    primaryBtn:     { backgroundColor: theme.accent, borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 16 },
+    primaryBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
 
-  revokeBtn:     { backgroundColor: '#fef2f2', borderColor: '#fca5a5', borderRadius: 10, borderWidth: 1, padding: 14, alignItems: 'center', marginBottom: 16 },
-  revokeBtnText: { color: '#b42318', fontSize: 14, fontWeight: '900' },
+    revokeBtn:     { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 10, borderWidth: 1, padding: 14, alignItems: 'center', marginBottom: 16 },
+    revokeBtnText: { color: theme.danger, fontSize: 14, fontWeight: '900' },
 
-  inputLabel: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 6, textTransform: 'uppercase' },
-  input:      { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, fontWeight: '700', padding: 10 },
+    inputLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 6, textTransform: 'uppercase' },
+    input:      { borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '700', padding: 10 },
 
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  chip:        { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
-  chipActive:  { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  chipText:     { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  chipTextActive: { color: '#fff' },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+    chip:        { borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
+    chipActive:  { backgroundColor: theme.accent, borderColor: theme.accent },
+    chipText:     { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    chipTextActive: { color: '#fff' },
 
-  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', marginBottom: 8 },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: 8 },
 
-  emptyCard:    { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32 },
-  emptyIcon:    { fontSize: 36, marginBottom: 10 },
-  emptyText:    { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  emptySubText: { color: '#5d6875', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-});
+    emptyCard:    { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32 },
+    emptyIcon:    { fontSize: 36, marginBottom: 10 },
+    emptyText:    { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    emptySubText: { color: theme.textSub, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  });
+}

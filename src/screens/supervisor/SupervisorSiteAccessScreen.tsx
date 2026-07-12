@@ -3,10 +3,16 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { ActionButton } from '../../components/ActionButton';
 import { getMySites, grantSiteAccess, revokeSiteAccess, type SiteAccess, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function SupervisorSiteAccessScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [sites, setSites] = useState<SiteAccess[]>([]);
   const [loading, setLoading] = useState(true);
   const [grantEmail, setGrantEmail] = useState('');
@@ -105,7 +111,7 @@ export function SupervisorSiteAccessScreen({ session: _ }: Props) {
         value={grantEmail}
         onChangeText={setGrantEmail}
         placeholder="supervisor@example.com"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         autoCapitalize="none"
         keyboardType="email-address"
       />
@@ -115,7 +121,7 @@ export function SupervisorSiteAccessScreen({ session: _ }: Props) {
         value={grantSite}
         onChangeText={setGrantSite}
         placeholder="e.g. Tarkwa Mine"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
       />
       <ActionButton label={granting ? 'Granting...' : 'Grant Access'} onPress={handleGrant} />
 
@@ -147,22 +153,24 @@ export function SupervisorSiteAccessScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 4 },
-  sectionTitle: { color: '#17212b', fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 16 },
-  label: { color: '#5d6875', fontSize: 13, fontWeight: '800', marginBottom: 6, marginTop: 4 },
-  meta: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginBottom: 8 },
-  input: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, minHeight: 44, paddingHorizontal: 12, marginBottom: 10 },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
-  cardActive: { borderColor: '#1f6f5b', borderWidth: 2 },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
-  siteName: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  tagRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  tag: { backgroundColor: '#17212b', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  tagGreen: { backgroundColor: '#1f6f5b' },
-  tagText: { color: '#fff', fontSize: 10, fontWeight: '900' },
-  grantedBy: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
-  revokeBtn: { backgroundColor: '#fff5f5', borderColor: '#b42318', borderRadius: 6, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
-  revokeBtnText: { color: '#b42318', fontSize: 12, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 4 },
+    sectionTitle: { color: theme.text, fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 16 },
+    label: { color: theme.textSub, fontSize: 13, fontWeight: '800', marginBottom: 6, marginTop: 4 },
+    meta: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 8 },
+    input: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, minHeight: 44, paddingHorizontal: 12, marginBottom: 10 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
+    cardActive: { borderColor: theme.accent, borderWidth: 2 },
+    cardRow: { flexDirection: 'row', alignItems: 'center' },
+    siteName: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    tagRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+    tag: { backgroundColor: theme.bgHero, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+    tagGreen: { backgroundColor: theme.accent },
+    tagText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+    grantedBy: { color: theme.textSub, fontSize: 11, fontWeight: '700' },
+    revokeBtn: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 6, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
+    revokeBtnText: { color: theme.danger, fontSize: 12, fontWeight: '800' },
+  });
+}

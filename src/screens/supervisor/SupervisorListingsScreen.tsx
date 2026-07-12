@@ -4,18 +4,23 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { getMarketplaceListings, createListing, withdrawListing, type MineralListing } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 const UNITS = ['tonnes', 'kg', 'oz', 'carats', 'barrels'];
 
 export function SupervisorListingsScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [listings, setListings] = useState<MineralListing[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [acting, setActing] = useState<number | null>(null);
 
-  // form state
   const [mineralType, setMineralType] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('tonnes');
@@ -112,10 +117,10 @@ export function SupervisorListingsScreen({ session: _ }: Props) {
           <Text style={styles.formTitle}>New Listing</Text>
 
           <Text style={styles.label}>Mineral Type *</Text>
-          <TextInput style={styles.input} value={mineralType} onChangeText={setMineralType} placeholder="e.g. Gold, Bauxite" placeholderTextColor="#8fa3b8" />
+          <TextInput style={styles.input} value={mineralType} onChangeText={setMineralType} placeholder="e.g. Gold, Bauxite" placeholderTextColor={theme.textMuted} />
 
           <Text style={styles.label}>Quantity *</Text>
-          <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} placeholder="e.g. 500" placeholderTextColor="#8fa3b8" keyboardType="decimal-pad" />
+          <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} placeholder="e.g. 500" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
 
           <Text style={styles.label}>Unit</Text>
           <View style={styles.unitRow}>
@@ -127,16 +132,16 @@ export function SupervisorListingsScreen({ session: _ }: Props) {
           </View>
 
           <Text style={styles.label}>Asking Price (GHS) *</Text>
-          <TextInput style={styles.input} value={askingPrice} onChangeText={setAskingPrice} placeholder="e.g. 250000" placeholderTextColor="#8fa3b8" keyboardType="decimal-pad" />
+          <TextInput style={styles.input} value={askingPrice} onChangeText={setAskingPrice} placeholder="e.g. 250000" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
 
           <Text style={styles.label}>Grade</Text>
-          <TextInput style={styles.input} value={grade} onChangeText={setGrade} placeholder="e.g. 22 carat" placeholderTextColor="#8fa3b8" />
+          <TextInput style={styles.input} value={grade} onChangeText={setGrade} placeholder="e.g. 22 carat" placeholderTextColor={theme.textMuted} />
 
           <Text style={styles.label}>Location</Text>
-          <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="e.g. Northern Zone, Block 3" placeholderTextColor="#8fa3b8" />
+          <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="e.g. Northern Zone, Block 3" placeholderTextColor={theme.textMuted} />
 
           <Text style={styles.label}>Min. Order Quantity</Text>
-          <TextInput style={styles.input} value={minOrderQty} onChangeText={setMinOrderQty} placeholder="Optional" placeholderTextColor="#8fa3b8" keyboardType="decimal-pad" />
+          <TextInput style={styles.input} value={minOrderQty} onChangeText={setMinOrderQty} placeholder="Optional" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
 
           <Text style={styles.label}>Photo</Text>
           <Pressable onPress={pickPhoto} style={[styles.photoBtn, photo ? styles.photoBtnDone : null]}>
@@ -190,47 +195,49 @@ export function SupervisorListingsScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
-  titleRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900' },
-  addBtn: { backgroundColor: '#1f6f5b', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 },
-  addBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  subtitle: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
-  formCard: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  formTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 16 },
-  label: { color: '#8fa3b8', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
-  input: { backgroundColor: '#f0f2f5', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 14, paddingHorizontal: 12, paddingVertical: 10 },
-  unitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
-  unitPill: { borderColor: '#e5e9ef', borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
-  unitPillActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  unitPillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '700' },
-  unitPillTextActive: { color: '#fff' },
-  photoBtn: { alignItems: 'center', backgroundColor: '#f0f2f5', borderColor: '#e5e9ef', borderRadius: 8, borderStyle: 'dashed', borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 16, padding: 12 },
-  photoBtnDone: { borderColor: '#1f6f5b', borderStyle: 'solid' },
-  photoBtnText: { color: '#8fa3b8', fontSize: 13, fontWeight: '700' },
-  photoThumb: { borderRadius: 6, height: 36, width: 36 },
-  submitBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 10, paddingVertical: 14 },
-  submitBtnDisabled: { opacity: 0.6 },
-  submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
-  emptyCard: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 40 },
-  emptyIcon: { fontSize: 32, marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  card: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
-  cardTop: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 10 },
-  thumb: { borderRadius: 8, height: 54, marginRight: 12, width: 54 },
-  thumbPlaceholder: { alignItems: 'center', backgroundColor: '#f0f2f5', borderRadius: 8, height: 54, justifyContent: 'center', marginRight: 12, width: 54 },
-  cardInfo: { flex: 1 },
-  mineral: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 2 },
-  qty: { color: '#5d6875', fontSize: 13, fontWeight: '700', marginBottom: 2 },
-  price: { color: '#1f6f5b', fontSize: 13, fontWeight: '800' },
-  statusBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  statusActive: { backgroundColor: '#dcfce7' },
-  statusSold: { backgroundColor: '#e0f2fe' },
-  statusWithdrawn: { backgroundColor: '#f3f4f6' },
-  statusText: { fontSize: 11, fontWeight: '800', color: '#374151' },
-  withdrawBtn: { alignItems: 'center', backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, paddingVertical: 8 },
-  withdrawBtnText: { color: '#dc2626', fontSize: 13, fontWeight: '800' },
-  btnDisabled: { opacity: 0.5 },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    titleRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    addBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 },
+    addBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
+    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    formTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 16 },
+    label: { color: theme.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 14, paddingHorizontal: 12, paddingVertical: 10 },
+    unitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+    unitPill: { borderColor: theme.border, borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
+    unitPillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    unitPillText: { color: theme.textMuted, fontSize: 12, fontWeight: '700' },
+    unitPillTextActive: { color: '#fff' },
+    photoBtn: { alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 16, padding: 12 },
+    photoBtnDone: { borderColor: theme.accent, borderStyle: 'solid' },
+    photoBtnText: { color: theme.textMuted, fontSize: 13, fontWeight: '700' },
+    photoThumb: { borderRadius: 6, height: 36, width: 36 },
+    submitBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, paddingVertical: 14 },
+    submitBtnDisabled: { opacity: 0.6 },
+    submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
+    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
+    cardTop: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 10 },
+    thumb: { borderRadius: 8, height: 54, marginRight: 12, width: 54 },
+    thumbPlaceholder: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 8, height: 54, justifyContent: 'center', marginRight: 12, width: 54 },
+    cardInfo: { flex: 1 },
+    mineral: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
+    qty: { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: 2 },
+    price: { color: theme.accent, fontSize: 13, fontWeight: '800' },
+    statusBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+    statusActive: { backgroundColor: theme.successLight },
+    statusSold: { backgroundColor: theme.infoLight },
+    statusWithdrawn: { backgroundColor: theme.bgInput },
+    statusText: { fontSize: 11, fontWeight: '800', color: theme.textSub },
+    withdrawBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, paddingVertical: 8 },
+    withdrawBtnText: { color: theme.danger, fontSize: 13, fontWeight: '800' },
+    btnDisabled: { opacity: 0.5 },
+  });
+}

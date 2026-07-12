@@ -5,10 +5,16 @@ import { AuditLogFeed } from '../../components/AuditLogFeed';
 import { searchAuditLogs, exportAuditLogsCsv } from '../../services/api';
 import type { AuditLog } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function SupervisorAuditScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -81,7 +87,7 @@ export function SupervisorAuditScreen({ session: _ }: Props) {
           autoCapitalize="characters"
           onChangeText={setAction}
           placeholder="e.g. HAZARD_SUBMITTED"
-          placeholderTextColor="#8fa3b8"
+          placeholderTextColor={theme.textMuted}
           style={styles.input}
           value={action}
         />
@@ -92,7 +98,7 @@ export function SupervisorAuditScreen({ session: _ }: Props) {
           keyboardType="email-address"
           onChangeText={setActorEmail}
           placeholder="user@example.com"
-          placeholderTextColor="#8fa3b8"
+          placeholderTextColor={theme.textMuted}
           style={styles.input}
           value={actorEmail}
         />
@@ -103,7 +109,7 @@ export function SupervisorAuditScreen({ session: _ }: Props) {
             <TextInput
               onChangeText={setFrom}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor="#8fa3b8"
+              placeholderTextColor={theme.textMuted}
               style={styles.input}
               value={from}
             />
@@ -113,7 +119,7 @@ export function SupervisorAuditScreen({ session: _ }: Props) {
             <TextInput
               onChangeText={setTo}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor="#8fa3b8"
+              placeholderTextColor={theme.textMuted}
               style={styles.input}
               value={to}
             />
@@ -154,23 +160,25 @@ export function SupervisorAuditScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  subtitle: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
-  filterCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
-  filterHeading: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 12 },
-  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4, textTransform: 'uppercase' },
-  input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 13, marginBottom: 10, minHeight: 40, paddingHorizontal: 10 },
-  dateRow: { flexDirection: 'row', gap: 10 },
-  dateField: { flex: 1 },
-  buttonRow: { flexDirection: 'row', gap: 8, marginTop: 2 },
-  searchBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 8, flex: 1, paddingVertical: 10 },
-  searchBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
-  clearBtn: { alignItems: 'center', backgroundColor: '#f4f6f8', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
-  clearBtnText: { color: '#5d6875', fontSize: 13, fontWeight: '800' },
-  exportBtn: { alignItems: 'center', backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10 },
-  exportBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
-  btnDisabled: { opacity: 0.5 },
-  resultCount: { color: '#8fa3b8', fontSize: 12, fontWeight: '700', marginBottom: 8 },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
+    filterCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
+    filterHeading: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 12 },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4, textTransform: 'uppercase' },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, marginBottom: 10, minHeight: 40, paddingHorizontal: 10 },
+    dateRow: { flexDirection: 'row', gap: 10 },
+    dateField: { flex: 1 },
+    buttonRow: { flexDirection: 'row', gap: 8, marginTop: 2 },
+    searchBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, paddingVertical: 10 },
+    searchBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
+    clearBtn: { alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
+    clearBtnText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    exportBtn: { alignItems: 'center', backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10 },
+    exportBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
+    btnDisabled: { opacity: 0.5 },
+    resultCount: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+  });
+}

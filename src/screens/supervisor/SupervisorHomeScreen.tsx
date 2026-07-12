@@ -8,11 +8,17 @@ import { getSupervisorDashboard, getDangerZones, type SupervisorDashboard } from
 import { formatAgo } from '../../utils/time';
 import type { DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession; onGoToSearch?: () => void };
 type Dashboard = SupervisorDashboard;
 
 export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -48,7 +54,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />}
       >
         {/* Hero */}
         <View style={styles.hero}>
@@ -91,34 +97,34 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
         <SiteMapView zones={mapZones} readOnly pollIntervalMs={25000} />
 
         {loading ? (
-          <ActivityIndicator color="#1f6f5b" style={{ marginTop: 40 }} />
+          <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
         ) : dash ? (
           <>
             {/* Primary stats strip */}
             <View style={styles.strip}>
               <View style={styles.stripItem}>
-                <Text style={[styles.stripValue, dash.workersOnSite > 0 && { color: '#1f6f5b' }]}>
+                <Text style={[styles.stripValue, dash.workersOnSite > 0 && { color: theme.accent }]}>
                   {dash.workersOnSite}
                 </Text>
                 <Text style={styles.stripLabel}>On Site</Text>
               </View>
               <View style={styles.stripDivider} />
               <View style={styles.stripItem}>
-                <Text style={[styles.stripValue, dash.hazardCount > 0 && { color: '#b42318' }]}>
+                <Text style={[styles.stripValue, dash.hazardCount > 0 && { color: theme.danger }]}>
                   {dash.hazardCount}
                 </Text>
                 <Text style={styles.stripLabel}>Hazards</Text>
               </View>
               <View style={styles.stripDivider} />
               <View style={styles.stripItem}>
-                <Text style={[styles.stripValue, dash.pendingShiftLogs > 0 && { color: '#d29922' }]}>
+                <Text style={[styles.stripValue, dash.pendingShiftLogs > 0 && { color: theme.amber }]}>
                   {dash.pendingShiftLogs}
                 </Text>
                 <Text style={styles.stripLabel}>Pending Logs</Text>
               </View>
               <View style={styles.stripDivider} />
               <View style={styles.stripItem}>
-                <Text style={[styles.stripValue, dash.unreadMessages > 0 && { color: '#1f6f5b' }]}>
+                <Text style={[styles.stripValue, dash.unreadMessages > 0 && { color: theme.accent }]}>
                   {dash.unreadMessages}
                 </Text>
                 <Text style={styles.stripLabel}>New Messages</Text>
@@ -237,7 +243,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
               <View style={styles.summaryCard}>
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Workers on site</Text>
-                  <Text style={[styles.summaryValue, { color: '#1f6f5b' }]}>{dash.workersOnSite}</Text>
+                  <Text style={[styles.summaryValue, { color: theme.accent }]}>{dash.workersOnSite}</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryRow}>
@@ -247,14 +253,14 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Shift logs pending approval</Text>
-                  <Text style={[styles.summaryValue, dash.pendingShiftLogs > 0 && { color: '#d29922' }]}>
+                  <Text style={[styles.summaryValue, dash.pendingShiftLogs > 0 && { color: theme.amber }]}>
                     {dash.pendingShiftLogs}
                   </Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Unread worker messages</Text>
-                  <Text style={[styles.summaryValue, dash.unreadMessages > 0 && { color: '#1f6f5b' }]}>
+                  <Text style={[styles.summaryValue, dash.unreadMessages > 0 && { color: theme.accent }]}>
                     {dash.unreadMessages}
                   </Text>
                 </View>
@@ -279,76 +285,78 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#f0f2f5' },
-  container: { paddingBottom: 110 },
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: theme.bg },
+    container: { paddingBottom: 110 },
 
-  hero: { alignItems: 'center', backgroundColor: '#17212b', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
-  greeting: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  heroBadges: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  scoreBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
-  scoreBadgeGreen: { backgroundColor: 'rgba(74,222,128,0.18)' },
-  scoreBadgeAmber: { backgroundColor: 'rgba(251,191,36,0.22)' },
-  scoreBadgeRed: { backgroundColor: 'rgba(248,113,113,0.22)' },
-  scoreText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  liveBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
-  liveDot: { backgroundColor: '#4ade80', borderRadius: 4, height: 7, width: 7 },
-  liveText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    hero: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
+    greeting: { color: '#fff', fontSize: 16, fontWeight: '800' },
+    site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+    heroBadges: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+    scoreBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+    scoreBadgeGreen: { backgroundColor: 'rgba(74,222,128,0.18)' },
+    scoreBadgeAmber: { backgroundColor: 'rgba(251,191,36,0.22)' },
+    scoreBadgeRed: { backgroundColor: 'rgba(248,113,113,0.22)' },
+    scoreText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    liveBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
+    liveDot: { backgroundColor: theme.success, borderRadius: 4, height: 7, width: 7 },
+    liveText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
-  searchPill: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: 16, marginBottom: 0, paddingHorizontal: 14, paddingVertical: 12 },
-  searchPillIcon: { fontSize: 15 },
-  searchPillText: { color: '#8fa3b8', flex: 1, fontSize: 13, fontWeight: '600' },
-  searchPillArrow: { color: '#8fa3b8', fontSize: 18 },
-  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: 16, padding: 12 },
-  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    searchPill: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: 16, marginBottom: 0, paddingHorizontal: 14, paddingVertical: 12 },
+    searchPillIcon: { fontSize: 15 },
+    searchPillText: { color: theme.textMuted, flex: 1, fontSize: 13, fontWeight: '600' },
+    searchPillArrow: { color: theme.textMuted, fontSize: 18 },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, margin: 16, padding: 12 },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
-  strip: { backgroundColor: '#fff', borderBottomColor: '#e5e9ef', borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 14 },
-  stripItem: { alignItems: 'center', flex: 1 },
-  stripValue: { color: '#17212b', fontSize: 20, fontWeight: '900' },
-  stripLabel: { color: '#8fa3b8', fontSize: 9, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
+    strip: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 14 },
+    stripItem: { alignItems: 'center', flex: 1 },
+    stripValue: { color: theme.text, fontSize: 20, fontWeight: '900' },
+    stripLabel: { color: theme.textMuted, fontSize: 9, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+    stripDivider: { backgroundColor: theme.border, width: 1 },
 
-  alertBanner: { borderRadius: 8, borderWidth: 1, margin: 16, marginBottom: 0, padding: 12 },
-  alertBannerRed: { backgroundColor: '#fff5f5', borderColor: '#fca5a5' },
-  alertBannerYellow: { backgroundColor: '#fffbeb', borderColor: '#fcd34d' },
-  alertBannerText: { color: '#92400e', fontSize: 12, fontWeight: '700', textAlign: 'center' },
+    alertBanner: { borderRadius: 8, borderWidth: 1, margin: 16, marginBottom: 0, padding: 12 },
+    alertBannerRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
+    alertBannerYellow: { backgroundColor: theme.amberLight, borderColor: theme.amber },
+    alertBannerText: { color: theme.amber, fontSize: 12, fontWeight: '700', textAlign: 'center' },
 
-  cardGrid: { gap: 10, padding: 16 },
-  actionCard: { borderRadius: 12, borderWidth: 1, padding: 16 },
-  actionCardYellow: { backgroundColor: '#fffbeb', borderColor: '#fcd34d' },
-  actionCardGreen: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
-  actionCardRed: { backgroundColor: '#fff5f5', borderColor: '#fca5a5' },
-  actionCardIcon: { fontSize: 22, marginBottom: 4 },
-  actionCardValue: { color: '#17212b', fontSize: 28, fontWeight: '900', marginBottom: 2 },
-  actionCardLabel: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
-  actionCardHint: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 4 },
+    cardGrid: { gap: 10, padding: 16 },
+    actionCard: { borderRadius: 12, borderWidth: 1, padding: 16 },
+    actionCardYellow: { backgroundColor: theme.amberLight, borderColor: theme.amber },
+    actionCardGreen: { backgroundColor: theme.successLight, borderColor: theme.success },
+    actionCardRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
+    actionCardIcon: { fontSize: 22, marginBottom: 4 },
+    actionCardValue: { color: theme.text, fontSize: 28, fontWeight: '900', marginBottom: 2 },
+    actionCardLabel: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
+    actionCardHint: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
 
-  section: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
-  sectionTitle: { color: '#17212b', fontSize: 14, fontWeight: '900', letterSpacing: -0.2, marginBottom: 10 },
+    section: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
+    sectionTitle: { color: theme.text, fontSize: 14, fontWeight: '900', letterSpacing: -0.2, marginBottom: 10 },
 
-  loneWorkerCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
-  loneWorkerCardRed: { backgroundColor: '#fff5f5', borderColor: '#fca5a5' },
-  loneWorkerIcon: { fontSize: 18 },
-  loneWorkerBody: { flex: 1 },
-  loneWorkerName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
-  loneWorkerMeta: { color: '#5d6875', fontSize: 11, fontWeight: '600' },
-  loneWorkerAlert: { color: '#b42318', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+    loneWorkerCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
+    loneWorkerCardRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
+    loneWorkerIcon: { fontSize: 18 },
+    loneWorkerBody: { flex: 1 },
+    loneWorkerName: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    loneWorkerMeta: { color: theme.textSub, fontSize: 11, fontWeight: '600' },
+    loneWorkerAlert: { color: theme.danger, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
 
-  announcementCard: { alignItems: 'flex-start', backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
-  announcementIcon: { fontSize: 15, marginTop: 1 },
-  announcementBody: { flex: 1 },
-  announcementContent: { color: '#17212b', fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: 3 },
-  announcementMeta: { color: '#a16207', fontSize: 11, fontWeight: '600' },
+    announcementCard: { alignItems: 'flex-start', backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
+    announcementIcon: { fontSize: 15, marginTop: 1 },
+    announcementBody: { flex: 1 },
+    announcementContent: { color: theme.text, fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: 3 },
+    announcementMeta: { color: theme.amber, fontSize: 11, fontWeight: '600' },
 
-  summaryCard: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1 },
-  summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  summaryDivider: { backgroundColor: '#f0f2f5', height: 1, marginHorizontal: 16 },
-  summaryLabel: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
-  summaryValue: { color: '#17212b', fontSize: 15, fontWeight: '900' },
+    summaryCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1 },
+    summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+    summaryDivider: { backgroundColor: theme.bg, height: 1, marginHorizontal: 16 },
+    summaryLabel: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
+    summaryValue: { color: theme.text, fontSize: 15, fontWeight: '900' },
 
-  allClearCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 16, padding: 16 },
-  allClearIcon: { color: '#16a34a', fontSize: 24 },
-  allClearTitle: { color: '#15803d', fontSize: 15, fontWeight: '900' },
-  allClearSub: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
-});
+    allClearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 16, padding: 16 },
+    allClearIcon: { color: theme.success, fontSize: 24 },
+    allClearTitle: { color: theme.success, fontSize: 15, fontWeight: '900' },
+    allClearSub: { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  });
+}

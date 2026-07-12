@@ -9,9 +9,10 @@ import {
   counterOffer,
   type MineralListing,
   type MarketplaceOffer,
-  type MarketplaceTransaction,
 } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -26,6 +27,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function SupervisorOffersScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [data, setData] = useState<ListingWithOffers[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing] = useState<number | null>(null);
@@ -173,9 +178,9 @@ export function SupervisorOffersScreen({ session: _ }: Props) {
                     isCountering ? (
                       <View style={styles.counterForm}>
                         <Text style={styles.counterTitle}>Counter-offer</Text>
-                        <TextInput style={styles.counterInput} value={counterPrice} onChangeText={setCounterPrice} placeholder="Counter price (GHS)" placeholderTextColor="#8fa3b8" keyboardType="decimal-pad" />
-                        <TextInput style={styles.counterInput} value={counterQty} onChangeText={setCounterQty} placeholder="Counter quantity" placeholderTextColor="#8fa3b8" keyboardType="decimal-pad" />
-                        <TextInput style={styles.counterInput} value={counterMsg} onChangeText={setCounterMsg} placeholder="Message (optional)" placeholderTextColor="#8fa3b8" />
+                        <TextInput style={styles.counterInput} value={counterPrice} onChangeText={setCounterPrice} placeholder="Counter price (GHS)" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
+                        <TextInput style={styles.counterInput} value={counterQty} onChangeText={setCounterQty} placeholder="Counter quantity" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
+                        <TextInput style={styles.counterInput} value={counterMsg} onChangeText={setCounterMsg} placeholder="Message (optional)" placeholderTextColor={theme.textMuted} />
                         <View style={styles.counterActions}>
                           <Pressable onPress={() => { setCounteringId(null); setCounterPrice(''); setCounterQty(''); setCounterMsg(''); }} style={styles.cancelBtn}>
                             <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -209,44 +214,46 @@ export function SupervisorOffersScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  subtitle: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
-  infoBox: { backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 },
-  infoText: { color: '#92400e', fontSize: 13, fontWeight: '700' },
-  emptyCard: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 40 },
-  emptyIcon: { fontSize: 32, marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  section: { marginBottom: 16 },
-  listingHeader: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 8 },
-  offerCard: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 8, padding: 14 },
-  offerHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 10 },
-  buyerName: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 1 },
-  buyerEmail: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
-  statusText: { fontSize: 10, fontWeight: '800' },
-  row: { flexDirection: 'row', gap: 16, marginBottom: 8 },
-  col: { flex: 1 },
-  label: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
-  value: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-  message: { color: '#5d6875', fontSize: 12, fontStyle: 'italic', marginBottom: 6 },
-  date: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 10 },
-  actions: { flexDirection: 'row', gap: 8 },
-  acceptBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 8, flex: 1, paddingVertical: 9 },
-  acceptBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  counterBtn: { alignItems: 'center', backgroundColor: '#eff6ff', borderColor: '#93c5fd', borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 9 },
-  counterBtnText: { color: '#1d5f99', fontSize: 13, fontWeight: '800' },
-  rejectBtn: { alignItems: 'center', backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
-  rejectBtnText: { color: '#dc2626', fontSize: 13, fontWeight: '800' },
-  btnDisabled: { opacity: 0.5 },
-  counterForm: { borderColor: '#e5e9ef', borderRadius: 8, borderTopWidth: 1, marginTop: 10, paddingTop: 12 },
-  counterTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', marginBottom: 10 },
-  counterInput: { backgroundColor: '#f0f2f5', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  counterActions: { flexDirection: 'row', gap: 8 },
-  cancelBtn: { alignItems: 'center', backgroundColor: '#f0f2f5', borderRadius: 8, flex: 1, paddingVertical: 9 },
-  cancelBtnText: { color: '#5d6875', fontSize: 13, fontWeight: '800' },
-  sendCounterBtn: { alignItems: 'center', backgroundColor: '#1d5f99', borderRadius: 8, flex: 1, paddingVertical: 9 },
-  sendCounterBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
+    infoBox: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 },
+    infoText: { color: theme.amber, fontSize: 13, fontWeight: '700' },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
+    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    section: { marginBottom: 16 },
+    listingHeader: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 8 },
+    offerCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 8, padding: 14 },
+    offerHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 10 },
+    buyerName: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 1 },
+    buyerEmail: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+    statusText: { fontSize: 10, fontWeight: '800' },
+    row: { flexDirection: 'row', gap: 16, marginBottom: 8 },
+    col: { flex: 1 },
+    label: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
+    value: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    message: { color: theme.textSub, fontSize: 12, fontStyle: 'italic', marginBottom: 6 },
+    date: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 10 },
+    actions: { flexDirection: 'row', gap: 8 },
+    acceptBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, paddingVertical: 9 },
+    acceptBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+    counterBtn: { alignItems: 'center', backgroundColor: theme.infoLight, borderColor: theme.info, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 9 },
+    counterBtnText: { color: theme.info, fontSize: 13, fontWeight: '800' },
+    rejectBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
+    rejectBtnText: { color: theme.danger, fontSize: 13, fontWeight: '800' },
+    btnDisabled: { opacity: 0.5 },
+    counterForm: { borderColor: theme.border, borderRadius: 8, borderTopWidth: 1, marginTop: 10, paddingTop: 12 },
+    counterTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 10 },
+    counterInput: { backgroundColor: theme.bg, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 8 },
+    counterActions: { flexDirection: 'row', gap: 8 },
+    cancelBtn: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 8, flex: 1, paddingVertical: 9 },
+    cancelBtnText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    sendCounterBtn: { alignItems: 'center', backgroundColor: theme.info, borderRadius: 8, flex: 1, paddingVertical: 9 },
+    sendCounterBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  });
+}

@@ -3,6 +3,8 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'r
 
 import { getSafetyIntelligenceSummary, type SafetyIntelligenceSummary } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -15,6 +17,10 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 export function SafetyIntelligenceScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [data, setData] = useState<SafetyIntelligenceSummary | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [dismissed, setDismissed] = useState<Set<number>>(new Set());
@@ -61,7 +67,6 @@ export function SafetyIntelligenceScreen({ session: _ }: Props) {
         </View>
       ) : null}
 
-      {/* ── Hotspots ── */}
       <Text style={styles.sectionTitle}>🔥 Hotspots</Text>
       {data && data.hotspots.length === 0 ? (
         <View style={styles.emptyCard}>
@@ -69,7 +74,7 @@ export function SafetyIntelligenceScreen({ session: _ }: Props) {
         </View>
       ) : null}
       {(data?.hotspots ?? []).map((h, i) => {
-        const sColor = SEVERITY_COLORS[h.mostRecentSeverity] ?? '#8fa3b8';
+        const sColor = SEVERITY_COLORS[h.mostRecentSeverity] ?? theme.textMuted;
         return (
           <View key={i} style={styles.hotspotCard}>
             <View style={styles.hotspotTop}>
@@ -93,7 +98,6 @@ export function SafetyIntelligenceScreen({ session: _ }: Props) {
         );
       })}
 
-      {/* ── Trending Hazard Types ── */}
       <Text style={[styles.sectionTitle, { marginTop: 20 }]}>📈 Trending Hazard Types</Text>
       {data && data.trends.length === 0 ? (
         <View style={styles.emptyCard}>
@@ -120,7 +124,6 @@ export function SafetyIntelligenceScreen({ session: _ }: Props) {
         </View>
       ))}
 
-      {/* ── Recommendations ── */}
       <Text style={[styles.sectionTitle, { marginTop: 20 }]}>💡 Recommendations</Text>
       {data && visibleRecs.length === 0 ? (
         <View style={styles.emptyCard}>
@@ -152,38 +155,37 @@ export function SafetyIntelligenceScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  subtitle: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 20 },
-  sectionTitle: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 10 },
-  errorCard: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 10, borderWidth: 1, marginBottom: 16, padding: 14 },
-  errorText: { color: '#dc2626', fontSize: 13, fontWeight: '700' },
-  emptyCard: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 16 },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  // hotspot
-  hotspotCard: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
-  hotspotTop: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 8 },
-  hotspotLocation: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 2 },
-  hotspotSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  countBadge: { alignItems: 'center', backgroundColor: '#17212b', borderRadius: 20, height: 36, justifyContent: 'center', width: 36 },
-  countBadgeText: { color: '#fff', fontSize: 14, fontWeight: '900' },
-  severityTag: { alignSelf: 'flex-start', borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  severityTagText: { fontSize: 11, fontWeight: '800' },
-  // trend
-  trendCard: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
-  trendRow: { alignItems: 'center', flexDirection: 'row' },
-  trendType: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 2 },
-  trendCounts: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  trendBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
-  trendBadgeNew: { backgroundColor: '#eff6ff', borderColor: '#93c5fd' },
-  trendBadgeRising: { backgroundColor: '#fff7ed', borderColor: '#fdba74' },
-  trendBadgeText: { fontSize: 10, fontWeight: '900' },
-  trendBadgeTextNew: { color: '#1d5f99' },
-  trendBadgeTextRising: { color: '#c2410c' },
-  // rec
-  recCard: { backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
-  recText: { color: '#92400e', fontSize: 13, fontWeight: '700', marginBottom: 10 },
-  dismissBtn: { alignSelf: 'flex-end', backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 6, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
-  dismissBtnText: { color: '#5d6875', fontSize: 12, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 20 },
+    sectionTitle: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 10 },
+    errorCard: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 10, borderWidth: 1, marginBottom: 16, padding: 14 },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700' },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 16 },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    hotspotCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
+    hotspotTop: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 8 },
+    hotspotLocation: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
+    hotspotSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    countBadge: { alignItems: 'center', backgroundColor: theme.bgHero, borderRadius: 20, height: 36, justifyContent: 'center', width: 36 },
+    countBadgeText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+    severityTag: { alignSelf: 'flex-start', borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    severityTagText: { fontSize: 11, fontWeight: '800' },
+    trendCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
+    trendRow: { alignItems: 'center', flexDirection: 'row' },
+    trendType: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 2 },
+    trendCounts: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    trendBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+    trendBadgeNew: { backgroundColor: theme.infoLight, borderColor: theme.info },
+    trendBadgeRising: { backgroundColor: theme.amberLight, borderColor: theme.amber },
+    trendBadgeText: { fontSize: 10, fontWeight: '900' },
+    trendBadgeTextNew: { color: theme.info },
+    trendBadgeTextRising: { color: theme.amber },
+    recCard: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
+    recText: { color: theme.amber, fontSize: 13, fontWeight: '700', marginBottom: 10 },
+    dismissBtn: { alignSelf: 'flex-end', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 6, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
+    dismissBtnText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
+  });
+}

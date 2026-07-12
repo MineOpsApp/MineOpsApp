@@ -11,6 +11,8 @@ import {
   type PendingBuyer,
 } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type PendingWorker = {
   id: number;
@@ -23,6 +25,10 @@ type PendingWorker = {
 type Props = { session: AuthSession };
 
 export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [workers, setWorkers] = useState<PendingWorker[]>([]);
   const [buyers, setBuyers] = useState<PendingBuyer[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -222,35 +228,37 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  subtitle: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
-  infoBox: { backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 },
-  infoText: { color: '#92400e', fontSize: 13, fontWeight: '700' },
-  emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 40 },
-  emptyIcon: { color: '#1f6f5b', fontSize: 32, fontWeight: '900', marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  sectionHeader: { color: '#17212b', fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
-  cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 14 },
-  avatar: { alignItems: 'center', backgroundColor: '#17212b', borderRadius: 22, height: 44, justifyContent: 'center', marginRight: 12, width: 44 },
-  buyerAvatar: { backgroundColor: '#1d5f99' },
-  avatarText: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
-  cardInfo: { flex: 1 },
-  name: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 2 },
-  email: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  meta: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 2 },
-  time: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  buyerBadge: { backgroundColor: '#eff6ff', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  buyerBadgeText: { color: '#1d5f99', fontSize: 9, fontWeight: '900' },
-  actions: { flexDirection: 'row', gap: 10 },
-  approveBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 8, flex: 1, paddingVertical: 10 },
-  approveBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
-  rejectBtn: { alignItems: 'center', backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, paddingHorizontal: 20, paddingVertical: 10 },
-  rejectBtnText: { color: '#dc2626', fontSize: 13, fontWeight: '800' },
-  btnDisabled: { opacity: 0.5 },
-  errorBanner: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
-  errorBannerText: { color: '#b42318', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
+    infoBox: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 },
+    infoText: { color: theme.amber, fontSize: 13, fontWeight: '700' },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
+    emptyIcon: { color: theme.accent, fontSize: 32, fontWeight: '900', marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    sectionHeader: { color: theme.text, fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
+    cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 14 },
+    avatar: { alignItems: 'center', backgroundColor: theme.bgHero, borderRadius: 22, height: 44, justifyContent: 'center', marginRight: 12, width: 44 },
+    buyerAvatar: { backgroundColor: theme.info },
+    avatarText: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
+    cardInfo: { flex: 1 },
+    name: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
+    email: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 2 },
+    meta: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 2 },
+    time: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    buyerBadge: { backgroundColor: theme.infoLight, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+    buyerBadgeText: { color: theme.info, fontSize: 9, fontWeight: '900' },
+    actions: { flexDirection: 'row', gap: 10 },
+    approveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, paddingVertical: 10 },
+    approveBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
+    rejectBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, paddingHorizontal: 20, paddingVertical: 10 },
+    rejectBtnText: { color: theme.danger, fontSize: 13, fontWeight: '800' },
+    btnDisabled: { opacity: 0.5 },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+    errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  });
+}

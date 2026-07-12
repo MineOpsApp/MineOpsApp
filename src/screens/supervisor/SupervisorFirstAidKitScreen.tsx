@@ -19,6 +19,8 @@ import {
 } from '../../services/api';
 import type { FirstAidKit, FirstAidKitPayload } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -58,6 +60,10 @@ function daysSince(dt: string | null): number | null {
 }
 
 export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [kits, setKits] = useState<FirstAidKit[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -136,7 +142,7 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
   }
 
   if (loading) {
-    return <View style={styles.centered}><ActivityIndicator color="#1f6f5b" /></View>;
+    return <View style={styles.centered}><ActivityIndicator color={theme.accent} /></View>;
   }
 
   const stockedCount = kits.filter((k) => k.fullyStocked).length;
@@ -145,7 +151,7 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />}
     >
       <View style={styles.pageHeader}>
         <View style={styles.pageTitleRow}>
@@ -167,12 +173,12 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
           </View>
           <View style={styles.stripDivider} />
           <View style={styles.stripItem}>
-            <Text style={[styles.stripValue, { color: '#1f6f5b' }]}>{stockedCount}</Text>
+            <Text style={[styles.stripValue, { color: theme.accent }]}>{stockedCount}</Text>
             <Text style={styles.stripLabel}>Fully Stocked</Text>
           </View>
           <View style={styles.stripDivider} />
           <View style={styles.stripItem}>
-            <Text style={[styles.stripValue, kits.length - stockedCount > 0 ? { color: '#b42318' } : {}]}>
+            <Text style={[styles.stripValue, kits.length - stockedCount > 0 ? { color: theme.danger } : {}]}>
               {kits.length - stockedCount}
             </Text>
             <Text style={styles.stripLabel}>Needs Restock</Text>
@@ -191,7 +197,7 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
             value={form.zone}
             onChangeText={(t) => setForm((f) => ({ ...f, zone: t }))}
             placeholder="e.g. Zone A, Blast Area, Control Room"
-            placeholderTextColor="#8fa3b8"
+            placeholderTextColor={theme.textMuted}
             editable={editingId === 'new'}
           />
 
@@ -201,7 +207,7 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
             value={form.location}
             onChangeText={(t) => setForm((f) => ({ ...f, location: t }))}
             placeholder="e.g. Near blast office entrance"
-            placeholderTextColor="#8fa3b8"
+            placeholderTextColor={theme.textMuted}
           />
 
           <Text style={styles.formLabel}>Items Present</Text>
@@ -224,7 +230,7 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
             value={form.notes}
             onChangeText={(t) => setForm((f) => ({ ...f, notes: t }))}
             placeholder="e.g. Oxygen cylinder due for replacement next week"
-            placeholderTextColor="#8fa3b8"
+            placeholderTextColor={theme.textMuted}
             multiline
             numberOfLines={3}
           />
@@ -323,69 +329,71 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { marginBottom: 16 },
-  pageTitleRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900' },
-  addBtn: { backgroundColor: '#1f6f5b', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7 },
-  addBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
-  pageSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  strip: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
-  stripItem: { alignItems: 'center', flex: 1 },
-  stripValue: { color: '#17212b', fontSize: 24, fontWeight: '900' },
-  stripLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
-  emptyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 40 },
-  emptyIcon: { fontSize: 36, marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  formCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  formTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  formLabel: { color: '#17212b', fontSize: 11, fontWeight: '800', marginBottom: 6, marginTop: 12, textTransform: 'uppercase' },
-  input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 10 },
-  inputDisabled: { color: '#8fa3b8' },
-  inputMulti: { minHeight: 70, textAlignVertical: 'top' },
-  checkRow: { alignItems: 'center', flexDirection: 'row', gap: 12, paddingVertical: 8 },
-  checkbox: { alignItems: 'center', borderColor: '#d1d5db', borderRadius: 5, borderWidth: 2, height: 24, justifyContent: 'center', width: 24 },
-  checkboxDone: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  checkmark: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
-  checkLabel: { color: '#17212b', fontSize: 14, fontWeight: '600' },
-  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', marginTop: 10 },
-  formActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  cancelBtn: { alignItems: 'center', backgroundColor: '#f4f6f8', borderRadius: 8, flex: 1, paddingVertical: 12 },
-  cancelBtnText: { color: '#5d6875', fontSize: 14, fontWeight: '800' },
-  saveBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 8, flex: 2, paddingVertical: 12 },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-  kitCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
-  kitCardOverdue: { borderColor: '#fcd34d' },
-  kitHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  kitZone: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 3 },
-  kitLocation: { color: '#5d6875', fontSize: 12, fontWeight: '600' },
-  kitHeaderRight: { alignItems: 'flex-end' },
-  stockBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  stockBadgeOk: { backgroundColor: '#f0fdf4' },
-  stockBadgeLow: { backgroundColor: '#fff5f5' },
-  stockBadgeText: { fontSize: 10, fontWeight: '900', color: '#5d6875' },
-  itemsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  itemPill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  itemPillOk: { backgroundColor: '#f0fdf4' },
-  itemPillMissing: { backgroundColor: '#fff5f5' },
-  itemPillText: { fontSize: 11, fontWeight: '800' },
-  itemPillTextOk: { color: '#15803d' },
-  itemPillTextMissing: { color: '#b42318' },
-  kitNotes: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginBottom: 10 },
-  kitFooter: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  checkedBadge: { backgroundColor: '#f0fdf4', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  checkedBadgeOverdue: { backgroundColor: '#fffbeb' },
-  checkedBadgeText: { color: '#15803d', fontSize: 11, fontWeight: '800' },
-  checkedBadgeTextOverdue: { color: '#92400e' },
-  checkedBy: { color: '#8fa3b8', flex: 1, fontSize: 11, fontWeight: '600' },
-  kitActions: { flexDirection: 'row', gap: 8, marginLeft: 'auto' },
-  editBtn: { backgroundColor: '#f4f6f8', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5 },
-  editBtnText: { color: '#1f6f5b', fontSize: 12, fontWeight: '800' },
-  deleteBtn: { alignItems: 'center', backgroundColor: '#fff5f5', borderRadius: 8, height: 30, justifyContent: 'center', width: 30 },
-  deleteBtnText: { color: '#b42318', fontSize: 12, fontWeight: '900' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    centered: { alignItems: 'center', flex: 1, justifyContent: 'center', backgroundColor: theme.bg },
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageHeader: { marginBottom: 16 },
+    pageTitleRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    addBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7 },
+    addBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
+    pageSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
+    stripItem: { alignItems: 'center', flex: 1 },
+    stripValue: { color: theme.text, fontSize: 24, fontWeight: '900' },
+    stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+    stripDivider: { backgroundColor: theme.border, width: 1 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
+    emptyIcon: { fontSize: 36, marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    formTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    formLabel: { color: theme.text, fontSize: 11, fontWeight: '800', marginBottom: 6, marginTop: 12, textTransform: 'uppercase' },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 10 },
+    inputDisabled: { color: theme.textMuted },
+    inputMulti: { minHeight: 70, textAlignVertical: 'top' },
+    checkRow: { alignItems: 'center', flexDirection: 'row', gap: 12, paddingVertical: 8 },
+    checkbox: { alignItems: 'center', borderColor: theme.border, borderRadius: 5, borderWidth: 2, height: 24, justifyContent: 'center', width: 24 },
+    checkboxDone: { backgroundColor: theme.accent, borderColor: theme.accent },
+    checkmark: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
+    checkLabel: { color: theme.text, fontSize: 14, fontWeight: '600' },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginTop: 10 },
+    formActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+    cancelBtn: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 8, flex: 1, paddingVertical: 12 },
+    cancelBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
+    saveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 2, paddingVertical: 12 },
+    saveBtnDisabled: { opacity: 0.6 },
+    saveBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+    kitCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
+    kitCardOverdue: { borderColor: theme.amber },
+    kitHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+    kitZone: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 3 },
+    kitLocation: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
+    kitHeaderRight: { alignItems: 'flex-end' },
+    stockBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    stockBadgeOk: { backgroundColor: theme.successLight },
+    stockBadgeLow: { backgroundColor: theme.dangerLight },
+    stockBadgeText: { fontSize: 10, fontWeight: '900', color: theme.textSub },
+    itemsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+    itemPill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+    itemPillOk: { backgroundColor: theme.successLight },
+    itemPillMissing: { backgroundColor: theme.dangerLight },
+    itemPillText: { fontSize: 11, fontWeight: '800' },
+    itemPillTextOk: { color: theme.success },
+    itemPillTextMissing: { color: theme.danger },
+    kitNotes: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 10 },
+    kitFooter: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+    checkedBadge: { backgroundColor: theme.successLight, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    checkedBadgeOverdue: { backgroundColor: theme.amberLight },
+    checkedBadgeText: { color: theme.success, fontSize: 11, fontWeight: '800' },
+    checkedBadgeTextOverdue: { color: theme.amber },
+    checkedBy: { color: theme.textMuted, flex: 1, fontSize: 11, fontWeight: '600' },
+    kitActions: { flexDirection: 'row', gap: 8, marginLeft: 'auto' },
+    editBtn: { backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5 },
+    editBtnText: { color: theme.accent, fontSize: 12, fontWeight: '800' },
+    deleteBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderRadius: 8, height: 30, justifyContent: 'center', width: 30 },
+    deleteBtnText: { color: theme.danger, fontSize: 12, fontWeight: '900' },
+  });
+}

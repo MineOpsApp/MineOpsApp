@@ -4,6 +4,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { ActionButton } from '../../components/ActionButton';
 import { scheduleBlast, getAllBlasts, cancelBlast, executeBlast, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type BlastSchedule = {
   id: number;
@@ -22,6 +24,10 @@ const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Processing Area'];
 const ADVANCE_MINUTES = [15, 30, 60, 120, 240];
 
 export function SupervisorBlastScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [blasts, setBlasts] = useState<BlastSchedule[]>([]);
   const [zone, setZone] = useState('Zone A');
   const [minutesAhead, setMinutesAhead] = useState(30);
@@ -189,41 +195,43 @@ export function SupervisorBlastScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 16 },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 14 },
-  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-  pill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#ffffff' },
-  warningBox: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 },
-  warningText: { color: '#b42318', fontSize: 12, fontWeight: '700' },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 10 },
-  blastCard: { backgroundColor: '#ffffff', borderColor: '#f5c6c6', borderLeftColor: '#b42318', borderLeftWidth: 4, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
-  blastHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  blastZone: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 2 },
-  blastTime: { color: '#5d6875', fontSize: 12, fontWeight: '600' },
-  countdownBadge: { backgroundColor: '#b42318', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-  countdownText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-  blastMeta: { color: '#8fa3b8', fontSize: 11, fontWeight: '700', marginBottom: 4 },
-  blastNotes: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginBottom: 8 },
-  blastActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  executeBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 8, flex: 1, paddingVertical: 8 },
-  executeBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
-  cancelBtn: { alignItems: 'center', backgroundColor: '#fff5f5', borderColor: '#b42318', borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 8 },
-  cancelBtnText: { color: '#b42318', fontSize: 12, fontWeight: '800' },
-  historyCard: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: 12 },
-  historyLeft: {},
-  historyZone: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
-  historyTime: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  statusPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  statusExecuted: { backgroundColor: '#e7f6ef' },
-  statusCancelled: { backgroundColor: '#f4f6f8' },
-  statusPillText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
-  emptyCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, padding: 20 },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#ffffff' },
+    warningBox: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 },
+    warningText: { color: theme.danger, fontSize: 12, fontWeight: '700' },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 10 },
+    blastCard: { backgroundColor: theme.bgCard, borderColor: theme.danger, borderLeftColor: theme.danger, borderLeftWidth: 4, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
+    blastHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    blastZone: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
+    blastTime: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
+    countdownBadge: { backgroundColor: theme.danger, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+    countdownText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
+    blastMeta: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 },
+    blastNotes: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 8 },
+    blastActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
+    executeBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, paddingVertical: 8 },
+    executeBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+    cancelBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 8 },
+    cancelBtnText: { color: theme.danger, fontSize: 12, fontWeight: '800' },
+    historyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: 12 },
+    historyLeft: {},
+    historyZone: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    historyTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    statusPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+    statusExecuted: { backgroundColor: theme.accentLight },
+    statusCancelled: { backgroundColor: theme.bgInput },
+    statusPillText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 20 },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  });
+}

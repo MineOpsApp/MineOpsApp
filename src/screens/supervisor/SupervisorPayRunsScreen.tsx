@@ -27,6 +27,8 @@ import {
 } from '../../services/api';
 import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -64,11 +66,15 @@ function defaultPeriodDates(): { periodStart: string; periodEnd: string } {
   const end = new Date();
   const start = new Date(end);
   start.setDate(end.getDate() - 6);
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  return { periodStart: fmt(start), periodEnd: fmt(end) };
+  const fmtD = (d: Date) => d.toISOString().slice(0, 10);
+  return { periodStart: fmtD(start), periodEnd: fmtD(end) };
 }
 
 export function SupervisorPayRunsScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const s = makeStyles(theme);
+
   const [view, setView] = useState<ScreenView>('list');
   const [cycles, setCycles] = useState<PayCycle[]>([]);
   const [detail, setDetail] = useState<PayCycleDetail | null>(null);
@@ -91,7 +97,6 @@ export function SupervisorPayRunsScreen({ session }: Props) {
     }
   }
 
-  // Generate form state
   const defaults = defaultPeriodDates();
   const [periodStart, setPeriodStart] = useState(defaults.periodStart);
   const [periodEnd, setPeriodEnd] = useState(defaults.periodEnd);
@@ -102,7 +107,6 @@ export function SupervisorPayRunsScreen({ session }: Props) {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
 
-  // Config edit state
   const [editingFormula, setEditingFormula] = useState(false);
   const [selectedFormula, setSelectedFormula] = useState('EQUAL_PER_HEAD');
 
@@ -119,37 +123,24 @@ export function SupervisorPayRunsScreen({ session }: Props) {
 
   useEffect(() => { loadList(); }, [loadList]);
 
-  // Fetch market prices whenever the generate view opens
   useEffect(() => {
     if (view !== 'generate') return;
     getMarketPrices().then(prices => {
       if (!mineralType) return;
-      const match = prices.find(
-        p => p.name?.toLowerCase() === mineralType.toLowerCase()
-      );
-      if (match?.price) {
-        setPricePerUnit(String(match.price));
-        setPriceFromMarket(true);
-      }
+      const match = prices.find(p => p.name?.toLowerCase() === mineralType.toLowerCase());
+      if (match?.price) { setPricePerUnit(String(match.price)); setPriceFromMarket(true); }
     }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
-  // Re-match when mineralType changes while on generate view
   useEffect(() => {
     if (view !== 'generate' || !mineralType) return;
     getMarketPrices().then(prices => {
-      const match = prices.find(
-        p => p.name?.toLowerCase() === mineralType.toLowerCase()
-      );
-      if (match?.price) {
-        setPricePerUnit(String(match.price));
-        setPriceFromMarket(true);
-      } else {
-        setPriceFromMarket(false);
-      }
+      const match = prices.find(p => p.name?.toLowerCase() === mineralType.toLowerCase());
+      if (match?.price) { setPricePerUnit(String(match.price)); setPriceFromMarket(true); }
+      else { setPriceFromMarket(false); }
     }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mineralType]);
 
   const onRefresh = () => { setRefreshing(true); loadList(); };
@@ -171,17 +162,14 @@ export function SupervisorPayRunsScreen({ session }: Props) {
   const generate = async () => {
     setGenerateError('');
     if (!periodStart || !periodEnd || !mineralType || !unit || !pricePerUnit) {
-      setGenerateError('All fields are required.');
-      return;
+      setGenerateError('All fields are required.'); return;
     }
     if (periodEnd < periodStart) {
-      setGenerateError('Period end must be on or after period start.');
-      return;
+      setGenerateError('Period end must be on or after period start.'); return;
     }
     const price = parseFloat(pricePerUnit);
     if (isNaN(price) || price <= 0) {
-      setGenerateError('Price per unit must be a positive number.');
-      return;
+      setGenerateError('Price per unit must be a positive number.'); return;
     }
     setGenerating(true);
     try {
@@ -255,13 +243,13 @@ export function SupervisorPayRunsScreen({ session }: Props) {
               </Text>
             </View>
           </View>
-          <Row label="Period" value={`${fmtDate(cycle.periodStart)} – ${fmtDate(cycle.periodEnd)}`} />
-          <Row label="Total Volume" value={`${cycle.totalVolume} ${cycle.unit}`} />
-          <Row label="Price / Unit" value={fmt(cycle.pricePerUnit)} />
-          <Row label="Gross Total" value={fmt(cycle.grossTotal)} bold />
-          <Row label="Formula" value={cycle.formulaType === 'EQUAL_PER_HEAD' ? 'Equal per worker' : 'Weighted by hours'} />
-          {cycle.managerApprovedBy && <Row label="1st Approved by" value={cycle.managerApprovedBy} />}
-          {cycle.supervisorApprovedBy && <Row label="2nd Approved by" value={cycle.supervisorApprovedBy} />}
+          <Row label="Period" value={`${fmtDate(cycle.periodStart)} – ${fmtDate(cycle.periodEnd)}`} theme={theme} />
+          <Row label="Total Volume" value={`${cycle.totalVolume} ${cycle.unit}`} theme={theme} />
+          <Row label="Price / Unit" value={fmt(cycle.pricePerUnit)} theme={theme} />
+          <Row label="Gross Total" value={fmt(cycle.grossTotal)} bold theme={theme} />
+          <Row label="Formula" value={cycle.formulaType === 'EQUAL_PER_HEAD' ? 'Equal per worker' : 'Weighted by hours'} theme={theme} />
+          {cycle.managerApprovedBy && <Row label="1st Approved by" value={cycle.managerApprovedBy} theme={theme} />}
+          {cycle.supervisorApprovedBy && <Row label="2nd Approved by" value={cycle.supervisorApprovedBy} theme={theme} />}
         </View>
 
         {error ? <Text style={s.errorText}>{error}</Text> : null}
@@ -278,7 +266,7 @@ export function SupervisorPayRunsScreen({ session }: Props) {
               <Text style={s.waitingText}>You gave first approval. Waiting for a second supervisor to co-sign.</Text>
             )}
             {canSecondApprove && (
-              <TouchableOpacity style={[s.approveBtn, { backgroundColor: '#15803d' }]} onPress={() => doApprove('supervisor')} disabled={actionLoading}>
+              <TouchableOpacity style={[s.approveBtn, { backgroundColor: theme.success }]} onPress={() => doApprove('supervisor')} disabled={actionLoading}>
                 <Text style={s.approveBtnText}>{actionLoading ? 'Disbursing…' : 'Give Second Approval & Disburse'}</Text>
               </TouchableOpacity>
             )}
@@ -293,12 +281,12 @@ export function SupervisorPayRunsScreen({ session }: Props) {
           <View key={r.id} style={s.card}>
             <Text style={s.workerName}>{r.workerName}</Text>
             <Text style={s.workerEmail}>{r.workerEmail}</Text>
-            <Row label="Gross" value={fmt(r.grossShare)} />
-            <Row label="Net Pay" value={fmt(r.netPay)} bold />
-            {r.hoursWorked != null && <Row label="Hours" value={`${Number(r.hoursWorked).toFixed(1)} h`} />}
-            <Row label="MoMo" value={r.momoNumber ? `${r.momoNumber} (${r.momoNetwork})` : 'No number on file'} />
-            <Row label="Status" value={r.disbursementStatus} />
-            {r.momoTransactionRef && <Row label="Ref" value={r.momoTransactionRef} mono />}
+            <Row label="Gross" value={fmt(r.grossShare)} theme={theme} />
+            <Row label="Net Pay" value={fmt(r.netPay)} bold theme={theme} />
+            {r.hoursWorked != null && <Row label="Hours" value={`${Number(r.hoursWorked).toFixed(1)} h`} theme={theme} />}
+            <Row label="MoMo" value={r.momoNumber ? `${r.momoNumber} (${r.momoNetwork})` : 'No number on file'} theme={theme} />
+            <Row label="Status" value={r.disbursementStatus} theme={theme} />
+            {r.momoTransactionRef && <Row label="Ref" value={r.momoTransactionRef} mono theme={theme} />}
             {r.failureReason && <Text style={s.failureText}>Failed: {r.failureReason}</Text>}
           </View>
         ))}
@@ -318,10 +306,10 @@ export function SupervisorPayRunsScreen({ session }: Props) {
         <Text style={s.pageSub}>Pulls all approved, unpaid shift logs for the week and mineral you specify.</Text>
 
         <View style={s.card}>
-          <Field label="Period Start (YYYY-MM-DD)" value={periodStart} onChange={setPeriodStart} placeholder="e.g. 2026-06-23" />
-          <Field label="Period End (YYYY-MM-DD)" value={periodEnd} onChange={setPeriodEnd} placeholder="e.g. 2026-06-29" />
-          <Field label="Mineral Type" value={mineralType} onChange={setMineralType} placeholder="e.g. Gold" />
-          <Field label="Unit" value={unit} onChange={setUnit} placeholder="e.g. kg or oz" />
+          <Field label="Period Start (YYYY-MM-DD)" value={periodStart} onChange={setPeriodStart} placeholder="e.g. 2026-06-23" theme={theme} />
+          <Field label="Period End (YYYY-MM-DD)" value={periodEnd} onChange={setPeriodEnd} placeholder="e.g. 2026-06-29" theme={theme} />
+          <Field label="Mineral Type" value={mineralType} onChange={setMineralType} placeholder="e.g. Gold" theme={theme} />
+          <Field label="Unit" value={unit} onChange={setUnit} placeholder="e.g. kg or oz" theme={theme} />
 
           <Text style={s.inputLabel}>Price Per Unit (GHS)</Text>
           <TextInput
@@ -329,18 +317,17 @@ export function SupervisorPayRunsScreen({ session }: Props) {
             value={pricePerUnit}
             onChangeText={v => { setPricePerUnit(v); setPriceFromMarket(false); }}
             placeholder="e.g. 320.00"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={theme.textMuted}
             keyboardType="decimal-pad"
           />
           {priceFromMarket && (
             <Text style={s.marketHint}>Pre-filled from live market rate — edit if needed.</Text>
           )}
 
-          {/* Formula picker */}
           <Text style={[s.inputLabel, { marginTop: 14 }]}>Pay Split Formula</Text>
           <Text style={s.formulaNote}>
             Current: {config?.formulaType === 'WEIGHTED_BY_HOURS' ? 'Weighted by hours worked' : 'Equal per worker'}
-            {' '}· <Text style={{ color: '#1f6f5b' }} onPress={() => setEditingFormula(true)}>Change</Text>
+            {' '}· <Text style={{ color: theme.accent }} onPress={() => setEditingFormula(true)}>Change</Text>
           </Text>
 
           {editingFormula && (
@@ -369,7 +356,7 @@ export function SupervisorPayRunsScreen({ session }: Props) {
 
   // ── LIST VIEW ──────────────────────────────────────────────────────────────
   if (loading) {
-    return <View style={s.centered}><ActivityIndicator color="#1f6f5b" size="large" /></View>;
+    return <View style={s.centered}><ActivityIndicator color={theme.accent} size="large" /></View>;
   }
 
   return (
@@ -413,92 +400,75 @@ export function SupervisorPayRunsScreen({ session }: Props) {
   );
 }
 
-// Small shared sub-components
-function Row({ label, value, bold, mono }: { label: string; value: string; bold?: boolean; mono?: boolean }) {
+function Row({ label, value, bold, mono, theme }: { label: string; value: string; bold?: boolean; mono?: boolean; theme: Theme }) {
   return (
-    <View style={s.row}>
-      <Text style={s.label}>{label}</Text>
-      <Text style={[s.value, bold && { fontWeight: '900', color: '#1f6f5b' }, mono && { fontSize: 11, fontFamily: 'monospace' }]}>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderTopColor: theme.bgInput, borderTopWidth: 1 }}>
+      <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700', flex: 1 }}>{label}</Text>
+      <Text style={[{ color: theme.text, fontSize: 13, fontWeight: '700', maxWidth: '55%', textAlign: 'right' }, bold && { fontWeight: '900', color: theme.accent }, mono && { fontSize: 11, fontFamily: 'monospace' }]}>
         {value}
       </Text>
     </View>
   );
 }
 
-function Field({ label, value, onChange, placeholder, keyboard }: {
+function Field({ label, value, onChange, placeholder, theme }: {
   label: string; value: string; onChange: (v: string) => void;
-  placeholder: string; keyboard?: any;
+  placeholder: string; theme: Theme;
 }) {
   return (
     <>
-      <Text style={s.inputLabel}>{label}</Text>
+      <Text style={{ color: theme.textSub, fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 4, textTransform: 'uppercase' }}>{label}</Text>
       <TextInput
-        style={s.input}
+        style={{ borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '700', padding: 10 }}
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor="#9ca3af"
-        keyboardType={keyboard ?? 'default'}
+        placeholderTextColor={theme.textMuted}
       />
     </>
   );
 }
 
-const s = StyleSheet.create({
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  container: { backgroundColor: '#f4f6f8', padding: 20, paddingBottom: 48 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  exportBtn: { backgroundColor: '#17212b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  pageSub: { color: '#5d6875', fontSize: 13, fontWeight: '700', marginBottom: 16 },
-
-  backBtn: { marginBottom: 12 },
-  backBtnText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: 16 },
-  sectionTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 12, textTransform: 'uppercase' },
-  sectionHeader: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 10 },
-
-  detailHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  detailTitle: { color: '#17212b', fontSize: 15, fontWeight: '900' },
-  cycleDate: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginTop: 2 },
-  cycleGross: { color: '#1f6f5b', fontSize: 18, fontWeight: '900', marginTop: 4 },
-  cycleSub: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginTop: 2 },
-
-  statusPill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  statusText: { fontSize: 11, fontWeight: '800' },
-
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderTopColor: '#f4f6f8', borderTopWidth: 1 },
-  label: { color: '#5d6875', fontSize: 13, fontWeight: '700', flex: 1 },
-  value: { color: '#17212b', fontSize: 13, fontWeight: '700', maxWidth: '55%', textAlign: 'right' },
-
-  workerName: { color: '#17212b', fontSize: 14, fontWeight: '800', marginBottom: 2 },
-  workerEmail: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginBottom: 6 },
-  failureText: { color: '#b42318', fontSize: 12, fontWeight: '700', marginTop: 4 },
-
-  approveBtn: { backgroundColor: '#1f6f5b', borderRadius: 10, padding: 14, alignItems: 'center' },
-  approveBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
-
-  waitingText: { color: '#92400e', fontSize: 13, fontWeight: '700', textAlign: 'center', padding: 8 },
-
-  generateBtn: { backgroundColor: '#1f6f5b', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 16 },
-  generateBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
-
-  inputLabel: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 4, textTransform: 'uppercase' },
-  input: { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, fontWeight: '700', padding: 10 },
-
-  marketHint: { color: '#1f6f5b', fontSize: 11, fontWeight: '700', marginTop: 4 },
-
-  formulaNote: { color: '#5d6875', fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  formulaBtn: { borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, padding: 12, marginBottom: 6 },
-  formulaBtnActive: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  formulaBtnText: { color: '#5d6875', fontSize: 13, fontWeight: '800' },
-  formulaBtnTextActive: { color: '#fff' },
-
-  errorText: { color: '#b42318', fontSize: 13, fontWeight: '700', marginBottom: 10 },
-
-  emptyCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32 },
-  emptyIcon: { fontSize: 36, marginBottom: 10 },
-  emptyText: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  emptySubText: { color: '#5d6875', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 48 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    exportBtn: { backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+    pageSub: { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: 16 },
+    backBtn: { marginBottom: 12 },
+    backBtnText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: 16 },
+    sectionTitle: { color: theme.text, fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 12, textTransform: 'uppercase' },
+    sectionHeader: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 10 },
+    detailHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+    detailTitle: { color: theme.text, fontSize: 15, fontWeight: '900' },
+    cycleDate: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginTop: 2 },
+    cycleGross: { color: theme.accent, fontSize: 18, fontWeight: '900', marginTop: 4 },
+    cycleSub: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginTop: 2 },
+    statusPill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    statusText: { fontSize: 11, fontWeight: '800' },
+    workerName: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 2 },
+    workerEmail: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 6 },
+    failureText: { color: theme.danger, fontSize: 12, fontWeight: '700', marginTop: 4 },
+    approveBtn: { backgroundColor: theme.accent, borderRadius: 10, padding: 14, alignItems: 'center' },
+    approveBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+    waitingText: { color: theme.amber, fontSize: 13, fontWeight: '700', textAlign: 'center', padding: 8 },
+    generateBtn: { backgroundColor: theme.accent, borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 16 },
+    generateBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+    inputLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 4, textTransform: 'uppercase' },
+    input: { borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '700', padding: 10 },
+    marketHint: { color: theme.accent, fontSize: 11, fontWeight: '700', marginTop: 4 },
+    formulaNote: { color: theme.textSub, fontSize: 13, fontWeight: '600', marginBottom: 8 },
+    formulaBtn: { borderColor: theme.border, borderRadius: 8, borderWidth: 1, padding: 12, marginBottom: 6 },
+    formulaBtnActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    formulaBtnText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    formulaBtnTextActive: { color: '#fff' },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: 10 },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32 },
+    emptyIcon: { fontSize: 36, marginBottom: 10 },
+    emptyText: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    emptySubText: { color: theme.textSub, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  });
+}

@@ -5,6 +5,8 @@ import { getWorkerContactDirectory, getWorkerEmergencyContacts, getWorkerProfile
 import type { UserProfile, WorkerDirectoryEntry } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession; onViewProfile?: (email: string) => void };
 
@@ -15,6 +17,10 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [workers, setWorkers] = useState<WorkerDirectoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,7 +77,7 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color="#1f6f5b" />
+        <ActivityIndicator color={theme.accent} />
       </View>
     );
   }
@@ -80,7 +86,7 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#1f6f5b" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />}
     >
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Worker Contacts</Text>
@@ -94,12 +100,12 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#1f6f5b' }]}>{withContacts}</Text>
+          <Text style={[styles.stripValue, { color: theme.accent }]}>{withContacts}</Text>
           <Text style={styles.stripLabel}>Have Contacts</Text>
         </View>
         <View style={styles.stripDivider} />
         <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: '#b42318' }]}>{workers.length - withContacts}</Text>
+          <Text style={[styles.stripValue, { color: theme.danger }]}>{workers.length - withContacts}</Text>
           <Text style={styles.stripLabel}>Missing</Text>
         </View>
       </View>
@@ -111,7 +117,7 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
           value={search}
           onChangeText={setSearch}
           placeholder="Search by name or email…"
-          placeholderTextColor="#8fa3b8"
+          placeholderTextColor={theme.textMuted}
           autoCapitalize="none"
         />
         {search.length > 0 && (
@@ -187,7 +193,7 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
                 )}
                 <Text style={styles.contactsPanelTitle}>📞 Emergency Contacts</Text>
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#1f6f5b" style={{ marginVertical: 8 }} />
+                  <ActivityIndicator size="small" color={theme.accent} style={{ marginVertical: 8 }} />
                 ) : !contacts || contacts.length === 0 ? (
                   <Text style={styles.noContactsText}>No emergency contacts on file</Text>
                 ) : (
@@ -218,55 +224,57 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
   );
 }
 
-const styles = StyleSheet.create({
-  centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageHeader: { marginBottom: 16 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900' },
-  pageSub: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  strip: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
-  stripItem: { alignItems: 'center', flex: 1 },
-  stripValue: { color: '#17212b', fontSize: 24, fontWeight: '900' },
-  stripLabel: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  stripDivider: { backgroundColor: '#e5e9ef', width: 1 },
-  searchWrap: { alignItems: 'center', backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: 14, paddingHorizontal: 12, paddingVertical: 10 },
-  searchIcon: { fontSize: 14, marginRight: 8 },
-  searchInput: { color: '#17212b', flex: 1, fontSize: 14, fontWeight: '600' },
-  clearSearch: { color: '#8fa3b8', fontSize: 14, fontWeight: '800', paddingLeft: 8 },
-  emptyCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, padding: 20 },
-  emptyText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  workerCardWrap: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 8, overflow: 'hidden' },
-  workerCard: { alignItems: 'center', flexDirection: 'row', padding: 12 },
-  workerLeft: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
-  workerAvatar: { alignItems: 'center', backgroundColor: '#17212b', borderRadius: 18, height: 36, justifyContent: 'center', overflow: 'hidden', width: 36 },
-  workerAvatarWarning: { backgroundColor: '#b45309' },
-  workerAvatarText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
-  workerAvatarImg: { height: 36, width: 36 },
-  bioRow: { backgroundColor: '#f8fafc', borderRadius: 8, marginBottom: 10, padding: 10 },
-  bioText: { color: '#5d6875', fontSize: 12, fontWeight: '600', lineHeight: 18 },
-  profileStatsRow: { alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 12 },
-  profileStat: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
-  profileStatDot: { color: '#9aa5b1', fontSize: 11 },
-  viewProfileBtn: { backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 10 },
-  viewProfileBtnText: { color: '#15803d', fontSize: 13, fontWeight: '800' },
-  workerName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
-  workerRole: { color: '#8fa3b8', fontSize: 11, fontWeight: '700' },
-  workerRight: { marginRight: 6 },
-  contactsBadge: { backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  contactsBadgeText: { color: '#15803d', fontSize: 11, fontWeight: '800' },
-  noContactsBadge: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  noContactsBadgeText: { color: '#b42318', fontSize: 11, fontWeight: '800' },
-  chevron: { color: '#8fa3b8', fontSize: 20, transform: [{ rotate: '0deg' }] },
-  chevronOpen: { transform: [{ rotate: '90deg' }] },
-  contactsPanel: { backgroundColor: '#f8fafc', borderTopColor: '#e5e9ef', borderTopWidth: 1, padding: 12 },
-  contactsPanelTitle: { color: '#17212b', fontSize: 12, fontWeight: '900', marginBottom: 10, textTransform: 'uppercase' },
-  noContactsText: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  contactRow: { alignItems: 'center', flexDirection: 'row', gap: 10, marginBottom: 8 },
-  contactTypePill: { backgroundColor: '#1f6f5b', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  contactTypeText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
-  contactInfo: { flex: 1 },
-  contactName: { color: '#17212b', fontSize: 13, fontWeight: '800' },
-  contactMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginTop: 1 },
-  callBtn: { backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
-  callBtnText: { color: '#15803d', fontSize: 12, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageHeader: { marginBottom: 16 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    pageSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
+    stripItem: { alignItems: 'center', flex: 1 },
+    stripValue: { color: theme.text, fontSize: 24, fontWeight: '900' },
+    stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+    stripDivider: { backgroundColor: theme.border, width: 1 },
+    searchWrap: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: 14, paddingHorizontal: 12, paddingVertical: 10 },
+    searchIcon: { fontSize: 14, marginRight: 8 },
+    searchInput: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '600' },
+    clearSearch: { color: theme.textMuted, fontSize: 14, fontWeight: '800', paddingLeft: 8 },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 20 },
+    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    workerCardWrap: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 8, overflow: 'hidden' },
+    workerCard: { alignItems: 'center', flexDirection: 'row', padding: 12 },
+    workerLeft: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
+    workerAvatar: { alignItems: 'center', backgroundColor: theme.bgHero, borderRadius: 18, height: 36, justifyContent: 'center', overflow: 'hidden', width: 36 },
+    workerAvatarWarning: { backgroundColor: theme.amber },
+    workerAvatarText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
+    workerAvatarImg: { height: 36, width: 36 },
+    bioRow: { backgroundColor: theme.bgInput, borderRadius: 8, marginBottom: 10, padding: 10 },
+    bioText: { color: theme.textSub, fontSize: 12, fontWeight: '600', lineHeight: 18 },
+    profileStatsRow: { alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 12 },
+    profileStat: { color: theme.textSub, fontSize: 11, fontWeight: '700' },
+    profileStatDot: { color: theme.textMuted, fontSize: 11 },
+    viewProfileBtn: { backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 10 },
+    viewProfileBtnText: { color: theme.success, fontSize: 13, fontWeight: '800' },
+    workerName: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    workerRole: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+    workerRight: { marginRight: 6 },
+    contactsBadge: { backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    contactsBadgeText: { color: theme.success, fontSize: 11, fontWeight: '800' },
+    noContactsBadge: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    noContactsBadgeText: { color: theme.danger, fontSize: 11, fontWeight: '800' },
+    chevron: { color: theme.textMuted, fontSize: 20, transform: [{ rotate: '0deg' }] },
+    chevronOpen: { transform: [{ rotate: '90deg' }] },
+    contactsPanel: { backgroundColor: theme.bgInput, borderTopColor: theme.border, borderTopWidth: 1, padding: 12 },
+    contactsPanelTitle: { color: theme.text, fontSize: 12, fontWeight: '900', marginBottom: 10, textTransform: 'uppercase' },
+    noContactsText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    contactRow: { alignItems: 'center', flexDirection: 'row', gap: 10, marginBottom: 8 },
+    contactTypePill: { backgroundColor: theme.accent, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    contactTypeText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
+    contactInfo: { flex: 1 },
+    contactName: { color: theme.text, fontSize: 13, fontWeight: '800' },
+    contactMeta: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginTop: 1 },
+    callBtn: { backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
+    callBtnText: { color: theme.success, fontSize: 12, fontWeight: '800' },
+  });
+}

@@ -9,6 +9,8 @@ import {
   parseApiError,
 } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -27,6 +29,10 @@ function daysUntil(iso: string | null | undefined): number | null {
 }
 
 export function SupervisorSubscriptionScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [sub, setSub] = useState<SiteSubscription | null>(null);
   const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +105,6 @@ export function SupervisorSubscriptionScreen({ session: _ }: Props) {
       <Text style={styles.title}>Subscription</Text>
       <Text style={styles.sub}>Manage your site's MineOps subscription and record payments.</Text>
 
-      {/* Status banner */}
       {status === 'TRIAL' && (
         <View style={[styles.banner, styles.bannerTrial]}>
           <Text style={styles.bannerTitle}>Free Trial</Text>
@@ -133,7 +138,6 @@ export function SupervisorSubscriptionScreen({ session: _ }: Props) {
         </View>
       )}
 
-      {/* Current plan */}
       <View style={styles.card}>
         <Text style={styles.cardLabel}>Current Plan</Text>
         <Text style={styles.cardValue}>
@@ -144,7 +148,6 @@ export function SupervisorSubscriptionScreen({ session: _ }: Props) {
         ) : null}
       </View>
 
-      {/* Record Payment */}
       <Text style={styles.sectionTitle}>Record a Payment</Text>
       <Text style={styles.hint}>
         Payments made outside the app (bank transfer, MoMo send-money) are recorded here manually.
@@ -176,7 +179,7 @@ export function SupervisorSubscriptionScreen({ session: _ }: Props) {
         value={amountGhs}
         onChangeText={setAmountGhs}
         placeholder="e.g. 500.00"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         keyboardType="decimal-pad"
       />
 
@@ -201,7 +204,7 @@ export function SupervisorSubscriptionScreen({ session: _ }: Props) {
         value={reference}
         onChangeText={setReference}
         placeholder="Transaction ID, receipt number, etc."
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
       />
 
       <Text style={styles.label}>Period Start (YYYY-MM-DD, optional)</Text>
@@ -210,7 +213,7 @@ export function SupervisorSubscriptionScreen({ session: _ }: Props) {
         value={periodStart}
         onChangeText={setPeriodStart}
         placeholder="2026-07-01"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         keyboardType="numbers-and-punctuation"
       />
 
@@ -220,7 +223,7 @@ export function SupervisorSubscriptionScreen({ session: _ }: Props) {
         value={periodEnd}
         onChangeText={setPeriodEnd}
         placeholder="2026-07-31"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         keyboardType="numbers-and-punctuation"
       />
 
@@ -240,43 +243,45 @@ export function SupervisorSubscriptionScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 48, backgroundColor: '#f4f6f8' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  loadingText: { color: '#8fa3b8', fontSize: 14, fontWeight: '600' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 4 },
-  sub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 16 },
-  banner: { borderRadius: 10, padding: 14, marginBottom: 16 },
-  bannerTrial: { backgroundColor: '#fef9c3', borderColor: '#fbbf24', borderWidth: 1 },
-  bannerPastDue: { backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderWidth: 1 },
-  bannerActive: { backgroundColor: '#f0fdf4', borderColor: '#86efac', borderWidth: 1 },
-  bannerCancelled: { backgroundColor: '#f3f4f6', borderColor: '#d1d5db', borderWidth: 1 },
-  bannerTitle: { fontSize: 14, fontWeight: '900', color: '#17212b', marginBottom: 2 },
-  bannerBody: { fontSize: 13, fontWeight: '600', color: '#5d6875' },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, padding: 14, marginBottom: 20 },
-  cardLabel: { color: '#8fa3b8', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 },
-  cardValue: { color: '#17212b', fontSize: 15, fontWeight: '900' },
-  cardMeta: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginTop: 4 },
-  sectionTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 6 },
-  hint: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 14, lineHeight: 18 },
-  label: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 4 },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#dde3ea',
-    borderRadius: 8,
-    borderWidth: 1,
-    color: '#17212b',
-    fontSize: 15,
-    marginBottom: 12,
-    minHeight: 48,
-    paddingHorizontal: 14,
-  },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  pill: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#5d6875', fontSize: 13, fontWeight: '800' },
-  pillActiveText: { color: '#fff' },
-  submitBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 10, paddingVertical: 14, marginBottom: 12 },
-  submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
-  disclaimer: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', lineHeight: 16, textAlign: 'center' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 48, backgroundColor: theme.bg },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    loadingText: { color: theme.textMuted, fontSize: 14, fontWeight: '600' },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 4 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+    banner: { borderRadius: 10, padding: 14, marginBottom: 16 },
+    bannerTrial: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderWidth: 1 },
+    bannerPastDue: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderWidth: 1 },
+    bannerActive: { backgroundColor: theme.successLight, borderColor: theme.success, borderWidth: 1 },
+    bannerCancelled: { backgroundColor: theme.bgInput, borderColor: theme.border, borderWidth: 1 },
+    bannerTitle: { fontSize: 14, fontWeight: '900', color: theme.text, marginBottom: 2 },
+    bannerBody: { fontSize: 13, fontWeight: '600', color: theme.textSub },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 14, marginBottom: 20 },
+    cardLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 },
+    cardValue: { color: theme.text, fontSize: 15, fontWeight: '900' },
+    cardMeta: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginTop: 4 },
+    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 6 },
+    hint: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 14, lineHeight: 18 },
+    label: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 4 },
+    input: {
+      backgroundColor: theme.bgCard,
+      borderColor: theme.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      color: theme.text,
+      fontSize: 15,
+      marginBottom: 12,
+      minHeight: 48,
+      paddingHorizontal: 14,
+    },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    pillActiveText: { color: '#fff' },
+    submitBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, paddingVertical: 14, marginBottom: 12 },
+    submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+    disclaimer: { color: theme.textMuted, fontSize: 11, fontWeight: '600', lineHeight: 16, textAlign: 'center' },
+  });
+}

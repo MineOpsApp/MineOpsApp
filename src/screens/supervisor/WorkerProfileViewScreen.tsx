@@ -12,6 +12,8 @@ import {
 import { getWorkerProfileByEmail } from '../../services/api';
 import type { UserProfile } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { email: string; session: AuthSession };
 
@@ -38,6 +40,10 @@ function getInitials(name: string) {
 }
 
 export function WorkerProfileViewScreen({ email, session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showIdCard, setShowIdCard] = useState(false);
@@ -54,7 +60,7 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color="#1f6f5b" size="large" />
+        <ActivityIndicator color={theme.accent} size="large" />
       </View>
     );
   }
@@ -109,7 +115,7 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
           <View style={styles.idCardDivider} />
 
           <View style={styles.idCardFooter}>
-            <View style={[styles.statusDot, { backgroundColor: profile.active ? '#15803d' : '#b42318' }]} />
+            <View style={[styles.statusDot, { backgroundColor: profile.active ? theme.success : theme.danger }]} />
             <Text style={styles.idCardStatus}>
               {profile.active ? 'ACTIVE EMPLOYEE' : 'ACCOUNT SUSPENDED'}
             </Text>
@@ -128,7 +134,6 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
       <Text style={styles.pageTitle}>{profile.fullName}</Text>
       <Text style={styles.pageSub}>{roleLabel(profile.role)} · {profile.assignedSite}</Text>
 
-      {/* Photo */}
       <View style={styles.photoSection}>
         {profile.profilePhoto ? (
           <Image source={{ uri: profile.profilePhoto }} style={styles.photoCircle} />
@@ -137,14 +142,13 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
             <Text style={styles.photoInitials}>{getInitials(profile.fullName)}</Text>
           </View>
         )}
-        <View style={[styles.statusPill, { backgroundColor: profile.active ? '#dcfce7' : '#fff5f5', marginTop: 10 }]}>
-          <Text style={[styles.statusPillText, { color: profile.active ? '#15803d' : '#b42318' }]}>
+        <View style={[styles.statusPill, { backgroundColor: profile.active ? theme.successLight : theme.dangerLight, marginTop: 10 }]}>
+          <Text style={[styles.statusPillText, { color: profile.active ? theme.success : theme.danger }]}>
             {profile.active ? 'Active' : 'Suspended'}
           </Text>
         </View>
       </View>
 
-      {/* Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{profile.shiftLogCount}</Text>
@@ -162,7 +166,6 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
         </View>
       </View>
 
-      {/* ID card shortcut */}
       <Pressable onPress={() => setShowIdCard(true)} style={styles.idCardBtn}>
         <Text style={styles.idCardBtnIcon}>🪪</Text>
         <View style={{ flex: 1 }}>
@@ -172,7 +175,6 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
         <Text style={styles.idCardBtnChevron}>›</Text>
       </Pressable>
 
-      {/* Bio */}
       {profile.bio ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Bio</Text>
@@ -180,7 +182,6 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
         </View>
       ) : null}
 
-      {/* Account details */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account Details</Text>
         <View style={styles.detailRow}>
@@ -210,79 +211,76 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  centered: { alignItems: 'center', flex: 1, justifyContent: 'center', backgroundColor: '#f4f6f8' },
-  container: { backgroundColor: '#f4f6f8', padding: 20, paddingBottom: 48 },
-  errorText: { color: '#b42318', fontSize: 14, fontWeight: '700' },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  pageSub: { color: '#5d6875', fontSize: 13, fontWeight: '700', marginBottom: 16 },
-  backBtn: { marginBottom: 12 },
-  backBtnText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-
-  photoSection: { alignItems: 'center', marginBottom: 18 },
-  photoCircle: {
-    alignItems: 'center',
-    backgroundColor: '#17212b',
-    borderRadius: 52,
-    height: 104,
-    justifyContent: 'center',
-    overflow: 'hidden',
-    width: 104,
-  },
-  photoInitials: { color: '#ffffff', fontSize: 36, fontWeight: '900' },
-  statusPill: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
-  statusPillText: { fontSize: 12, fontWeight: '800' },
-
-  statsRow: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 14, paddingVertical: 16 },
-  statItem: { alignItems: 'center', flex: 1 },
-  statValue: { color: '#17212b', fontSize: 26, fontWeight: '900' },
-  statLabel: { color: '#5d6875', fontSize: 10, fontWeight: '800', marginTop: 2, textTransform: 'uppercase' },
-  statDivider: { backgroundColor: '#dde3ea', width: 1 },
-
-  idCardBtn: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 14, padding: 14 },
-  idCardBtnIcon: { fontSize: 24 },
-  idCardBtnLabel: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-  idCardBtnSub: { color: '#5d6875', fontSize: 12, fontWeight: '700', marginTop: 1 },
-  idCardBtnChevron: { color: '#5d6875', fontSize: 22 },
-
-  section: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, marginBottom: 14, padding: 16 },
-  sectionTitle: { color: '#17212b', fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 10, textTransform: 'uppercase' },
-  bioText: { color: '#17212b', fontSize: 14, fontWeight: '600', lineHeight: 22 },
-
-  detailRow: { alignItems: 'center', borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9 },
-  detailLabel: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  detailValue: { color: '#17212b', fontSize: 13, fontWeight: '700', maxWidth: '60%', textAlign: 'right' },
-
-  idCard: {
-    backgroundColor: '#17212b',
-    borderRadius: 16,
-    elevation: 6,
-    marginBottom: 16,
-    marginTop: 8,
-    overflow: 'hidden',
-    padding: 22,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  idCardHeader: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 14 },
-  idCardHeaderIcon: { fontSize: 28 },
-  idCardOrgName: { color: '#ffffff', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
-  idCardSite: { color: '#6fcfae', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginTop: 2 },
-  idCardDivider: { backgroundColor: '#2e3f50', height: 1, marginBottom: 14 },
-  idCardBody: { alignItems: 'flex-start', flexDirection: 'row', gap: 16, marginBottom: 14 },
-  idCardPhotoWrap: { borderColor: '#2e3f50', borderRadius: 8, borderWidth: 2, height: 84, overflow: 'hidden', width: 72 },
-  idCardPhoto: { height: '100%', width: '100%' },
-  idCardPhotoFallback: { alignItems: 'center', backgroundColor: '#2e3f50', flex: 1, justifyContent: 'center' },
-  idCardPhotoInitials: { color: '#6fcfae', fontSize: 26, fontWeight: '900' },
-  idCardInfo: { flex: 1, justifyContent: 'center' },
-  idCardName: { color: '#ffffff', fontSize: 16, fontWeight: '900', letterSpacing: 0.5, marginBottom: 3 },
-  idCardRole: { color: '#9cbdcf', fontSize: 12, fontWeight: '700', marginBottom: 10 },
-  idCardIdLabel: { color: '#5d7a8c', fontSize: 9, fontWeight: '900', letterSpacing: 1, marginBottom: 2, textTransform: 'uppercase' },
-  idCardIdNumber: { color: '#6fcfae', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
-  idCardFooter: { alignItems: 'center', flexDirection: 'row', gap: 8, marginBottom: 6 },
-  statusDot: { borderRadius: 5, height: 10, width: 10 },
-  idCardStatus: { color: '#9cbdcf', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  idCardSince: { color: '#5d7a8c', fontSize: 11, fontWeight: '600' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    centered: { alignItems: 'center', flex: 1, justifyContent: 'center', backgroundColor: theme.bg },
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 48 },
+    errorText: { color: theme.danger, fontSize: 14, fontWeight: '700' },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    pageSub: { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: 16 },
+    backBtn: { marginBottom: 12 },
+    backBtnText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    photoSection: { alignItems: 'center', marginBottom: 18 },
+    photoCircle: {
+      alignItems: 'center',
+      backgroundColor: theme.bgHero,
+      borderRadius: 52,
+      height: 104,
+      justifyContent: 'center',
+      overflow: 'hidden',
+      width: 104,
+    },
+    photoInitials: { color: '#ffffff', fontSize: 36, fontWeight: '900' },
+    statusPill: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
+    statusPillText: { fontSize: 12, fontWeight: '800' },
+    statsRow: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 14, paddingVertical: 16 },
+    statItem: { alignItems: 'center', flex: 1 },
+    statValue: { color: theme.text, fontSize: 26, fontWeight: '900' },
+    statLabel: { color: theme.textSub, fontSize: 10, fontWeight: '800', marginTop: 2, textTransform: 'uppercase' },
+    statDivider: { backgroundColor: theme.border, width: 1 },
+    idCardBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 14, padding: 14 },
+    idCardBtnIcon: { fontSize: 24 },
+    idCardBtnLabel: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    idCardBtnSub: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginTop: 1 },
+    idCardBtnChevron: { color: theme.textSub, fontSize: 22 },
+    section: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 14, padding: 16 },
+    sectionTitle: { color: theme.text, fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 10, textTransform: 'uppercase' },
+    bioText: { color: theme.text, fontSize: 14, fontWeight: '600', lineHeight: 22 },
+    detailRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9 },
+    detailLabel: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    detailValue: { color: theme.text, fontSize: 13, fontWeight: '700', maxWidth: '60%', textAlign: 'right' },
+    // ID card is intentionally always dark (brand card design)
+    idCard: {
+      backgroundColor: '#17212b',
+      borderRadius: 16,
+      elevation: 6,
+      marginBottom: 16,
+      marginTop: 8,
+      overflow: 'hidden',
+      padding: 22,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+    },
+    idCardHeader: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 14 },
+    idCardHeaderIcon: { fontSize: 28 },
+    idCardOrgName: { color: '#ffffff', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
+    idCardSite: { color: '#6fcfae', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginTop: 2 },
+    idCardDivider: { backgroundColor: '#2e3f50', height: 1, marginBottom: 14 },
+    idCardBody: { alignItems: 'flex-start', flexDirection: 'row', gap: 16, marginBottom: 14 },
+    idCardPhotoWrap: { borderColor: '#2e3f50', borderRadius: 8, borderWidth: 2, height: 84, overflow: 'hidden', width: 72 },
+    idCardPhoto: { height: '100%', width: '100%' },
+    idCardPhotoFallback: { alignItems: 'center', backgroundColor: '#2e3f50', flex: 1, justifyContent: 'center' },
+    idCardPhotoInitials: { color: '#6fcfae', fontSize: 26, fontWeight: '900' },
+    idCardInfo: { flex: 1, justifyContent: 'center' },
+    idCardName: { color: '#ffffff', fontSize: 16, fontWeight: '900', letterSpacing: 0.5, marginBottom: 3 },
+    idCardRole: { color: '#9cbdcf', fontSize: 12, fontWeight: '700', marginBottom: 10 },
+    idCardIdLabel: { color: '#5d7a8c', fontSize: 9, fontWeight: '900', letterSpacing: 1, marginBottom: 2, textTransform: 'uppercase' },
+    idCardIdNumber: { color: '#6fcfae', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
+    idCardFooter: { alignItems: 'center', flexDirection: 'row', gap: 8, marginBottom: 6 },
+    statusDot: { borderRadius: 5, height: 10, width: 10 },
+    idCardStatus: { color: '#9cbdcf', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+    idCardSince: { color: '#5d7a8c', fontSize: 11, fontWeight: '600' },
+  });
+}

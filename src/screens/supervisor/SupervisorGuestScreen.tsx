@@ -4,6 +4,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { ActionButton } from '../../components/ActionButton';
 import { createGuestAccount, renewGuestSession, getGuestList } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type GuestType = 'visitor' | 'inspector' | 'investor';
 type ActiveTab = 'create' | 'renew' | 'list';
@@ -25,9 +27,12 @@ const DURATIONS = [
 type Props = { session: AuthSession };
 
 export function SupervisorGuestScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('create');
 
-  // Create state
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [guestType, setGuestType] = useState<GuestType>('visitor');
@@ -36,9 +41,8 @@ export function SupervisorGuestScreen({ session }: Props) {
   const [loading, setLoading] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<{ email: string; password: string; fullName: string; guestType: string; expiresIn: string } | null>(null);
   const [guests, setGuests] = useState<any[]>([]);
-const [loadingGuests, setLoadingGuests] = useState(false);
+  const [loadingGuests, setLoadingGuests] = useState(false);
 
-  // Renew state
   const [renewEmail, setRenewEmail] = useState('');
   const [renewHours, setRenewHours] = useState(24);
   const [renewing, setRenewing] = useState(false);
@@ -92,17 +96,16 @@ const [loadingGuests, setLoadingGuests] = useState(false);
   }
 
   async function loadGuests() {
-  setLoadingGuests(true);
-  try { setGuests(await getGuestList()); } 
-  catch {} 
-  finally { setLoadingGuests(false); }
-}
+    setLoadingGuests(true);
+    try { setGuests(await getGuestList()); }
+    catch {}
+    finally { setLoadingGuests(false); }
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Guest Access</Text>
 
-      {/* Tab switcher */}
       <View style={styles.tabRow}>
         <Pressable onPress={() => setActiveTab('create')} style={[styles.tab, activeTab === 'create' && styles.tabActive]}>
           <Text style={[styles.tabText, activeTab === 'create' && styles.tabTextActive]}>Create Account</Text>
@@ -110,9 +113,9 @@ const [loadingGuests, setLoadingGuests] = useState(false);
         <Pressable onPress={() => setActiveTab('renew')} style={[styles.tab, activeTab === 'renew' && styles.tabActive]}>
           <Text style={[styles.tabText, activeTab === 'renew' && styles.tabTextActive]}>Renew Access</Text>
         </Pressable>
-       <Pressable onPress={() => { setActiveTab('list'); loadGuests(); }} style={[styles.tab, activeTab === 'list' && styles.tabActive]}>
-  <Text style={[styles.tabText, activeTab === 'list' && styles.tabTextActive]}>Guest List</Text>
-</Pressable>
+        <Pressable onPress={() => { setActiveTab('list'); loadGuests(); }} style={[styles.tab, activeTab === 'list' && styles.tabActive]}>
+          <Text style={[styles.tabText, activeTab === 'list' && styles.tabTextActive]}>Guest List</Text>
+        </Pressable>
       </View>
 
       {activeTab === 'create' ? (
@@ -148,9 +151,9 @@ const [loadingGuests, setLoadingGuests] = useState(false);
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>Guest Details</Text>
                 <Text style={styles.fieldLabel}>Full Name</Text>
-                <TextInput autoCapitalize="words" onChangeText={setFullName} placeholder="Guest full name" placeholderTextColor="#8fa3b8" style={styles.input} value={fullName} />
+                <TextInput autoCapitalize="words" onChangeText={setFullName} placeholder="Guest full name" placeholderTextColor={theme.textMuted} style={styles.input} value={fullName} />
                 <Text style={styles.fieldLabel}>Email Address</Text>
-                <TextInput autoCapitalize="none" keyboardType="email-address" onChangeText={setEmail} placeholder="guest@example.com" placeholderTextColor="#8fa3b8" style={styles.input} value={email} />
+                <TextInput autoCapitalize="none" keyboardType="email-address" onChangeText={setEmail} placeholder="guest@example.com" placeholderTextColor={theme.textMuted} style={styles.input} value={email} />
               </View>
 
               <View style={styles.card}>
@@ -205,7 +208,7 @@ const [loadingGuests, setLoadingGuests] = useState(false);
             keyboardType="email-address"
             onChangeText={setRenewEmail}
             placeholder="Guest email address"
-            placeholderTextColor="#8fa3b8"
+            placeholderTextColor={theme.textMuted}
             style={styles.input}
             value={renewEmail}
           />
@@ -242,54 +245,54 @@ const [loadingGuests, setLoadingGuests] = useState(false);
       )}
     </ScrollView>
   );
-  
-   
-  
 }
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  pageTitle: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 16 },
-  tabRow: { backgroundColor: '#edf1f5', borderRadius: 10, flexDirection: 'row', marginBottom: 20, padding: 4 },
-  tab: { alignItems: 'center', borderRadius: 8, flex: 1, paddingVertical: 10 },
-  tabActive: { backgroundColor: '#ffffff' },
-  tabText: { color: '#5d6875', fontSize: 13, fontWeight: '800' },
-  tabTextActive: { color: '#17212b' },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  renewSub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 14 },
-  fieldLabel: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, marginTop: 4, textTransform: 'uppercase' },
-  input: { backgroundColor: '#f4f6f8', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 12, minHeight: 44, paddingHorizontal: 12 },
-  typeRow: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1.5, flexDirection: 'row', marginBottom: 8, padding: 12 },
-  typeIcon: { fontSize: 22, marginRight: 12 },
-  typeBody: { flex: 1 },
-  typeLabel: { color: '#17212b', fontSize: 14, fontWeight: '800', marginBottom: 2 },
-  typeDesc: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
-  typeRadio: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 2, height: 24, justifyContent: 'center', width: 24 },
-  typeRadioCheck: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { borderColor: '#e5e9ef', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#ffffff' },
-  durationRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  durationBtn: { alignItems: 'center', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 10 },
-  durationBtnActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  durationText: { color: '#8fa3b8', fontSize: 12, fontWeight: '800' },
-  durationTextActive: { color: '#ffffff' },
-  successCard: { backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 12, borderWidth: 1, padding: 20 },
-  successTitle: { color: '#15803d', fontSize: 18, fontWeight: '900', marginBottom: 4 },
-  successSub: { color: '#4ade80', fontSize: 13, fontWeight: '600', marginBottom: 16 },
-  credentialRow: { borderTopColor: '#d1fae5', borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
-  credentialLabel: { color: '#5d6875', fontSize: 13, fontWeight: '700' },
-  credentialValue: { color: '#17212b', fontSize: 13, fontWeight: '700' },
-  credentialValueBold: { color: '#15803d', fontSize: 15, fontWeight: '900' },
-  guestRow: { borderTopColor: '#f4f6f8', borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
-guestLeft: { flex: 1 },
-guestName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
-guestEmail: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 2 },
-guestRole: { color: '#5d6875', fontSize: 11, fontWeight: '700' },
-guestExpiry: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
-guestActive: { backgroundColor: '#e7f6ef' },
-guestExpired: { backgroundColor: '#fff5f5' },
-guestExpiryText: { color: '#5d6875', fontSize: 11, fontWeight: '800' },
-});
+
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
+    tabRow: { backgroundColor: theme.bgInput, borderRadius: 10, flexDirection: 'row', marginBottom: 20, padding: 4 },
+    tab: { alignItems: 'center', borderRadius: 8, flex: 1, paddingVertical: 10 },
+    tabActive: { backgroundColor: theme.bgCard },
+    tabText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    tabTextActive: { color: theme.text },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    renewSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 14 },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, marginTop: 4, textTransform: 'uppercase' },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 44, paddingHorizontal: 12 },
+    typeRow: { alignItems: 'center', borderColor: theme.border, borderRadius: 10, borderWidth: 1.5, flexDirection: 'row', marginBottom: 8, padding: 12 },
+    typeIcon: { fontSize: 22, marginRight: 12 },
+    typeBody: { flex: 1 },
+    typeLabel: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 2 },
+    typeDesc: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    typeRadio: { alignItems: 'center', borderColor: theme.border, borderRadius: 12, borderWidth: 2, height: 24, justifyContent: 'center', width: 24 },
+    typeRadioCheck: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#ffffff' },
+    durationRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+    durationBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 10 },
+    durationBtnActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    durationText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    durationTextActive: { color: '#ffffff' },
+    successCard: { backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, padding: 20 },
+    successTitle: { color: theme.success, fontSize: 18, fontWeight: '900', marginBottom: 4 },
+    successSub: { color: theme.success, fontSize: 13, fontWeight: '600', marginBottom: 16 },
+    credentialRow: { borderTopColor: theme.border, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
+    credentialLabel: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    credentialValue: { color: theme.text, fontSize: 13, fontWeight: '700' },
+    credentialValueBold: { color: theme.success, fontSize: 15, fontWeight: '900' },
+    guestRow: { borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
+    guestLeft: { flex: 1 },
+    guestName: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    guestEmail: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 2 },
+    guestRole: { color: theme.textSub, fontSize: 11, fontWeight: '700' },
+    guestExpiry: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
+    guestActive: { backgroundColor: theme.accentLight },
+    guestExpired: { backgroundColor: theme.dangerLight },
+    guestExpiryText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+  });
+}

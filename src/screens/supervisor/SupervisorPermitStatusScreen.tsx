@@ -2,23 +2,32 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getMyPermitStatus, updatePermitStatus, type MiningPermitStatus, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 const MINISTERIAL_OPTIONS = ['PENDING', 'APPROVED', 'REJECTED'];
 
-function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ label, value, onChange, theme }: { label: string; value: boolean; onChange: (v: boolean) => void; theme: Theme }) {
   return (
-    <Pressable onPress={() => onChange(!value)} style={styles.toggleRow}>
-      <View style={[styles.toggleBox, value && styles.toggleBoxOn]}>
-        <Text style={styles.toggleMark}>{value ? '✓' : '✗'}</Text>
+    <Pressable onPress={() => onChange(!value)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={[
+        { alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 6, borderWidth: 1.5, height: 32, justifyContent: 'center', width: 32 },
+        value && { backgroundColor: theme.accent, borderColor: theme.accent },
+      ]}>
+        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900' }}>{value ? '✓' : '✗'}</Text>
       </View>
-      <Text style={styles.toggleLabel}>{label}</Text>
+      <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700', flex: 1 }}>{label}</Text>
     </Pressable>
   );
 }
 
 export function SupervisorPermitStatusScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [permit, setPermit] = useState<MiningPermitStatus | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -64,16 +73,19 @@ export function SupervisorPermitStatusScreen({ session: _ }: Props) {
           label="Application submitted to Minerals Commission"
           value={!!permit.applicationSubmitted}
           onChange={v => setPermit(p => p ? { ...p, applicationSubmitted: v } : p)}
+          theme={theme}
         />
         <Toggle
           label="Community / traditional authority notified"
           value={!!permit.communityNotificationDone}
           onChange={v => setPermit(p => p ? { ...p, communityNotificationDone: v } : p)}
+          theme={theme}
         />
         <Toggle
           label="EPA environmental permit obtained"
           value={!!permit.epaPermitObtained}
           onChange={v => setPermit(p => p ? { ...p, epaPermitObtained: v } : p)}
+          theme={theme}
         />
 
         <Text style={styles.fieldLabel}>Ministerial Review Decision</Text>
@@ -109,26 +121,23 @@ export function SupervisorPermitStatusScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  sub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 16 },
-  meta: { color: '#8fa3b8', fontSize: 13, fontWeight: '600' },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, padding: 16, marginBottom: 16, gap: 14 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  toggleBox: { alignItems: 'center', backgroundColor: '#f0f2f5', borderColor: '#dde3ea', borderRadius: 6, borderWidth: 1.5, height: 32, justifyContent: 'center', width: 32 },
-  toggleBoxOn: { backgroundColor: '#1f6f5b', borderColor: '#1f6f5b' },
-  toggleMark: { color: '#fff', fontSize: 14, fontWeight: '900' },
-  toggleLabel: { color: '#17212b', fontSize: 13, fontWeight: '700', flex: 1 },
-  fieldLabel: { color: '#5d6875', fontSize: 12, fontWeight: '800', marginBottom: 6 },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { borderColor: '#dde3ea', borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
-  pillActive: { backgroundColor: '#17212b', borderColor: '#17212b' },
-  pillText: { color: '#5d6875', fontSize: 12, fontWeight: '800' },
-  pillActiveText: { color: '#fff' },
-  saveBtn: { alignItems: 'center', backgroundColor: '#1f6f5b', borderRadius: 10, paddingVertical: 14, marginBottom: 14 },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
-  infoBox: { backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 8, borderWidth: 1, padding: 12 },
-  infoText: { color: '#92400e', fontSize: 12, fontWeight: '600', lineHeight: 18 },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+    meta: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 16, marginBottom: 16, gap: 14 },
+    fieldLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginBottom: 6 },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
+    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
+    pillActiveText: { color: '#fff' },
+    saveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, paddingVertical: 14, marginBottom: 14 },
+    saveBtnDisabled: { opacity: 0.6 },
+    saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+    infoBox: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 8, borderWidth: 1, padding: 12 },
+    infoText: { color: theme.amber, fontSize: 12, fontWeight: '600', lineHeight: 18 },
+  });
+}
