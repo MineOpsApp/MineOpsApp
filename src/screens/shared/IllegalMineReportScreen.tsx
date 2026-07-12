@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { submitIllegalMineReport, parseApiError } from '../../services/api';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 export function IllegalMineReportScreen() {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [location, setLocation] = useState('');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -42,7 +48,7 @@ export function IllegalMineReportScreen() {
         value={location}
         onChangeText={setLocation}
         placeholder="e.g. Near Nsuta Junction, along the Ankobra River, Tarkwa area"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         multiline
         numberOfLines={3}
       />
@@ -53,7 +59,7 @@ export function IllegalMineReportScreen() {
         value={details}
         onChangeText={setDetails}
         placeholder="Equipment seen, number of people, dates of activity, any other relevant information…"
-        placeholderTextColor="#9aa5b1"
+        placeholderTextColor={theme.textMuted}
         multiline
         numberOfLines={5}
       />
@@ -69,16 +75,18 @@ export function IllegalMineReportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 4 },
-  sub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 20 },
-  label: { color: '#5d6875', fontSize: 13, fontWeight: '800', marginBottom: 6, marginTop: 4 },
-  input: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 14, marginBottom: 14, padding: 12, textAlignVertical: 'top' },
-  inputLarge: { minHeight: 100 },
-  submitBtn: { alignItems: 'center', backgroundColor: '#b42318', borderRadius: 10, paddingVertical: 14, marginBottom: 16 },
-  submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
-  disclaimer: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', lineHeight: 16, textAlign: 'center' },
-  successTitle: { color: '#17212b', fontSize: 20, fontWeight: '900', marginBottom: 12 },
-  successSub: { color: '#5d6875', fontSize: 14, fontWeight: '600', lineHeight: 22, textAlign: 'center' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 4 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 20 },
+    label: { color: theme.textSub, fontSize: 13, fontWeight: '800', marginBottom: 6, marginTop: 4 },
+    input: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 14, padding: 12, textAlignVertical: 'top' },
+    inputLarge: { minHeight: 100 },
+    submitBtn: { alignItems: 'center', backgroundColor: theme.danger, borderRadius: 10, paddingVertical: 14, marginBottom: 16 },
+    submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+    disclaimer: { color: theme.textMuted, fontSize: 11, fontWeight: '600', lineHeight: 16, textAlign: 'center' },
+    successTitle: { color: theme.text, fontSize: 20, fontWeight: '900', marginBottom: 12 },
+    successSub: { color: theme.textSub, fontSize: 14, fontWeight: '600', lineHeight: 22, textAlign: 'center' },
+  });
+}

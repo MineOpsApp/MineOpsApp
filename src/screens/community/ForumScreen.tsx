@@ -23,10 +23,16 @@ import {
   type ForumReply,
 } from '../../services/api';
 import { parseApiError } from '../../services/api';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 const SUBFORUMS = ['general', 'safety', 'market', 'jobs', 'regulatory'];
 
 export default function ForumScreen() {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [subforum, setSubforum] = useState('general');
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,7 +141,7 @@ export default function ForumScreen() {
           <TextInput
             style={styles.replyInput}
             placeholder="Write a reply..."
-            placeholderTextColor="#6b7280"
+            placeholderTextColor={theme.textMuted}
             value={replyText}
             onChangeText={setReplyText}
             multiline
@@ -194,14 +200,14 @@ export default function ForumScreen() {
             <TextInput
               style={styles.modalInput}
               placeholder="Title"
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={theme.textMuted}
               value={newTitle}
               onChangeText={setNewTitle}
             />
             <TextInput
               style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }]}
               placeholder="Body"
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={theme.textMuted}
               value={newBody}
               onChangeText={setNewBody}
               multiline
@@ -225,42 +231,44 @@ export default function ForumScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
-  subforumBar: { backgroundColor: '#1e293b', paddingVertical: 8, paddingHorizontal: 8, maxHeight: 56 },
-  subforumChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#334155', marginRight: 8 },
-  subforumChipActive: { backgroundColor: '#f59e0b' },
-  subforumText: { color: '#94a3b8', fontWeight: '600', fontSize: 13 },
-  subforumTextActive: { color: '#0f172a' },
-  newPostBtn: { margin: 12, backgroundColor: '#f59e0b', borderRadius: 8, padding: 12, alignItems: 'center' },
-  newPostBtnText: { color: '#0f172a', fontWeight: '700', fontSize: 14 },
-  error: { color: '#ef4444', margin: 12, textAlign: 'center' },
-  empty: { color: '#64748b', textAlign: 'center', marginTop: 40 },
-  postCard: { backgroundColor: '#1e293b', margin: 8, marginHorizontal: 12, borderRadius: 10, padding: 14 },
-  postCardTitle: { color: '#f8fafc', fontSize: 15, fontWeight: '700' },
-  postCardMeta: { color: '#94a3b8', fontSize: 12, marginTop: 4 },
-  backBtn: { padding: 16, backgroundColor: '#1e293b' },
-  backText: { color: '#f59e0b', fontWeight: '600' },
-  postTitle: { color: '#f8fafc', fontSize: 20, fontWeight: '700', marginBottom: 4 },
-  postMeta: { color: '#94a3b8', fontSize: 13, marginBottom: 12 },
-  postBody: { color: '#cbd5e1', fontSize: 15, lineHeight: 22, marginBottom: 20 },
-  repliesHeader: { color: '#f59e0b', fontWeight: '700', fontSize: 14, marginBottom: 10 },
-  replyCard: { backgroundColor: '#1e293b', borderRadius: 8, padding: 12, marginBottom: 8 },
-  replyAuthor: { color: '#f8fafc', fontWeight: '600', fontSize: 13 },
-  replyRole: { color: '#94a3b8', fontWeight: '400' },
-  replyBody: { color: '#cbd5e1', fontSize: 14, marginTop: 4 },
-  replyBox: { flexDirection: 'row', padding: 10, backgroundColor: '#1e293b', alignItems: 'flex-end', gap: 8 },
-  replyInput: { flex: 1, backgroundColor: '#0f172a', borderRadius: 8, padding: 10, color: '#f8fafc', maxHeight: 100 },
-  sendBtn: { backgroundColor: '#f59e0b', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10 },
-  sendBtnDisabled: { opacity: 0.5 },
-  sendBtnText: { color: '#0f172a', fontWeight: '700' },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
-  modalSheet: { backgroundColor: '#1e293b', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
-  modalTitle: { color: '#f8fafc', fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  modalInput: { backgroundColor: '#0f172a', borderRadius: 8, padding: 12, color: '#f8fafc', marginBottom: 10 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
-  cancelText: { color: '#94a3b8', fontWeight: '600' },
-  submitBtn: { backgroundColor: '#f59e0b', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
-  submitBtnText: { color: '#0f172a', fontWeight: '700' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.bg },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
+    subforumBar: { backgroundColor: theme.bgCard, paddingVertical: 8, paddingHorizontal: 8, maxHeight: 56 },
+    subforumChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: theme.bgInput, marginRight: 8 },
+    subforumChipActive: { backgroundColor: '#f59e0b' },
+    subforumText: { color: theme.textSub, fontWeight: '600', fontSize: 13 },
+    subforumTextActive: { color: '#0f172a' },
+    newPostBtn: { margin: 12, backgroundColor: '#f59e0b', borderRadius: 8, padding: 12, alignItems: 'center' },
+    newPostBtnText: { color: '#0f172a', fontWeight: '700', fontSize: 14 },
+    error: { color: theme.danger, margin: 12, textAlign: 'center' },
+    empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },
+    postCard: { backgroundColor: theme.bgCard, margin: 8, marginHorizontal: 12, borderRadius: 10, padding: 14 },
+    postCardTitle: { color: theme.text, fontSize: 15, fontWeight: '700' },
+    postCardMeta: { color: theme.textSub, fontSize: 12, marginTop: 4 },
+    backBtn: { padding: 16, backgroundColor: theme.bgCard },
+    backText: { color: '#f59e0b', fontWeight: '600' },
+    postTitle: { color: theme.text, fontSize: 20, fontWeight: '700', marginBottom: 4 },
+    postMeta: { color: theme.textSub, fontSize: 13, marginBottom: 12 },
+    postBody: { color: theme.textSub, fontSize: 15, lineHeight: 22, marginBottom: 20 },
+    repliesHeader: { color: '#f59e0b', fontWeight: '700', fontSize: 14, marginBottom: 10 },
+    replyCard: { backgroundColor: theme.bgCard, borderRadius: 8, padding: 12, marginBottom: 8 },
+    replyAuthor: { color: theme.text, fontWeight: '600', fontSize: 13 },
+    replyRole: { color: theme.textSub, fontWeight: '400' },
+    replyBody: { color: theme.textSub, fontSize: 14, marginTop: 4 },
+    replyBox: { flexDirection: 'row', padding: 10, backgroundColor: theme.bgCard, alignItems: 'flex-end', gap: 8 },
+    replyInput: { flex: 1, backgroundColor: theme.bg, borderRadius: 8, padding: 10, color: theme.text, maxHeight: 100 },
+    sendBtn: { backgroundColor: '#f59e0b', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10 },
+    sendBtnDisabled: { opacity: 0.5 },
+    sendBtnText: { color: '#0f172a', fontWeight: '700' },
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
+    modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
+    modalInput: { backgroundColor: theme.bg, borderRadius: 8, padding: 12, color: theme.text, marginBottom: 10 },
+    modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
+    cancelText: { color: theme.textSub, fontWeight: '600' },
+    submitBtn: { backgroundColor: '#f59e0b', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+    submitBtnText: { color: '#0f172a', fontWeight: '700' },
+  });
+}

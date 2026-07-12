@@ -3,6 +3,8 @@ import { Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, 
 
 import { getMyTransactions, submitRating, raiseDispute, parseApiError, type MarketplaceTransaction } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -27,7 +29,26 @@ const BATCH_ICONS: Record<string, string> = {
   DELIVERED: '✓',
 };
 
+function StarRow({ label, value, onChange, theme }: { label: string; value: number; onChange: (v: number) => void; theme: Theme }) {
+  return (
+    <View style={{ marginBottom: 10 }}>
+      <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 }}>{label}</Text>
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        {[1, 2, 3, 4, 5].map(n => (
+          <TouchableOpacity key={n} onPress={() => onChange(n)}>
+            <Text style={{ fontSize: 24, color: n <= value ? '#f59e0b' : theme.border }}>★</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export function BuyerTransactionsScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [transactions, setTransactions] = useState<MarketplaceTransaction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [ratingTx, setRatingTx] = useState<MarketplaceTransaction | null>(null);
@@ -86,21 +107,6 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
     catch { return s; }
   }
 
-  function StarRow({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
-    return (
-      <View style={{ marginBottom: 10 }}>
-        <Text style={{ color: '#8fa3b8', fontSize: 11, fontWeight: '700', marginBottom: 4 }}>{label}</Text>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          {[1, 2, 3, 4, 5].map(n => (
-            <TouchableOpacity key={n} onPress={() => onChange(n)}>
-              <Text style={{ fontSize: 24, color: n <= value ? '#f59e0b' : '#d1d5db' }}>★</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    );
-  }
-
   return (
     <>
     <ScrollView
@@ -118,7 +124,7 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
         </View>
       ) : (
         transactions.map((tx) => {
-          const color = BATCH_COLORS[tx.batchStatus] ?? '#8fa3b8';
+          const color = BATCH_COLORS[tx.batchStatus] ?? theme.textMuted;
           const icon = BATCH_ICONS[tx.batchStatus] ?? '📦';
           return (
             <View key={tx.id} style={styles.card}>
@@ -170,13 +176,13 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
       <View style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
           <Text style={styles.modalTitle}>Rate Transaction #{ratingTx?.id}</Text>
-          <StarRow label="RELIABILITY" value={reliability} onChange={setReliability} />
-          <StarRow label="COMMUNICATION" value={communication} onChange={setCommunication} />
-          <StarRow label="LISTING ACCURACY" value={listingAccuracy} onChange={setListingAccuracy} />
+          <StarRow label="RELIABILITY" value={reliability} onChange={setReliability} theme={theme} />
+          <StarRow label="COMMUNICATION" value={communication} onChange={setCommunication} theme={theme} />
+          <StarRow label="LISTING ACCURACY" value={listingAccuracy} onChange={setListingAccuracy} theme={theme} />
           <TextInput
             style={styles.modalInput}
             placeholder="Comment (optional)"
-            placeholderTextColor="#8fa3b8"
+            placeholderTextColor={theme.textMuted}
             value={ratingComment}
             onChangeText={setRatingComment}
             multiline
@@ -198,7 +204,7 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
           <TextInput
             style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }]}
             placeholder="Describe the issue..."
-            placeholderTextColor="#8fa3b8"
+            placeholderTextColor={theme.textMuted}
             value={disputeReason}
             onChangeText={setDisputeReason}
             multiline
@@ -216,38 +222,40 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  subtitle: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
-  emptyCard: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 40 },
-  emptyIcon: { fontSize: 32, marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  card: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
-  cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 12 },
-  mineral: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 2 },
-  site: { color: '#1f6f5b', fontSize: 12, fontWeight: '700' },
-  statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
-  statusText: { fontSize: 11, fontWeight: '800' },
-  row: { flexDirection: 'row', gap: 16, marginBottom: 10 },
-  col: { flex: 1 },
-  label: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
-  value: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-  footer: { flexDirection: 'row', justifyContent: 'space-between' },
-  txId: { color: '#8fa3b8', fontSize: 11, fontWeight: '700' },
-  date: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  updated: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginTop: 2 },
-  rateBtn: { flex: 1, backgroundColor: '#f59e0b', borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
-  rateBtnText: { color: '#0f172a', fontWeight: '800', fontSize: 13 },
-  disputeBtn: { flex: 1, backgroundColor: '#fee2e2', borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
-  disputeBtnText: { color: '#dc2626', fontWeight: '800', fontSize: 13 },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalSheet: { backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
-  modalTitle: { color: '#17212b', fontSize: 16, fontWeight: '900', marginBottom: 14 },
-  modalInput: { backgroundColor: '#f0f2f5', borderRadius: 8, padding: 12, color: '#17212b', marginBottom: 10, fontSize: 14 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
-  cancelText: { color: '#8fa3b8', fontWeight: '700' },
-  submitBtn: { backgroundColor: '#1f6f5b', borderRadius: 8, paddingHorizontal: 18, paddingVertical: 10 },
-  submitBtnText: { color: '#fff', fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
+    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
+    cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 12 },
+    mineral: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 2 },
+    site: { color: theme.accent, fontSize: 12, fontWeight: '700' },
+    statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+    statusText: { fontSize: 11, fontWeight: '800' },
+    row: { flexDirection: 'row', gap: 16, marginBottom: 10 },
+    col: { flex: 1 },
+    label: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
+    value: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    footer: { flexDirection: 'row', justifyContent: 'space-between' },
+    txId: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+    date: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    updated: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
+    rateBtn: { flex: 1, backgroundColor: '#f59e0b', borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
+    rateBtnText: { color: '#0f172a', fontWeight: '800', fontSize: 13 },
+    disputeBtn: { flex: 1, backgroundColor: theme.dangerLight, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
+    disputeBtnText: { color: theme.danger, fontWeight: '800', fontSize: 13 },
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
+    modalTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 14 },
+    modalInput: { backgroundColor: theme.bg, borderRadius: 8, padding: 12, color: theme.text, marginBottom: 10, fontSize: 14 },
+    modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
+    cancelText: { color: theme.textMuted, fontWeight: '700' },
+    submitBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 18, paddingVertical: 10 },
+    submitBtnText: { color: '#fff', fontWeight: '800' },
+  });
+}

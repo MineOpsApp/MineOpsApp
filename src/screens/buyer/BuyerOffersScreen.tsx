@@ -3,6 +3,8 @@ import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } 
 
 import { getMyOffers, withdrawOffer, type MarketplaceOffer } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -23,6 +25,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function BuyerOffersScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [offers, setOffers] = useState<MarketplaceOffer[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing] = useState<number | null>(null);
@@ -86,7 +92,7 @@ export function BuyerOffersScreen({ session: _ }: Props) {
         </View>
       ) : (
         offers.map((offer) => {
-          const color = STATUS_COLORS[offer.status] ?? '#8fa3b8';
+          const color = STATUS_COLORS[offer.status] ?? theme.textMuted;
           const isCounter = offer.parentOfferId != null;
           return (
             <View key={offer.id} style={styles.card}>
@@ -136,28 +142,30 @@ export function BuyerOffersScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  subtitle: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 16 },
-  emptyCard: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, padding: 40 },
-  emptyIcon: { fontSize: 32, marginBottom: 10 },
-  emptyTitle: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  emptySub: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  card: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
-  cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 12 },
-  listingRef: { color: '#17212b', fontSize: 14, fontWeight: '900', marginBottom: 4 },
-  counterBadge: { backgroundColor: '#eff6ff', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start' },
-  counterBadgeText: { color: '#1d5f99', fontSize: 10, fontWeight: '800' },
-  statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
-  statusText: { fontSize: 11, fontWeight: '800' },
-  row: { flexDirection: 'row', gap: 16, marginBottom: 8 },
-  col: { flex: 1 },
-  label: { color: '#8fa3b8', fontSize: 10, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
-  value: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-  message: { color: '#5d6875', fontSize: 12, fontStyle: 'italic', marginBottom: 6 },
-  date: { color: '#8fa3b8', fontSize: 11, fontWeight: '600', marginBottom: 2 },
-  withdrawBtn: { alignItems: 'center', backgroundColor: '#fff5f5', borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginTop: 10, paddingVertical: 8 },
-  withdrawBtnText: { color: '#dc2626', fontSize: 13, fontWeight: '800' },
-  btnDisabled: { opacity: 0.5 },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
+    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
+    cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 12 },
+    listingRef: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 4 },
+    counterBadge: { backgroundColor: theme.infoLight, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start' },
+    counterBadgeText: { color: theme.info, fontSize: 10, fontWeight: '800' },
+    statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+    statusText: { fontSize: 11, fontWeight: '800' },
+    row: { flexDirection: 'row', gap: 16, marginBottom: 8 },
+    col: { flex: 1 },
+    label: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
+    value: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    message: { color: theme.textSub, fontSize: 12, fontStyle: 'italic', marginBottom: 6 },
+    date: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 2 },
+    withdrawBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginTop: 10, paddingVertical: 8 },
+    withdrawBtnText: { color: theme.danger, fontSize: 13, fontWeight: '800' },
+    btnDisabled: { opacity: 0.5 },
+  });
+}

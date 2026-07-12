@@ -3,6 +3,8 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 
 import { getMyProfile, type UserProfile } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
@@ -12,16 +14,20 @@ const VERIF_STATUS: Record<string, { label: string; color: string }> = {
   REJECTED: { label: 'Rejected', color: '#b42318' },
 };
 
-function Row({ label, value, border }: { label: string; value: string; border?: boolean }) {
+function Row({ label, value, border, theme }: { label: string; value: string; border?: boolean; theme: Theme }) {
   return (
-    <View style={[styles.row, border && styles.rowBorder]}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+    <View style={[{ paddingHorizontal: 16, paddingVertical: 14 }, border && { borderTopColor: theme.bgInput, borderTopWidth: 1 }]}>
+      <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.4, marginBottom: 4, textTransform: 'uppercase' }}>{label}</Text>
+      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '700' }}>{value}</Text>
     </View>
   );
 }
 
 export function BuyerProfileScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,7 +49,7 @@ export function BuyerProfileScreen({ session }: Props) {
   }
 
   const verifKey = profile?.buyerVerificationStatus ?? '';
-  const verif = VERIF_STATUS[verifKey] ?? (verifKey ? { label: verifKey, color: '#8fa3b8' } : null);
+  const verif = VERIF_STATUS[verifKey] ?? (verifKey ? { label: verifKey, color: theme.textMuted } : null);
 
   return (
     <ScrollView
@@ -58,16 +64,16 @@ export function BuyerProfileScreen({ session }: Props) {
       ) : (
         <>
           <View style={styles.card}>
-            <Row label="Full Name" value={profile?.fullName ?? session.user.fullName} />
-            <Row label="Email" value={profile?.email ?? session.user.email} border />
-            <Row label="Account Type" value="Mineral Buyer" border />
-            {profile?.createdAt ? <Row label="Member Since" value={formatDate(profile.createdAt)} border /> : null}
+            <Row label="Full Name" value={profile?.fullName ?? session.user.fullName} theme={theme} />
+            <Row label="Email" value={profile?.email ?? session.user.email} border theme={theme} />
+            <Row label="Account Type" value="Mineral Buyer" border theme={theme} />
+            {profile?.createdAt ? <Row label="Member Since" value={formatDate(profile.createdAt)} border theme={theme} /> : null}
           </View>
 
           <Text style={styles.sectionTitle}>Business Details</Text>
           <View style={styles.card}>
-            <Row label="Business Name" value={profile?.businessName ?? 'Not provided'} />
-            <Row label="GoldBod License No." value={profile?.goldbodLicenseNumber ?? 'Not provided'} border />
+            <Row label="Business Name" value={profile?.businessName ?? 'Not provided'} theme={theme} />
+            <Row label="GoldBod License No." value={profile?.goldbodLicenseNumber ?? 'Not provided'} border theme={theme} />
           </View>
 
           {verif ? (
@@ -85,17 +91,15 @@ export function BuyerProfileScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 20 },
-  sectionTitle: { color: '#5d6875', fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 20, textTransform: 'uppercase' },
-  card: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
-  row: { paddingHorizontal: 16, paddingVertical: 14 },
-  rowBorder: { borderTopColor: '#f4f6f8', borderTopWidth: 1 },
-  rowLabel: { color: '#8fa3b8', fontSize: 11, fontWeight: '800', letterSpacing: 0.4, marginBottom: 4, textTransform: 'uppercase' },
-  rowValue: { color: '#17212b', fontSize: 15, fontWeight: '700' },
-  meta: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', padding: 16 },
-  verifCard: { alignItems: 'center', backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 10, padding: 16 },
-  verifDot: { borderRadius: 6, height: 12, width: 12 },
-  verifLabel: { fontSize: 15, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 20 },
+    sectionTitle: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 20, textTransform: 'uppercase' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
+    meta: { color: theme.textMuted, fontSize: 13, fontWeight: '600', padding: 16 },
+    verifCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 10, padding: 16 },
+    verifDot: { borderRadius: 6, height: 12, width: 12 },
+    verifLabel: { fontSize: 15, fontWeight: '800' },
+  });
+}

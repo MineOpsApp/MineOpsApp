@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getGovernmentBulkPurchaseRequests, fulfillBulkPurchaseRequest, type BulkPurchaseRequest, parseApiError } from '../../services/api';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 export function GovernmentBulkPurchaseScreen() {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [requests, setRequests] = useState<BulkPurchaseRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing] = useState<number | null>(null);
@@ -66,18 +72,20 @@ export function GovernmentBulkPurchaseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  sub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 16 },
-  empty: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 10, padding: 14 },
-  cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  mineral: { color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 2 },
-  site: { color: '#1f6f5b', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  qty: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
-  meta: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  status: { fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
-  fulfillBtn: { backgroundColor: '#1f6f5b', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
-  fulfillBtnText: { color: '#fff', fontSize: 12, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+    empty: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 40 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 10, padding: 14 },
+    cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
+    mineral: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
+    site: { color: theme.accent, fontSize: 12, fontWeight: '700', marginBottom: 2 },
+    qty: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    meta: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    status: { fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+    fulfillBtn: { backgroundColor: theme.accent, borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
+    fulfillBtnText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  });
+}

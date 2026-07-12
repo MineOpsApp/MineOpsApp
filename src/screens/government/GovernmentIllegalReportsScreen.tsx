@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { getGovernmentIllegalMineReports, reviewIllegalMineReport, type IllegalMineReport, parseApiError } from '../../services/api';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 const STATUSES = ['UNDER_REVIEW', 'CONFIRMED', 'DISMISSED'];
 
 export function GovernmentIllegalReportsScreen() {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [reports, setReports] = useState<IllegalMineReport[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [reviewingId, setReviewingId] = useState<number | null>(null);
@@ -63,7 +69,7 @@ export function GovernmentIllegalReportsScreen() {
                 value={reviewNotes}
                 onChangeText={setReviewNotes}
                 placeholder="Review notes (optional)"
-                placeholderTextColor="#8fa3b8"
+                placeholderTextColor={theme.textMuted}
                 multiline
               />
               <View style={styles.statusRow}>
@@ -90,25 +96,27 @@ export function GovernmentIllegalReportsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f0f2f5' },
-  title: { color: '#17212b', fontSize: 22, fontWeight: '900', marginBottom: 2 },
-  sub: { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 16 },
-  empty: { color: '#8fa3b8', fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#fff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 14 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
-  location: { color: '#17212b', fontSize: 14, fontWeight: '800', marginBottom: 3 },
-  meta: { color: '#8fa3b8', fontSize: 11, fontWeight: '600' },
-  status: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
-  details: { color: '#5d6875', fontSize: 12, fontWeight: '600', marginTop: 4 },
-  reviewNotes: { color: '#1f6f5b', fontSize: 12, fontWeight: '700', marginTop: 6, fontStyle: 'italic' },
-  reviewPanel: { marginTop: 10, gap: 8 },
-  input: { backgroundColor: '#f0f2f5', borderColor: '#e5e9ef', borderRadius: 8, borderWidth: 1, color: '#17212b', fontSize: 13, padding: 10, minHeight: 60 },
-  statusRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  statusBtn: { borderRadius: 6, borderWidth: 1.5, paddingHorizontal: 10, paddingVertical: 6 },
-  statusBtnText: { fontSize: 11, fontWeight: '800' },
-  cancelBtn: { alignSelf: 'flex-start' },
-  cancelBtnText: { color: '#8fa3b8', fontSize: 12, fontWeight: '700' },
-  reviewBtn: { alignSelf: 'flex-start', backgroundColor: '#eff6ff', borderColor: '#1d5f99', borderRadius: 6, borderWidth: 1, marginTop: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  reviewBtnText: { color: '#1d5f99', fontSize: 12, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+    empty: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 40 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 14 },
+    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
+    location: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 3 },
+    meta: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    status: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
+    details: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginTop: 4 },
+    reviewNotes: { color: theme.accent, fontSize: 12, fontWeight: '700', marginTop: 6, fontStyle: 'italic' },
+    reviewPanel: { marginTop: 10, gap: 8 },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, padding: 10, minHeight: 60 },
+    statusRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    statusBtn: { borderRadius: 6, borderWidth: 1.5, paddingHorizontal: 10, paddingVertical: 6 },
+    statusBtnText: { fontSize: 11, fontWeight: '800' },
+    cancelBtn: { alignSelf: 'flex-start' },
+    cancelBtnText: { color: theme.textMuted, fontSize: 12, fontWeight: '700' },
+    reviewBtn: { alignSelf: 'flex-start', backgroundColor: theme.infoLight, borderColor: theme.info, borderRadius: 6, borderWidth: 1, marginTop: 8, paddingHorizontal: 12, paddingVertical: 6 },
+    reviewBtnText: { color: theme.info, fontSize: 12, fontWeight: '800' },
+  });
+}

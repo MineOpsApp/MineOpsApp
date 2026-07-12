@@ -10,10 +10,16 @@ import {
   TextInput,
 } from 'react-native';
 import { getMines, getVerifiedBuyers, type MineProfile, type BuyerProfile } from '../../services/api';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Tab = 'mines' | 'buyers';
 
 export default function DirectoryScreen() {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [tab, setTab] = useState<Tab>('mines');
   const [mines, setMines] = useState<MineProfile[]>([]);
   const [buyers, setBuyers] = useState<BuyerProfile[]>([]);
@@ -82,7 +88,7 @@ export default function DirectoryScreen() {
       <TextInput
         style={styles.search}
         placeholder="Search..."
-        placeholderTextColor="#6b7280"
+        placeholderTextColor={theme.textMuted}
         value={search}
         onChangeText={setSearch}
       />
@@ -143,39 +149,27 @@ export default function DirectoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
-  tabs: { flexDirection: 'row', backgroundColor: '#1e293b' },
-  tab: { flex: 1, padding: 14, alignItems: 'center' },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: '#f59e0b' },
-  tabText: { color: '#94a3b8', fontWeight: '600' },
-  activeTabText: { color: '#f59e0b' },
-  search: {
-    margin: 12,
-    backgroundColor: '#1e293b',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#f8fafc',
-    fontSize: 14,
-  },
-  error: { color: '#ef4444', margin: 12, textAlign: 'center' },
-  empty: { color: '#64748b', textAlign: 'center', marginTop: 40 },
-  card: {
-    backgroundColor: '#1e293b',
-    margin: 8,
-    marginHorizontal: 12,
-    borderRadius: 10,
-    padding: 14,
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  cardTitle: { color: '#f8fafc', fontSize: 16, fontWeight: '700', flex: 1 },
-  cardMeta: { color: '#94a3b8', fontSize: 13, marginTop: 2 },
-  cardDesc: { color: '#cbd5e1', fontSize: 13, marginTop: 6 },
-  cardContact: { color: '#60a5fa', fontSize: 12, marginTop: 4 },
-  scoreBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
-  scoreText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  verifiedBadge: { marginTop: 6, alignSelf: 'flex-start', backgroundColor: '#22c55e', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
-  verifiedText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.bg },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
+    tabs: { flexDirection: 'row', backgroundColor: theme.bgCard },
+    tab: { flex: 1, padding: 14, alignItems: 'center' },
+    activeTab: { borderBottomWidth: 2, borderBottomColor: '#f59e0b' },
+    tabText: { color: theme.textSub, fontWeight: '600' },
+    activeTabText: { color: '#f59e0b' },
+    search: { margin: 12, backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: theme.text, fontSize: 14 },
+    error: { color: theme.danger, margin: 12, textAlign: 'center' },
+    empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },
+    card: { backgroundColor: theme.bgCard, margin: 8, marginHorizontal: 12, borderRadius: 10, padding: 14 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+    cardTitle: { color: theme.text, fontSize: 16, fontWeight: '700', flex: 1 },
+    cardMeta: { color: theme.textSub, fontSize: 13, marginTop: 2 },
+    cardDesc: { color: theme.textSub, fontSize: 13, marginTop: 6 },
+    cardContact: { color: '#60a5fa', fontSize: 12, marginTop: 4 },
+    scoreBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
+    scoreText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    verifiedBadge: { marginTop: 6, alignSelf: 'flex-start', backgroundColor: '#22c55e', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+    verifiedText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  });
+}

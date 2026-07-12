@@ -21,6 +21,8 @@ import {
   parseApiError,
   type JobPosting,
 } from '../../services/api';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 export default function JobBoardScreen({
   isSupervisor = false,
@@ -29,6 +31,10 @@ export default function JobBoardScreen({
   isSupervisor?: boolean;
   userEmail?: string;
 }) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -156,8 +162,8 @@ export default function JobBoardScreen({
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>Post a Job</Text>
-            <TextInput style={styles.input} placeholder="Job title" placeholderTextColor="#6b7280" value={title} onChangeText={setTitle} />
-            <TextInput style={[styles.input, { height: 100, textAlignVertical: 'top' }]} placeholder="Description (optional)" placeholderTextColor="#6b7280" value={description} onChangeText={setDescription} multiline />
+            <TextInput style={styles.input} placeholder="Job title" placeholderTextColor={theme.textMuted} value={title} onChangeText={setTitle} />
+            <TextInput style={[styles.input, { height: 100, textAlignVertical: 'top' }]} placeholder="Description (optional)" placeholderTextColor={theme.textMuted} value={description} onChangeText={setDescription} multiline />
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelText}>Cancel</Text>
@@ -174,7 +180,7 @@ export default function JobBoardScreen({
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>Express Interest</Text>
-            <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} placeholder="Optional message..." placeholderTextColor="#6b7280" value={interestMsg} onChangeText={setInterestMsg} multiline />
+            <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} placeholder="Optional message..." placeholderTextColor={theme.textMuted} value={interestMsg} onChangeText={setInterestMsg} multiline />
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setInterestModalVisible(false)}>
                 <Text style={styles.cancelText}>Cancel</Text>
@@ -190,32 +196,34 @@ export default function JobBoardScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
-  createBtn: { margin: 12, backgroundColor: '#f59e0b', borderRadius: 8, padding: 12, alignItems: 'center' },
-  createBtnText: { color: '#0f172a', fontWeight: '700' },
-  error: { color: '#ef4444', margin: 12, textAlign: 'center' },
-  empty: { color: '#64748b', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#1e293b', margin: 8, marginHorizontal: 12, borderRadius: 10, padding: 14 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  cardTitle: { color: '#f8fafc', fontSize: 15, fontWeight: '700', flex: 1 },
-  statusBadge: { backgroundColor: '#22c55e', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
-  closedBadge: { backgroundColor: '#475569' },
-  statusText: { color: '#fff', fontSize: 11, fontWeight: '600' },
-  siteMeta: { color: '#94a3b8', fontSize: 12, marginBottom: 4 },
-  desc: { color: '#cbd5e1', fontSize: 13 },
-  actions: { flexDirection: 'row', marginTop: 10, gap: 8 },
-  interestBtn: { backgroundColor: '#3b82f6', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
-  interestBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  closeBtn: { backgroundColor: '#ef4444', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
-  closeBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
-  modalSheet: { backgroundColor: '#1e293b', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
-  modalTitle: { color: '#f8fafc', fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  input: { backgroundColor: '#0f172a', borderRadius: 8, padding: 12, color: '#f8fafc', marginBottom: 10 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
-  cancelText: { color: '#94a3b8', fontWeight: '600' },
-  submitBtn: { backgroundColor: '#f59e0b', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
-  submitBtnText: { color: '#0f172a', fontWeight: '700' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.bg },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
+    createBtn: { margin: 12, backgroundColor: '#f59e0b', borderRadius: 8, padding: 12, alignItems: 'center' },
+    createBtnText: { color: '#0f172a', fontWeight: '700' },
+    error: { color: theme.danger, margin: 12, textAlign: 'center' },
+    empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },
+    card: { backgroundColor: theme.bgCard, margin: 8, marginHorizontal: 12, borderRadius: 10, padding: 14 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '700', flex: 1 },
+    statusBadge: { backgroundColor: '#22c55e', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+    closedBadge: { backgroundColor: theme.bgInput },
+    statusText: { color: '#fff', fontSize: 11, fontWeight: '600' },
+    siteMeta: { color: theme.textSub, fontSize: 12, marginBottom: 4 },
+    desc: { color: theme.textSub, fontSize: 13 },
+    actions: { flexDirection: 'row', marginTop: 10, gap: 8 },
+    interestBtn: { backgroundColor: '#3b82f6', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
+    interestBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+    closeBtn: { backgroundColor: theme.danger, borderRadius: 6, paddingHorizontal: 12, paddingVertical: 6 },
+    closeBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
+    modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
+    input: { backgroundColor: theme.bg, borderRadius: 8, padding: 12, color: theme.text, marginBottom: 10 },
+    modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
+    cancelText: { color: theme.textSub, fontWeight: '600' },
+    submitBtn: { backgroundColor: '#f59e0b', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+    submitBtnText: { color: '#0f172a', fontWeight: '700' },
+  });
+}

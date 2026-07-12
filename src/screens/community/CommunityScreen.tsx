@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 import DirectoryScreen from './DirectoryScreen';
 import ForumScreen from './ForumScreen';
 import EventsScreen from './EventsScreen';
@@ -21,6 +23,10 @@ export default function CommunityScreen({
   isSupervisor?: boolean;
   userEmail?: string;
 }) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [tab, setTab] = useState<CommunityTab>('directory');
 
   function renderTab() {
@@ -53,13 +59,15 @@ export default function CommunityScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { backgroundColor: '#1e293b', padding: 16, paddingTop: 48 },
-  headerTitle: { color: '#f8fafc', fontSize: 22, fontWeight: '700' },
-  tabBar: { backgroundColor: '#1e293b', borderBottomWidth: 1, borderBottomColor: '#334155', maxHeight: 48 },
-  tabItem: { paddingHorizontal: 18, paddingVertical: 12 },
-  tabItemActive: { borderBottomWidth: 2, borderBottomColor: '#f59e0b' },
-  tabLabel: { color: '#94a3b8', fontWeight: '600', fontSize: 14 },
-  tabLabelActive: { color: '#f59e0b' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.bg },
+    header: { backgroundColor: theme.bgCard, padding: 16, paddingTop: 48 },
+    headerTitle: { color: theme.text, fontSize: 22, fontWeight: '700' },
+    tabBar: { backgroundColor: theme.bgCard, borderBottomWidth: 1, borderBottomColor: theme.border, maxHeight: 48 },
+    tabItem: { paddingHorizontal: 18, paddingVertical: 12 },
+    tabItemActive: { borderBottomWidth: 2, borderBottomColor: '#f59e0b' },
+    tabLabel: { color: theme.textSub, fontWeight: '600', fontSize: 14 },
+    tabLabelActive: { color: '#f59e0b' },
+  });
+}
