@@ -1062,7 +1062,12 @@ export function getMyProfile() {
   return request<UserProfile>('/profile');
 }
 
-export function updateMyProfile(payload: { photo?: string | null; bio?: string | null }) {
+export function updateMyProfile(payload: {
+  photo?: string | null;
+  bio?: string | null;
+  businessName?: string | null;
+  goldbodLicenseNumber?: string | null;
+}) {
   return put<UserProfile>('/profile', payload);
 }
 
