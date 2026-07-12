@@ -197,7 +197,7 @@ export function WorkerProfileScreen({ session: _ }: Props) {
           <View style={styles.idCardDivider} />
 
           <View style={styles.idCardFooter}>
-            <View style={[styles.statusDot, { backgroundColor: profile.active ? '#15803d' : '#b42318' }]} />
+            <View style={[styles.statusDot, { backgroundColor: profile.active ? theme.success : theme.danger }]} />
             <Text style={styles.idCardStatus}>
               {profile.active ? 'ACTIVE EMPLOYEE' : 'ACCOUNT SUSPENDED'}
             </Text>
@@ -345,8 +345,8 @@ export function WorkerProfileScreen({ session: _ }: Props) {
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Status</Text>
-          <View style={[styles.statusPill, { backgroundColor: profile.active ? '#dcfce7' : '#fff5f5' }]}>
-            <Text style={[styles.statusPillText, { color: profile.active ? '#15803d' : '#b42318' }]}>
+          <View style={[styles.statusPill, { backgroundColor: profile.active ? theme.successLight : theme.dangerLight }]}>
+            <Text style={[styles.statusPillText, { color: profile.active ? theme.success : theme.danger }]}>
               {profile.active ? 'Active' : 'Suspended'}
             </Text>
           </View>
@@ -370,8 +370,8 @@ export function WorkerProfileScreen({ session: _ }: Props) {
           <>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Status</Text>
-              <View style={[styles.statusPill, { backgroundColor: '#dcfce7' }]}>
-                <Text style={[styles.statusPillText, { color: '#15803d' }]}>Insured ✓</Text>
+              <View style={[styles.statusPill, { backgroundColor: theme.successLight }]}>
+                <Text style={[styles.statusPillText, { color: theme.success }]}>Insured ✓</Text>
               </View>
             </View>
             {insurance.enrolledAt ? (

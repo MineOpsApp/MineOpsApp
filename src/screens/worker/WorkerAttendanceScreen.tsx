@@ -122,7 +122,7 @@ export function WorkerAttendanceScreen({ session }: Props) {
 
       <View style={[styles.statusCard, onSite ? styles.statusCardGreen : styles.statusCardGrey]}>
         <View style={styles.statusLeft}>
-          <View style={[styles.statusDot, { backgroundColor: onSite ? '#4ade80' : '#8fa3b8' }]} />
+          <View style={[styles.statusDot, { backgroundColor: onSite ? theme.success : theme.textMuted }]} />
           <View>
             <Text style={styles.statusTitle}>{onSite ? 'On Site' : 'Off Site'}</Text>
             {onSite && activeRecord ? (
@@ -170,7 +170,7 @@ export function WorkerAttendanceScreen({ session }: Props) {
       {history.map((r) => (
         <View key={r.id} style={styles.historyCard}>
           <View style={styles.historyLeft}>
-            <View style={[styles.historyDot, { backgroundColor: r.status === 'ON_SITE' ? '#4ade80' : '#8fa3b8' }]} />
+            <View style={[styles.historyDot, { backgroundColor: r.status === 'ON_SITE' ? theme.success : theme.textMuted }]} />
             <View>
               <Text style={styles.historyZone}>{r.zone}</Text>
               <Text style={styles.historyTime}>{formatTime(r.clockInAt)}</Text>
@@ -178,7 +178,7 @@ export function WorkerAttendanceScreen({ session }: Props) {
           </View>
           <View style={styles.historyRight}>
             <Text style={styles.historyDuration}>{getDuration(r.clockInAt, r.clockOutAt)}</Text>
-            <Text style={[styles.historyStatus, { color: r.status === 'ON_SITE' ? '#15803d' : theme.textMuted }]}>
+            <Text style={[styles.historyStatus, { color: r.status === 'ON_SITE' ? theme.success : theme.textMuted }]}>
               {r.status === 'ON_SITE' ? 'On Site' : 'Completed'}
             </Text>
           </View>
@@ -193,7 +193,7 @@ function makeStyles(theme: Theme) {
     container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
     pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
     statusCard: { borderRadius: 12, borderWidth: 2, marginBottom: 16, padding: 16 },
-    statusCardGreen: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
+    statusCardGreen: { backgroundColor: theme.successLight, borderColor: theme.success },
     statusCardGrey: { backgroundColor: theme.bgInput, borderColor: theme.border },
     statusLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
     statusDot: { borderRadius: 8, height: 16, width: 16 },
