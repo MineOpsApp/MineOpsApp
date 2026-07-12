@@ -118,21 +118,6 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
     }
   }
 
-  function StarRow({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
-    return (
-      <View style={{ marginBottom: 10 }}>
-        <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 }}>{label}</Text>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          {[1, 2, 3, 4, 5].map(n => (
-            <TouchableOpacity key={n} onPress={() => onChange(n)}>
-              <Text style={{ fontSize: 24, color: n <= value ? '#f59e0b' : theme.border }}>★</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    );
-  }
-
   function formatDate(s: string | null) {
     if (!s) return '';
     try { return new Date(s).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
@@ -223,8 +208,8 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
       <View style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
           <Text style={styles.modalTitle}>Rate Buyer — Txn #{ratingTx?.id}</Text>
-          <StarRow label="RELIABILITY" value={reliability} onChange={setReliability} />
-          <StarRow label="COMMUNICATION" value={communication} onChange={setCommunication} />
+          <StarRow label="RELIABILITY" value={reliability} onChange={setReliability} theme={theme} />
+          <StarRow label="COMMUNICATION" value={communication} onChange={setCommunication} theme={theme} />
           <TextInput
             style={styles.modalInput}
             placeholder="Comment (optional)"
@@ -265,6 +250,23 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
       </View>
     </Modal>
     </>
+  );
+}
+
+function StarRow({ label, value, onChange, theme }: {
+  label: string; value: number; onChange: (v: number) => void; theme: Theme;
+}) {
+  return (
+    <View style={{ marginBottom: 10 }}>
+      <Text style={{ color: theme.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 }}>{label}</Text>
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        {[1, 2, 3, 4, 5].map(n => (
+          <TouchableOpacity key={n} onPress={() => onChange(n)}>
+            <Text style={{ fontSize: 24, color: n <= value ? '#f59e0b' : theme.border }}>★</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 }
 
