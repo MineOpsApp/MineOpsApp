@@ -6,10 +6,16 @@ import { ActionButton } from '../../components/ActionButton';
 import { getNotices, createNotice, parseApiError } from '../../services/api';
 import type { Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function SafetyNoticesScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [notices, setNotices] = useState<Notice[]>([]);
   const [title, setTitle] = useState('Safety Alert');
   const [message, setMessage] = useState('');
@@ -49,12 +55,14 @@ export function SafetyNoticesScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 16 },
-  sectionTitle: { color: '#17212b', fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 8 },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  meta: { color: '#5d6875', fontSize: 13, fontWeight: '600', marginBottom: 4 },
-  seenMeta: { color: '#9aa5b1', fontSize: 12, fontWeight: '700' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 16 },
+    sectionTitle: { color: theme.text, fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 8 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    meta: { color: theme.textSub, fontSize: 13, fontWeight: '600', marginBottom: 4 },
+    seenMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '700' },
+  });
+}

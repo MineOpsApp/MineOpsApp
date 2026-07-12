@@ -6,10 +6,16 @@ import { InputField } from '../../components/InputField';
 import { getHazardReports, reviewHazardReport, closeHazardReport, parseApiError } from '../../services/api';
 import type { HazardReport } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function SafetyHazardsScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [actionTaken, setActionTaken] = useState('Area secured and safety protocols applied');
   const [actioning, setActioning] = useState<number | null>(null);
@@ -52,9 +58,11 @@ export function SafetyHazardsScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 16 },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  meta: { color: '#5d6875', fontSize: 13, fontWeight: '600' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    meta: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
+  });
+}

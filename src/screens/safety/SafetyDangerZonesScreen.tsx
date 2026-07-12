@@ -25,6 +25,8 @@ import {
 } from '../../services/api';
 import type { DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 type ScreenMode = 'list' | 'map' | 'trace';
@@ -40,15 +42,17 @@ const RISK_DOT_COLOR: Record<string, string> = {
 };
 
 export function SafetyDangerZonesScreen({ session }: Props) {
-  const [mode, setMode]           = useState<ScreenMode>('list');
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
+  const [screenMode, setScreenMode] = useState<ScreenMode>('list');
   const [zones, setZones]         = useState<DangerZone[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Map view
   const [mapData, setMapData]     = useState<SiteMapData | null>(null);
   const [noMap, setNoMap]         = useState(false);
 
-  // Trace mode
   const [traceZone, setTraceZone] = useState<DangerZone | null>(null);
   const [vertices, setVertices]   = useState<MapPoint[]>([]);
   const [imgSize, setImgSize]     = useState({ w: 0, h: 0 });
@@ -93,7 +97,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
       setVertices([]);
     }
     setTraceError('');
-    setMode('trace');
+    setScreenMode('trace');
   }
 
   function onImageLayout(e: LayoutChangeEvent) {
@@ -105,7 +109,6 @@ export function SafetyDangerZonesScreen({ session }: Props) {
     if (!imgSize.w || !imgSize.h) return;
     const { locationX, locationY } = e.nativeEvent;
 
-    // Tapping near the first vertex (within 20px) closes the shape
     if (vertices.length >= 3) {
       const first = vertices[0];
       const fx = (first.x / 100) * imgSize.w;
@@ -130,7 +133,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
       const updated = await updateZonePosition(traceZone.id, vertices);
       setZones(zs => zs.map(z => z.id === updated.id ? updated : z));
       Alert.alert('Saved', `Zone boundary for "${traceZone.zoneName}" saved.`);
-      setMode('list');
+      setScreenMode('list');
     } catch (e) {
       setTraceError(parseApiError(e));
     } finally {
@@ -142,11 +145,11 @@ export function SafetyDangerZonesScreen({ session }: Props) {
   const cleared = zones.filter(z => z.status === 'Cleared');
 
   // ── TRACE MODE ────────────────────────────────────────────────────────────────
-  if (mode === 'trace' && traceZone && mapData) {
+  if (screenMode === 'trace' && traceZone && mapData) {
     const dotColor = RISK_DOT_COLOR[traceZone.riskLevel] ?? '#f59e0b';
     return (
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity onPress={() => setMode('list')} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => setScreenMode('list')} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Danger Zones</Text>
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Trace: {traceZone.zoneName}</Text>
@@ -205,10 +208,10 @@ export function SafetyDangerZonesScreen({ session }: Props) {
   }
 
   // ── MAP VIEW ──────────────────────────────────────────────────────────────────
-  if (mode === 'map') {
+  if (screenMode === 'map') {
     return (
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity onPress={() => setMode('list')} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => setScreenMode('list')} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Danger Zones</Text>
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Site Map</Text>
@@ -226,7 +229,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
         <Text style={styles.pageTitle}>Danger Zones</Text>
         {active.length > 0 && <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>{active.length} active</Text></View>}
         {mapData && (
-          <TouchableOpacity style={styles.mapTabBtn} onPress={() => setMode('map')}>
+          <TouchableOpacity style={styles.mapTabBtn} onPress={() => setScreenMode('map')}>
             <Text style={styles.mapTabBtnText}>🗺 Map</Text>
           </TouchableOpacity>
         )}
@@ -289,53 +292,45 @@ export function SafetyDangerZonesScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#f0f2f5', padding: 20, paddingBottom: 40 },
-
-  backBtn:     { marginBottom: 12 },
-  backBtnText: { color: '#1f6f5b', fontSize: 14, fontWeight: '800' },
-
-  pageHeader:   { alignItems: 'center', flexDirection: 'row', marginBottom: 16, gap: 8 },
-  pageTitle:    { color: '#17212b', flex: 1, fontSize: 22, fontWeight: '900' },
-  activeBadge:  { backgroundColor: '#a15c00', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  activeBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-  mapTabBtn:    { backgroundColor: '#1f6f5b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  mapTabBtnText:{ color: '#fff', fontSize: 12, fontWeight: '800' },
-
-  createCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 12, borderWidth: 1, marginBottom: 20, padding: 16 },
-  createTitle:{ color: '#17212b', fontSize: 15, fontWeight: '900', marginBottom: 4 },
-  createSub:  { color: '#8fa3b8', fontSize: 12, fontWeight: '600', marginBottom: 14 },
-
-  sectionLabel: { color: '#8fa3b8', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 10 },
-
-  zoneCard: { borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
-  zoneTop:  { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  zoneName: { color: '#17212b', flex: 1, fontSize: 14, fontWeight: '900', marginRight: 8 },
-  riskPill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
-  riskPillText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
-  zoneMeta: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
-
-  traceBtn:     { alignSelf: 'flex-start', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 },
-  traceBtnText: { color: '#17212b', fontSize: 12, fontWeight: '800' },
-
-  clearCard: { alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#86efac', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 16 },
-  clearIcon: { color: '#16a34a', fontSize: 22 },
-  clearTitle:{ color: '#15803d', fontSize: 14, fontWeight: '900' },
-  clearSub:  { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 2 },
-
-  clearedCard: { backgroundColor: '#ffffff', borderColor: '#e5e9ef', borderRadius: 10, borderWidth: 1, marginBottom: 8, opacity: 0.6, padding: 12 },
-  clearedName: { color: '#17212b', fontSize: 13, fontWeight: '800', marginBottom: 2 },
-  clearedMeta: { color: '#8fa3b8', fontSize: 12, fontWeight: '600' },
-
-  // Trace mode
-  traceSub:      { color: '#5d6875', fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: 16 },
-  imageWrapper:  { borderRadius: 12, overflow: 'hidden', backgroundColor: '#000', marginBottom: 12 },
-  traceImage:    { width: '100%', aspectRatio: 16 / 9 },
-  vertexCount:   { color: '#5d6875', fontSize: 12, fontWeight: '700', marginBottom: 8 },
-  errorText:     { color: '#b42318', fontSize: 13, fontWeight: '700', marginBottom: 8 },
-  traceActions:  { flexDirection: 'row', gap: 8, marginTop: 4 },
-  primaryBtn:    { backgroundColor: '#1f6f5b', borderRadius: 10, padding: 13, alignItems: 'center', flex: 1 },
-  primaryBtnText:{ color: '#fff', fontSize: 14, fontWeight: '900' },
-  secondaryBtn:  { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 10, borderWidth: 1, padding: 13, alignItems: 'center', flex: 1 },
-  secondaryBtnText: { color: '#17212b', fontSize: 14, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    backBtn:     { marginBottom: 12 },
+    backBtnText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    pageHeader:   { alignItems: 'center', flexDirection: 'row', marginBottom: 16, gap: 8 },
+    pageTitle:    { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
+    activeBadge:  { backgroundColor: theme.amber, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+    activeBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
+    mapTabBtn:    { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+    mapTabBtnText:{ color: '#fff', fontSize: 12, fontWeight: '800' },
+    createCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 20, padding: 16 },
+    createTitle:{ color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    createSub:  { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 14 },
+    sectionLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 10 },
+    zoneCard: { borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
+    zoneTop:  { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    zoneName: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '900', marginRight: 8 },
+    riskPill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+    riskPillText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
+    zoneMeta: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    traceBtn:     { alignSelf: 'flex-start', backgroundColor: theme.bgInput, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 },
+    traceBtnText: { color: theme.text, fontSize: 12, fontWeight: '800' },
+    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 16 },
+    clearIcon: { color: theme.success, fontSize: 22 },
+    clearTitle:{ color: theme.success, fontSize: 14, fontWeight: '900' },
+    clearSub:  { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 2 },
+    clearedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 8, opacity: 0.6, padding: 12 },
+    clearedName: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    clearedMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+    traceSub:      { color: theme.textSub, fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: 16 },
+    imageWrapper:  { borderRadius: 12, overflow: 'hidden', backgroundColor: '#000', marginBottom: 12 },
+    traceImage:    { width: '100%', aspectRatio: 16 / 9 },
+    vertexCount:   { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    errorText:     { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: 8 },
+    traceActions:  { flexDirection: 'row', gap: 8, marginTop: 4 },
+    primaryBtn:    { backgroundColor: theme.accent, borderRadius: 10, padding: 13, alignItems: 'center', flex: 1 },
+    primaryBtnText:{ color: '#fff', fontSize: 14, fontWeight: '900' },
+    secondaryBtn:  { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 13, alignItems: 'center', flex: 1 },
+    secondaryBtnText: { color: theme.text, fontSize: 14, fontWeight: '800' },
+  });
+}

@@ -8,10 +8,16 @@ import type { MineralInventory } from '../../services/api';
 import type { Notice, HazardReport, DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 import type { GuestSubRole } from '../../navigation/GuestNavigator';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession; subRole: GuestSubRole };
 
 export function GuestHomeScreen({ session, subRole }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [notices, setNotices] = useState<Notice[]>([]);
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [dangerZones, setDangerZones] = useState<DangerZone[]>([]);
@@ -188,37 +194,39 @@ export function GuestHomeScreen({ session, subRole }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 2 },
-  subtitle: { color: '#5d6875', fontSize: 14, fontWeight: '700', marginBottom: 16 },
-  sectionTitle: { color: '#17212b', fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 8 },
-  infoCard: { backgroundColor: '#f0f9ff', borderColor: '#bae6fd', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
-  infoTitle: { color: '#0369a1', fontSize: 14, fontWeight: '800', marginBottom: 4 },
-  infoText: { color: '#0369a1', fontSize: 13, fontWeight: '600', lineHeight: 18 },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  alertCard: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  zoneCard: { backgroundColor: '#fffbeb', borderColor: '#fde68a', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  clearCard: { backgroundColor: '#e7f6ef', borderColor: '#1f6f5b', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  clearText: { color: '#1f7a4d', fontSize: 14, fontWeight: '800' },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  alertTitle: { color: '#b42318', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  zoneTitle: { color: '#a15c00', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  meta: { color: '#5d6875', fontSize: 13, fontWeight: '600', marginBottom: 2 },
-  roleMeta: { color: '#9aa5b1', fontSize: 12, fontWeight: '700', marginTop: 4 },
-  statsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  statCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, flex: 1, padding: 12, alignItems: 'center' },
-  statCardRed: { backgroundColor: '#fff5f5', borderColor: '#f5c6c6' },
-  statCardAmber: { backgroundColor: '#fffbeb', borderColor: '#fde68a' },
-  statCardGreen: { backgroundColor: '#e7f6ef', borderColor: '#bbf7d0' },
-  statValue: { color: '#17212b', fontSize: 22, fontWeight: '900' },
-  statValueRed: { color: '#b42318' },
-  statValueAmber: { color: '#a15c00' },
-  statValueGreen: { color: '#1f7a4d' },
-  statLabel: { color: '#5d6875', fontSize: 11, fontWeight: '700', marginTop: 2, textAlign: 'center' },
-  inventoryCard: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
-  inventoryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 2 },
-  inventoryMineral: { color: '#17212b', fontSize: 15, fontWeight: '900', flex: 1 },
-  inventoryVolume: { color: '#1f6f5b', fontSize: 18, fontWeight: '900' },
-  inventoryUnit: { color: '#5d6875', fontSize: 12, fontWeight: '700' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 2 },
+    subtitle: { color: theme.textSub, fontSize: 14, fontWeight: '700', marginBottom: 16 },
+    sectionTitle: { color: theme.text, fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 8 },
+    infoCard: { backgroundColor: theme.infoLight, borderColor: theme.info, borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+    infoTitle: { color: theme.info, fontSize: 14, fontWeight: '800', marginBottom: 4 },
+    infoText: { color: theme.info, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    alertCard: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    zoneCard: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    clearCard: { backgroundColor: theme.accentLight, borderColor: theme.accent, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    clearText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    alertTitle: { color: theme.danger, fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    zoneTitle: { color: theme.amber, fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    meta: { color: theme.textSub, fontSize: 13, fontWeight: '600', marginBottom: 2 },
+    roleMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginTop: 4 },
+    statsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+    statCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, padding: 12, alignItems: 'center' },
+    statCardRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
+    statCardAmber: { backgroundColor: theme.amberLight, borderColor: theme.amber },
+    statCardGreen: { backgroundColor: theme.successLight, borderColor: theme.success },
+    statValue: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    statValueRed: { color: theme.danger },
+    statValueAmber: { color: theme.amber },
+    statValueGreen: { color: theme.success },
+    statLabel: { color: theme.textSub, fontSize: 11, fontWeight: '700', marginTop: 2, textAlign: 'center' },
+    inventoryCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
+    inventoryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 2 },
+    inventoryMineral: { color: theme.text, fontSize: 15, fontWeight: '900', flex: 1 },
+    inventoryVolume: { color: theme.accent, fontSize: 18, fontWeight: '900' },
+    inventoryUnit: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
+  });
+}

@@ -5,10 +5,16 @@ import { ActionButton } from '../../components/ActionButton';
 import { getNotices, markNoticeSeen } from '../../services/api';
 import type { Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function GuestNoticesScreen({ session }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [notices, setNotices] = useState<Notice[]>([]);
 
   useEffect(() => {
@@ -44,12 +50,14 @@ export function GuestNoticesScreen({ session }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-  title: { color: '#17212b', fontSize: 26, fontWeight: '800', marginBottom: 16 },
-  card: { backgroundColor: '#fff', borderColor: '#dde3ea', borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-  seenCard: { borderColor: '#1f6f5b', opacity: 0.8 },
-  cardTitle: { color: '#17212b', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  meta: { color: '#5d6875', fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  seenLabel: { color: '#1f6f5b', fontSize: 13, fontWeight: '800' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
+    seenCard: { borderColor: theme.accent, opacity: 0.8 },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    meta: { color: theme.textSub, fontSize: 13, fontWeight: '600', marginBottom: 8 },
+    seenLabel: { color: theme.accent, fontSize: 13, fontWeight: '800' },
+  });
+}

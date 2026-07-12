@@ -5,10 +5,16 @@ import { AuditLogFeed } from '../../components/AuditLogFeed';
 import { getAuditLogs } from '../../services/api';
 import type { AuditLog } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { useTheme, type Theme } from '../../theme/theme';
+import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
 export function SafetyAuditScreen({ session: _ }: Props) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -34,6 +40,8 @@ export function SafetyAuditScreen({ session: _ }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40, backgroundColor: '#f4f6f8' },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+  });
+}
