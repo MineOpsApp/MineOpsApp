@@ -26,4 +26,5 @@ export type AuthPayload = {
   businessName?: string;
   verificationDocument?: string;
   goldbodLicenseNumber?: string;
+  acceptedTerms?: boolean;
 };

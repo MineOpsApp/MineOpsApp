@@ -3,6 +3,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -21,6 +22,8 @@ import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import type { AuthSession } from '../types/auth';
 import type { UserRole } from '../types/role';
+import { TermsOfServiceScreen } from './legal/TermsOfServiceScreen';
+import { PrivacyPolicyScreen } from './legal/PrivacyPolicyScreen';
 
 const WORKER_ROLES = [
   { id: 'worker' as UserRole, label: 'Worker', icon: '⛏', description: 'Field worker on site' },
@@ -56,6 +59,8 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const [verificationDocument, setVerificationDocument] = useState<string | null>(null);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(null);
 
   const [guestCode, setGuestCode]         = useState('');
   const [guestName, setGuestName]         = useState('');
@@ -109,6 +114,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
       if (password.length < 6) { Alert.alert('Weak password', 'Password must be at least 6 characters.'); return; }
       if (password !== confirmPassword) { Alert.alert('Password mismatch', 'Passwords do not match.'); return; }
+      if (!acceptedTerms) { Alert.alert('Terms required', 'Please accept the Terms of Service and Privacy Policy to register.'); return; }
     } else {
       if (!email.trim() || !password.trim()) { Alert.alert('Missing information', 'Enter your email and password.'); return; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { Alert.alert('Invalid email', 'Enter a valid email address.'); return; }
@@ -117,7 +123,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
     setIsSubmitting(true);
     try {
       if (authMode === 'register') {
-        const result = await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedRole === 'buyer' ? undefined : selectedSite, guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined, businessName: selectedRole === 'buyer' ? businessName.trim() : undefined, verificationDocument: selectedRole === 'buyer' ? verificationDocument ?? undefined : undefined, goldbodLicenseNumber: selectedRole === 'buyer' && goldbodLicenseNumber.trim() ? goldbodLicenseNumber.trim() : undefined });
+        const result = await registerUser({ email: email.trim().toLowerCase(), fullName: fullName.trim(), password, role: selectedRole, assignedSite: selectedRole === 'buyer' ? undefined : selectedSite, guestSubRole: selectedRole === 'guest' ? selectedSubRole : undefined, businessName: selectedRole === 'buyer' ? businessName.trim() : undefined, verificationDocument: selectedRole === 'buyer' ? verificationDocument ?? undefined : undefined, goldbodLicenseNumber: selectedRole === 'buyer' && goldbodLicenseNumber.trim() ? goldbodLicenseNumber.trim() : undefined, acceptedTerms: true });
         if (result?.pending) {
           setPendingApproval(true);
         } else {
@@ -444,6 +450,20 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                 </View>
               ) : null}
 
+              {authMode === 'register' ? (
+                <View style={styles.termsRow}>
+                  <Pressable onPress={() => setAcceptedTerms(!acceptedTerms)} style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+                    {acceptedTerms ? <Text style={styles.checkmark}>✓</Text> : null}
+                  </Pressable>
+                  <Text style={styles.termsText}>
+                    I agree to the{' '}
+                    <Text style={styles.termsLink} onPress={() => setLegalModal('terms')}>Terms of Service</Text>
+                    {' '}and{' '}
+                    <Text style={styles.termsLink} onPress={() => setLegalModal('privacy')}>Privacy Policy</Text>
+                  </Text>
+                </View>
+              ) : null}
+
               {authMode === 'login' && biometricAvailable && storedEmail ? (
                 <Pressable
                   onPress={handleBiometricLogin}
@@ -473,6 +493,29 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
 
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {legalModal === 'terms' ? (
+        <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setLegalModal(null)}>
+          <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
+            <Pressable onPress={() => setLegalModal(null)} style={{ padding: 16 }}>
+              <Text style={{ color: theme.accent, fontSize: 14, fontWeight: '800' }}>✓ Done</Text>
+            </Pressable>
+            <TermsOfServiceScreen />
+          </SafeAreaView>
+        </Modal>
+      ) : null}
+
+      {legalModal === 'privacy' ? (
+        <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setLegalModal(null)}>
+          <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
+            <Pressable onPress={() => setLegalModal(null)} style={{ padding: 16 }}>
+              <Text style={{ color: theme.accent, fontSize: 14, fontWeight: '800' }}>✓ Done</Text>
+            </Pressable>
+            <PrivacyPolicyScreen />
+          </SafeAreaView>
+        </Modal>
+      ) : null}
+
     </SafeAreaView>
   );
 }
@@ -538,5 +581,12 @@ function makeStyles(theme: Theme) {
     docUploadBtnDone: { borderColor: theme.accent, borderStyle: 'solid' },
     docUploadText: { color: theme.textMuted, flex: 1, fontSize: 13, fontWeight: '700' },
     docThumb: { borderRadius: 6, height: 40, width: 40 },
+
+    termsRow: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 16, marginTop: 4 },
+    checkbox: { alignItems: 'center', borderColor: theme.border, borderRadius: 6, borderWidth: 2, height: 24, justifyContent: 'center', width: 24 },
+    checkboxChecked: { backgroundColor: theme.accent, borderColor: theme.accent },
+    checkmark: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+    termsText: { color: theme.textSub, flex: 1, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+    termsLink: { color: theme.accent, fontWeight: '800', textDecorationLine: 'underline' },
   });
 }
