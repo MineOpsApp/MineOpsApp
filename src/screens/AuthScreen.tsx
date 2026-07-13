@@ -133,6 +133,8 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
         Alert.alert('Pending approval', 'Your account is awaiting supervisor approval. Try again once approved.');
       } else if (msg.includes('SUSPENDED')) {
         Alert.alert('Account suspended', 'Your account has been suspended. Contact your supervisor.');
+      } else if (msg.includes('LOCKED')) {
+        Alert.alert('Account temporarily locked', 'Too many failed login attempts. Try again in 15 minutes, or contact your supervisor to reset your password.');
       } else if (msg.includes('EXPIRED')) {
         Alert.alert('Access expired', 'Your guest session has expired. Contact your site administrator.');
       } else if (msg.includes('INVALID_CREDENTIALS') || msg.includes('401')) {
