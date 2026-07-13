@@ -1791,6 +1791,9 @@ export type IllegalMineReport = {
   reviewedByEmail: string | null;
   reviewNotes: string | null;
   createdAt: string;
+  photoData: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 // Government-role endpoints
@@ -1838,7 +1841,13 @@ export function withdrawBulkPurchaseRequest(id: number) {
 }
 
 // Illegal mine report (any non-guest role)
-export function submitIllegalMineReport(payload: { locationDescription: string; details?: string }) {
+export function submitIllegalMineReport(payload: {
+  locationDescription: string;
+  details?: string;
+  photoData?: string;
+  latitude?: number;
+  longitude?: number;
+}) {
   return post<IllegalMineReport>('/illegal-mine-reports', payload);
 }
 

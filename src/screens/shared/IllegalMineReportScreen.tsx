@@ -1,5 +1,7 @@
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { submitIllegalMineReport, parseApiError } from '../../services/api';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
@@ -11,14 +13,39 @@ export function IllegalMineReportScreen() {
 
   const [location, setLocation] = useState('');
   const [details, setDetails] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  async function takePhoto() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('Permission needed', 'Camera access is required to attach a photo.'); return; }
+    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.3, allowsEditing: true, exif: false });
+    if (!result.canceled && result.assets[0].base64) setPhoto(result.assets[0].base64);
+  }
 
   async function handleSubmit() {
     if (!location.trim()) { Alert.alert('Required', 'Describe the location of the suspected illegal mining activity.'); return; }
     setSubmitting(true);
     try {
-      await submitIllegalMineReport({ locationDescription: location.trim(), details: details.trim() || undefined });
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          latitude = loc.coords.latitude;
+          longitude = loc.coords.longitude;
+        }
+      } catch {}
+
+      await submitIllegalMineReport({
+        locationDescription: location.trim(),
+        details: details.trim() || undefined,
+        photoData: photo ?? undefined,
+        latitude,
+        longitude,
+      });
       setSubmitted(true);
     } catch (e) {
       Alert.alert('Failed', parseApiError(e));
@@ -64,6 +91,20 @@ export function IllegalMineReportScreen() {
         numberOfLines={5}
       />
 
+      <Text style={styles.label}>Photo Evidence (optional)</Text>
+      {photo ? (
+        <>
+          <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photoPreview} resizeMode="cover" />
+          <Pressable onPress={() => setPhoto(null)} style={{ alignItems: 'center', marginBottom: 14 }}>
+            <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>Remove</Text>
+          </Pressable>
+        </>
+      ) : (
+        <Pressable onPress={takePhoto} style={styles.photoBtn}>
+          <Text style={styles.photoBtnText}>📷 Take Photo</Text>
+        </Pressable>
+      )}
+
       <Pressable onPress={handleSubmit} disabled={submitting} style={[styles.submitBtn, submitting && { opacity: 0.6 }]}>
         <Text style={styles.submitBtnText}>{submitting ? 'Submitting…' : 'Submit Report'}</Text>
       </Pressable>
@@ -83,6 +124,9 @@ function makeStyles(theme: Theme) {
     label: { color: theme.textSub, fontSize: 13, fontWeight: '800', marginBottom: 6, marginTop: 4 },
     input: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 14, padding: 12, textAlignVertical: 'top' },
     inputLarge: { minHeight: 100 },
+    photoPreview: { borderRadius: 8, height: 160, width: '100%', marginBottom: 6 },
+    photoBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, marginBottom: 14, paddingVertical: 14 },
+    photoBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '700' },
     submitBtn: { alignItems: 'center', backgroundColor: theme.danger, borderRadius: 10, paddingVertical: 14, marginBottom: 16 },
     submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
     disclaimer: { color: theme.textMuted, fontSize: 11, fontWeight: '600', lineHeight: 16, textAlign: 'center' },

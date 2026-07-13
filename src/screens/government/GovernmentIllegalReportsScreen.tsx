@@ -1,10 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { getGovernmentIllegalMineReports, reviewIllegalMineReport, type IllegalMineReport, parseApiError } from '../../services/api';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 const STATUSES = ['UNDER_REVIEW', 'CONFIRMED', 'DISMISSED'];
+
+function ReportPhoto({ photoData }: { photoData: string }) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Pressable onPress={() => setExpanded(e => !e)} style={{ marginTop: 8 }}>
+      {expanded ? (
+        <Image source={{ uri: `data:image/jpeg;base64,${photoData}` }} style={{ borderRadius: 8, height: 180, width: '100%' }} resizeMode="cover" />
+      ) : (
+        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
+          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
 
 export function GovernmentIllegalReportsScreen() {
   const { mode } = useThemeMode();
@@ -61,6 +78,10 @@ export function GovernmentIllegalReportsScreen() {
             <Text style={[styles.status, { color: statusColor(r.status) }]}>{r.status.replace('_', ' ')}</Text>
           </View>
           {r.details ? <Text style={styles.details}>{r.details}</Text> : null}
+          {r.photoData ? <ReportPhoto photoData={r.photoData} /> : null}
+          {r.latitude != null && r.longitude != null ? (
+            <Text style={styles.coords}>📍 {r.latitude.toFixed(5)}, {r.longitude.toFixed(5)}</Text>
+          ) : null}
           {r.reviewNotes ? <Text style={styles.reviewNotes}>Review: {r.reviewNotes}</Text> : null}
           {reviewingId === r.id ? (
             <View style={styles.reviewPanel}>
@@ -108,6 +129,7 @@ function makeStyles(theme: Theme) {
     meta: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
     status: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
     details: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginTop: 4 },
+    coords: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 6 },
     reviewNotes: { color: theme.accent, fontSize: 12, fontWeight: '700', marginTop: 6, fontStyle: 'italic' },
     reviewPanel: { marginTop: 10, gap: 8 },
     input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, padding: 10, minHeight: 60 },
