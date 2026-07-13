@@ -21,7 +21,7 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
   const [suspending, setSuspending] = useState(false);
 
   async function handleReset() {
-    if (!email.trim()) { Alert.alert('Missing email', 'Enter the worker email address.'); return; }
+    if (!email.trim()) { Alert.alert('Missing email', 'Enter the user email address.'); return; }
     setLoading(true);
     try {
       const res = await resetUserPassword(email.trim().toLowerCase());
@@ -36,7 +36,7 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
   }
 
   async function handleSuspend(suspend: boolean) {
-    if (!suspendEmail.trim()) { Alert.alert('Missing email', 'Enter the worker email address.'); return; }
+    if (!suspendEmail.trim()) { Alert.alert('Missing email', 'Enter the user email address.'); return; }
     setSuspending(true);
     try {
       const res = await suspendUser(suspendEmail.trim().toLowerCase(), suspend);
@@ -57,12 +57,12 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text style={styles.pageTitle}>Reset Password</Text>
-        <Text style={styles.pageSub}>Generate a temporary password for a worker who has been locked out</Text>
+        <Text style={styles.pageSub}>Generate a temporary password for a worker, buyer, or government user who has been locked out</Text>
 
         {result ? (
           <View style={styles.successCard}>
             <Text style={styles.successTitle}>✓ Password Reset</Text>
-            <Text style={styles.successSub}>Share this temporary password with the worker</Text>
+            <Text style={styles.successSub}>Share this temporary password with the user</Text>
             <View style={styles.credentialRow}>
               <Text style={styles.credentialLabel}>Name</Text>
               <Text style={styles.credentialValue}>{result.fullName}</Text>
@@ -82,18 +82,18 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
           </View>
         ) : (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Worker Email</Text>
+            <Text style={styles.cardTitle}>User Email</Text>
             <TextInput
               autoCapitalize="none"
               keyboardType="email-address"
               onChangeText={setEmail}
-              placeholder="worker@example.com"
+              placeholder="user@example.com"
               placeholderTextColor={theme.textMuted}
               style={styles.input}
               value={email}
             />
             <View style={styles.infoBox}>
-              <Text style={styles.infoText}>The worker will receive a temporary password to log in. They should update it immediately.</Text>
+              <Text style={styles.infoText}>The user will receive a temporary password to log in. They should update it immediately.</Text>
             </View>
             <ActionButton label={loading ? 'Resetting...' : 'Reset Password'} onPress={handleReset} disabled={loading} />
           </View>
@@ -105,7 +105,7 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
             autoCapitalize="none"
             keyboardType="email-address"
             onChangeText={setSuspendEmail}
-            placeholder="worker@example.com"
+            placeholder="user@example.com"
             placeholderTextColor={theme.textMuted}
             style={styles.input}
             value={suspendEmail}
@@ -115,7 +115,7 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
               disabled={suspending}
               onPress={() => Alert.alert(
                 'Suspend account?',
-                'This will prevent the worker from logging in. You can reinstate them at any time.',
+                'This will prevent the user from logging in. You can reinstate them at any time.',
                 [
                   { text: 'Cancel', style: 'cancel' },
                   { text: 'Suspend', style: 'destructive', onPress: () => handleSuspend(true) },
