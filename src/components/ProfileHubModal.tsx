@@ -9,13 +9,14 @@ import { WorkerCertificationsScreen } from '../screens/worker/WorkerCertificatio
 import { BuyerProfileScreen } from '../screens/buyer/BuyerProfileScreen';
 import { ActiveSessionsScreen } from '../screens/shared/ActiveSessionsScreen';
 import { NotificationPreferencesScreen } from '../screens/shared/NotificationPreferencesScreen';
+import { DataPrivacyScreen } from '../screens/shared/DataPrivacyScreen';
 import { TermsOfServiceScreen } from '../screens/legal/TermsOfServiceScreen';
 import { PrivacyPolicyScreen } from '../screens/legal/PrivacyPolicyScreen';
 import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import type { AuthSession } from '../types/auth';
 
-type Screen = 'menu' | 'profile' | 'emergencyContacts' | 'pay' | 'certifications' | 'buyerProfile' | 'sessions' | 'notifications' | 'terms' | 'privacy';
+type Screen = 'menu' | 'profile' | 'emergencyContacts' | 'pay' | 'certifications' | 'buyerProfile' | 'sessions' | 'notifications' | 'terms' | 'privacy' | 'dataPrivacy';
 
 type Props = {
   visible: boolean;
@@ -116,6 +117,13 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
       </Modal>
     );
   }
+  if (screen === 'dataPrivacy') {
+    return (
+      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
+        <SafeAreaView style={styles.safe}>{backBtn}<DataPrivacyScreen onAccountDeleted={() => { handleClose(); onLogout(); }} /></SafeAreaView>
+      </Modal>
+    );
+  }
 
   const profileItems: Array<{ icon: string; label: string; description: string; onPress: () => void }> = [];
   if (role === 'worker') {
@@ -213,6 +221,14 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
               <View style={styles.body}>
                 <Text style={styles.label}>Privacy Policy</Text>
                 <Text style={styles.desc}>See how your data is collected and used</Text>
+              </View>
+              <Text style={styles.arrow}>›</Text>
+            </Pressable>
+            <Pressable onPress={() => setScreen('dataPrivacy')} style={[styles.row, styles.rowBorder]}>
+              <View style={styles.iconWrap}><Text style={styles.icon}>🗑️</Text></View>
+              <View style={styles.body}>
+                <Text style={styles.label}>Data & Privacy</Text>
+                <Text style={styles.desc}>Export your data or delete your account</Text>
               </View>
               <Text style={styles.arrow}>›</Text>
             </Pressable>

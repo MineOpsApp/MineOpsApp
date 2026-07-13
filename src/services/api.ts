@@ -442,6 +442,16 @@ export function updateNotificationPreferences(prefs: Partial<NotificationPrefere
   return put<NotificationPreferences>('/profile/notification-preferences', prefs);
 }
 
+export type AccountExport = Record<string, unknown>;
+
+export function exportMyData() {
+  return request<AccountExport>('/account/export');
+}
+
+export function deleteMyAccount(password: string) {
+  return post<{ success: boolean }>('/account/delete', { password });
+}
+
 export function renewGuestSession(email: string, hours: number) {
   return post<{ email: string; fullName: string; sessionExpiresAt: string; hoursGranted: number }>(
     '/admin/guests/renew',
