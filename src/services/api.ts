@@ -432,6 +432,16 @@ export function revokeSession(id: number) {
   return post<{ success: boolean }>(`/auth/sessions/${id}/revoke`, {});
 }
 
+export type NotificationPreferences = { notifyHazard: boolean; notifyNotice: boolean };
+
+export function getNotificationPreferences() {
+  return request<NotificationPreferences>('/profile/notification-preferences');
+}
+
+export function updateNotificationPreferences(prefs: Partial<NotificationPreferences>) {
+  return put<NotificationPreferences>('/profile/notification-preferences', prefs);
+}
+
 export function renewGuestSession(email: string, hours: number) {
   return post<{ email: string; fullName: string; sessionExpiresAt: string; hoursGranted: number }>(
     '/admin/guests/renew',

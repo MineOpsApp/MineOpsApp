@@ -8,13 +8,14 @@ import { WorkerPayScreen } from '../screens/worker/WorkerPayScreen';
 import { WorkerCertificationsScreen } from '../screens/worker/WorkerCertificationsScreen';
 import { BuyerProfileScreen } from '../screens/buyer/BuyerProfileScreen';
 import { ActiveSessionsScreen } from '../screens/shared/ActiveSessionsScreen';
+import { NotificationPreferencesScreen } from '../screens/shared/NotificationPreferencesScreen';
 import { TermsOfServiceScreen } from '../screens/legal/TermsOfServiceScreen';
 import { PrivacyPolicyScreen } from '../screens/legal/PrivacyPolicyScreen';
 import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import type { AuthSession } from '../types/auth';
 
-type Screen = 'menu' | 'profile' | 'emergencyContacts' | 'pay' | 'certifications' | 'buyerProfile' | 'sessions' | 'terms' | 'privacy';
+type Screen = 'menu' | 'profile' | 'emergencyContacts' | 'pay' | 'certifications' | 'buyerProfile' | 'sessions' | 'notifications' | 'terms' | 'privacy';
 
 type Props = {
   visible: boolean;
@@ -91,6 +92,13 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
         <SafeAreaView style={styles.safe}>{backBtn}<ActiveSessionsScreen /></SafeAreaView>
+      </Modal>
+    );
+  }
+  if (screen === 'notifications') {
+    return (
+      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
+        <SafeAreaView style={styles.safe}>{backBtn}<NotificationPreferencesScreen /></SafeAreaView>
       </Modal>
     );
   }
@@ -173,6 +181,14 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
               <View style={styles.body}>
                 <Text style={styles.label}>Active Sessions</Text>
                 <Text style={styles.desc}>Manage devices signed in to your account</Text>
+              </View>
+              <Text style={styles.arrow}>›</Text>
+            </Pressable>
+            <Pressable onPress={() => setScreen('notifications')} style={[styles.row, styles.rowBorder]}>
+              <View style={styles.iconWrap}><Text style={styles.icon}>🔔</Text></View>
+              <View style={styles.body}>
+                <Text style={styles.label}>Notifications</Text>
+                <Text style={styles.desc}>Choose which alerts you receive</Text>
               </View>
               <Text style={styles.arrow}>›</Text>
             </Pressable>
