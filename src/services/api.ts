@@ -1163,6 +1163,12 @@ export function getSupervisorDashboard() {
   return request<SupervisorDashboard>('/supervisor/dashboard');
 }
 
+export type MultiSiteDashboardEntry = { site: string; isHome: boolean; summary: SupervisorDashboard };
+
+export function getMultiSiteDashboard() {
+  return request<MultiSiteDashboardEntry[]>('/supervisor/multi-site-dashboard');
+}
+
 // Shift announcements
 export function getSiteAnnouncements() {
   return request<ShiftAnnouncement[]>('/announcements');

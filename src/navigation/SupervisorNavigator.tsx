@@ -39,6 +39,7 @@ import { SafetyIntelligenceScreen } from '../screens/supervisor/SafetyIntelligen
 import CommunityScreen from '../screens/community/CommunityScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { SupervisorSiteAccessScreen } from '../screens/supervisor/SupervisorSiteAccessScreen';
+import { SupervisorMultiSiteScreen } from '../screens/supervisor/SupervisorMultiSiteScreen';
 import { SupervisorPermitStatusScreen } from '../screens/supervisor/SupervisorPermitStatusScreen';
 import { SupervisorBulkPurchaseScreen } from '../screens/supervisor/SupervisorBulkPurchaseScreen';
 import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
@@ -63,7 +64,7 @@ const TAB_ICONS: Record<string, string> = {
   More: '☰',
 };
 
-type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription';
+type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'multiSite' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -137,6 +138,7 @@ function SupervisorMoreStack({
   if (screen === 'community') return <View style={{ flex: 1 }}>{backBtn}<CommunityScreen isSupervisor userEmail={session.user.email} /></View>;
   if (screen === 'search') return <View style={{ flex: 1 }}>{backBtn}<SearchScreen session={session} /></View>;
   if (screen === 'siteAccess') return <View style={{ flex: 1 }}>{backBtn}<SupervisorSiteAccessScreen session={session} /></View>;
+  if (screen === 'multiSite') return <View style={{ flex: 1 }}>{backBtn}<SupervisorMultiSiteScreen session={session} /></View>;
   if (screen === 'permitStatus') return <View style={{ flex: 1 }}>{backBtn}<SupervisorPermitStatusScreen session={session} /></View>;
   if (screen === 'bulkPurchase') return <View style={{ flex: 1 }}>{backBtn}<SupervisorBulkPurchaseScreen session={session} /></View>;
   if (screen === 'illegalReport') return <View style={{ flex: 1 }}>{backBtn}<IllegalMineReportScreen /></View>;
@@ -153,6 +155,7 @@ function SupervisorMoreStack({
             { icon: '👤', label: 'Guest Access', description: 'Create and manage guest accounts', onPress: () => setScreen('guests') },
             { icon: '🎟', label: 'Guest Codes', description: 'Generate QR / PIN codes for site visitors and inspectors', onPress: () => setScreen('guestCodes') },
             { icon: '🏭', label: 'Site Access', description: 'Grant or revoke multi-site access for supervisors', onPress: () => setScreen('siteAccess') },
+            { icon: '🗺', label: 'All My Sites', description: 'Combined view of every site you have access to', onPress: () => setScreen('multiSite') },
           ],
         },
         {
