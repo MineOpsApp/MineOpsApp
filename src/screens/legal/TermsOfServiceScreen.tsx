@@ -9,7 +9,7 @@ const SECTIONS = [
   },
   {
     title: '2. Eligibility',
-    body: 'You must be at least 18 years of age and have the legal authority to enter into a binding agreement. Use of the App on behalf of a company or organization requires authority to bind that entity to these Terms.',
+    body: 'You must be a working-age adult with the legal authority to enter into a binding agreement, and eligible to work at your assigned mine site under applicable Ghanaian labor law. Use of the App on behalf of a company or organization requires authority to bind that entity to these Terms.',
   },
   {
     title: '3. Account Registration',
@@ -78,7 +78,7 @@ export function TermsOfServiceScreen() {
         </View>
       ))}
 
-      <Text style={styles.contact}>Questions? Contact us at support@mineops.app</Text>
+      <Text style={styles.contact}>Questions about these Terms? Contact your site supervisor or your organization's designated support contact.</Text>
     </ScrollView>
   );
 }
