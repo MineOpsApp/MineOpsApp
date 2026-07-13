@@ -1,4 +1,6 @@
+import * as Device from 'expo-device';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 import type { DashboardData } from '../types/dashboard';
 import type { Site } from '../types/site';
@@ -393,19 +395,41 @@ export function getSites() {
   return request<Site[]>('/sites');
 }
 
+function getDeviceInfo() {
+  const deviceName = Device.deviceName ?? Device.modelName ?? undefined;
+  const platform = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : Platform.OS;
+  return { deviceName, platform };
+}
+
 export function registerUser(payload: AuthPayload) {
   setAuthToken(null);
-  return postPublic<any>('/auth/register', payload);
+  return postPublic<any>('/auth/register', { ...payload, ...getDeviceInfo() });
 }
 
 export async function loginUser(payload: AuthPayload): Promise<AuthSession> {
   setAuthToken(null);
-  const session = await postPublic<AuthSession>('/auth/login', payload);
+  const session = await postPublic<AuthSession>('/auth/login', { ...payload, ...getDeviceInfo() });
   if (session.refreshToken && session.user?.email) {
     storedRefreshToken = session.refreshToken;
     await persistRefreshToken(session.refreshToken, session.user.email);
   }
   return session;
+}
+
+export type ActiveSession = {
+  id: number;
+  deviceName: string;
+  platform: string | null;
+  createdAt: string;
+  lastUsedAt: string;
+};
+
+export function getMySessions() {
+  return request<ActiveSession[]>('/auth/sessions');
+}
+
+export function revokeSession(id: number) {
+  return post<{ success: boolean }>(`/auth/sessions/${id}/revoke`, {});
 }
 
 export function renewGuestSession(email: string, hours: number) {

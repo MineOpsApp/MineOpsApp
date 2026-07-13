@@ -7,11 +7,12 @@ import { WorkerEmergencyContactsScreen } from '../screens/worker/WorkerEmergency
 import { WorkerPayScreen } from '../screens/worker/WorkerPayScreen';
 import { WorkerCertificationsScreen } from '../screens/worker/WorkerCertificationsScreen';
 import { BuyerProfileScreen } from '../screens/buyer/BuyerProfileScreen';
+import { ActiveSessionsScreen } from '../screens/shared/ActiveSessionsScreen';
 import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import type { AuthSession } from '../types/auth';
 
-type Screen = 'menu' | 'profile' | 'emergencyContacts' | 'pay' | 'certifications' | 'buyerProfile';
+type Screen = 'menu' | 'profile' | 'emergencyContacts' | 'pay' | 'certifications' | 'buyerProfile' | 'sessions';
 
 type Props = {
   visible: boolean;
@@ -84,6 +85,13 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
       </Modal>
     );
   }
+  if (screen === 'sessions') {
+    return (
+      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
+        <SafeAreaView style={styles.safe}>{backBtn}<ActiveSessionsScreen /></SafeAreaView>
+      </Modal>
+    );
+  }
 
   const profileItems: Array<{ icon: string; label: string; description: string; onPress: () => void }> = [];
   if (role === 'worker') {
@@ -144,6 +152,14 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
 
           <Text style={styles.sectionLabel}>SETTINGS</Text>
           <View style={styles.list}>
+            <Pressable onPress={() => setScreen('sessions')} style={[styles.row, styles.rowBorder]}>
+              <View style={styles.iconWrap}><Text style={styles.icon}>🔐</Text></View>
+              <View style={styles.body}>
+                <Text style={styles.label}>Active Sessions</Text>
+                <Text style={styles.desc}>Manage devices signed in to your account</Text>
+              </View>
+              <Text style={styles.arrow}>›</Text>
+            </Pressable>
             <Pressable onPress={cycleTheme} style={[styles.row, styles.rowBorder]}>
               <View style={styles.iconWrap}><Text style={styles.icon}>{themeIcon}</Text></View>
               <View style={styles.body}>
