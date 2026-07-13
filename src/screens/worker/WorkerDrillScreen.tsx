@@ -1,9 +1,11 @@
+import NetInfo from '@react-native-community/netinfo';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { InputField } from '../../components/InputField';
 import { startDrillOperation, signOffDrillStep, getMyDrillOperations } from '../../services/api';
+import { enqueue } from '../../utils/offlineQueue';
 import type { AuthSession } from '../../types/auth';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
@@ -92,8 +94,28 @@ export function WorkerDrillScreen({ session }: Props) {
   }
 
   async function signOff(drillId: number, step: string) {
+    const notes = stepNotes[`${drillId}-${step}`] ?? '';
     try {
-      const updated = await signOffDrillStep(drillId, { step, notes: stepNotes[`${drillId}-${step}`] ?? '' });
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+
+      if (!isOnline) {
+        await enqueue('drillSignOff', { drillId, step, notes } as Record<string, unknown>);
+        setDrills((c) => c.map((d) => {
+          if (d.id !== drillId) return d;
+          const patched = { ...d };
+          if (step === 'setup') patched.stepSetupComplete = true;
+          if (step === 'drilling') patched.stepDrillingComplete = true;
+          if (step === 'blasting') patched.stepBlastingComplete = true;
+          if (step === 'cleanup') { patched.stepCleanupComplete = true; patched.status = 'COMPLETED'; }
+          return patched;
+        }));
+        setStepNotes((c) => ({ ...c, [`${drillId}-${step}`]: '' }));
+        Alert.alert('Saved offline', `${step} queued — will sync when you reconnect.`);
+        return;
+      }
+
+      const updated = await signOffDrillStep(drillId, { step, notes });
       setDrills((c) => c.map((d) => (d.id === updated.id ? updated : d)));
       setStepNotes((c) => ({ ...c, [`${drillId}-${step}`]: '' }));
       if (updated.status === 'COMPLETED') {

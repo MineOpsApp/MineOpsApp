@@ -1,8 +1,10 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import NetInfo from '@react-native-community/netinfo';
 import { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { submitIllegalMineReport, parseApiError } from '../../services/api';
+import { enqueue } from '../../utils/offlineQueue';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
@@ -39,13 +41,23 @@ export function IllegalMineReportScreen() {
         }
       } catch {}
 
-      await submitIllegalMineReport({
+      const payload = {
         locationDescription: location.trim(),
         details: details.trim() || undefined,
         photoData: photo ?? undefined,
         latitude,
         longitude,
-      });
+      };
+
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+      if (!isOnline) {
+        await enqueue('illegalMineReport', payload as Record<string, unknown>);
+        setSubmitted(true);
+        return;
+      }
+
+      await submitIllegalMineReport(payload);
       setSubmitted(true);
     } catch (e) {
       Alert.alert('Failed', parseApiError(e));

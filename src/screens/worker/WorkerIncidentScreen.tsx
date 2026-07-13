@@ -1,10 +1,12 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import NetInfo from '@react-native-community/netinfo';
 import { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { createIncident, getMyIncidents, parseApiError } from '../../services/api';
+import { enqueue } from '../../utils/offlineQueue';
 import type { AuthSession } from '../../types/auth';
 import { useEffect } from 'react';
 import { useTheme, type Theme } from '../../theme/theme';
@@ -101,7 +103,7 @@ export function WorkerIncidentScreen({ session }: Props) {
         }
       } catch {}
 
-      const incident = await createIncident({
+      const payload = {
         zone, category, severity,
         description: description.trim(),
         involvedPersons: involvedPersons.trim() || undefined,
@@ -112,7 +114,23 @@ export function WorkerIncidentScreen({ session }: Props) {
         longitude,
         photoData: photo ?? undefined,
         incidentAt: new Date().toISOString().slice(0, 19),
-      });
+      };
+
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+      if (!isOnline) {
+        await enqueue('incident', payload as Record<string, unknown>);
+        setDescription('');
+        setInvolvedPersons('');
+        setImmediateAction('');
+        setFirstAidGiven(false);
+        setHospitalRequired(false);
+        setPhoto(null);
+        Alert.alert('Saved offline', 'Incident report queued — will send automatically when you reconnect.');
+        return;
+      }
+
+      const incident = await createIncident(payload);
 
       setIncidents((c) => [incident, ...c]);
       setDescription('');

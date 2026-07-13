@@ -1,7 +1,9 @@
+import NetInfo from '@react-native-community/netinfo';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getMyChecklistToday, submitSafetyChecklist } from '../../services/api';
+import { enqueue } from '../../utils/offlineQueue';
 import type { ChecklistPayload, SafetyChecklist } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { useTheme, type Theme } from '../../theme/theme';
@@ -93,6 +95,14 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
 
     setSubmitting(true);
     try {
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected && netState.isInternetReachable !== false;
+      if (!isOnline) {
+        await enqueue('safetyChecklist', checks as Record<string, unknown>);
+        Alert.alert('Saved offline', 'Checklist queued — will sync automatically when you reconnect.');
+        setSubmitting(false);
+        return;
+      }
       const saved = await submitSafetyChecklist(checks);
       setExisting(saved);
       setSubmitted(true);

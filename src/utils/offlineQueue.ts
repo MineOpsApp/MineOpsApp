@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { clockIn, clockOut, createHazardReport, createSosAlert, submitShiftLog } from '../services/api';
+import { clockIn, clockOut, createHazardReport, createIncident, createSosAlert, signOffDrillStep, submitIllegalMineReport, submitShiftLog, submitSafetyChecklist } from '../services/api';
 
 const QUEUE_KEY = 'mineops_offline_queue';
 
-export type OfflineActionType = 'hazard' | 'sos' | 'clockIn' | 'clockOut' | 'shiftLog';
+export type OfflineActionType = 'hazard' | 'sos' | 'clockIn' | 'clockOut' | 'shiftLog' | 'incident' | 'safetyChecklist' | 'drillSignOff' | 'illegalMineReport';
 
 export type QueuedAction = {
   id: string;
@@ -67,6 +67,20 @@ export async function drainQueue(): Promise<number> {
         }
         case 'shiftLog':
           await submitShiftLog({ ...(action.payload as Parameters<typeof submitShiftLog>[0]), clientRequestId: action.id });
+          break;
+        case 'incident':
+          await createIncident({ ...(action.payload as Parameters<typeof createIncident>[0]), clientRequestId: action.id });
+          break;
+        case 'safetyChecklist':
+          await submitSafetyChecklist(action.payload as Parameters<typeof submitSafetyChecklist>[0]);
+          break;
+        case 'drillSignOff': {
+          const p = action.payload as { drillId: number; step: string; notes?: string };
+          await signOffDrillStep(p.drillId, { step: p.step, notes: p.notes });
+          break;
+        }
+        case 'illegalMineReport':
+          await submitIllegalMineReport({ ...(action.payload as Parameters<typeof submitIllegalMineReport>[0]), clientRequestId: action.id });
           break;
       }
       await removeFromQueue(action.id);

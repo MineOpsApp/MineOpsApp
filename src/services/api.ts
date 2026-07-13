@@ -711,6 +711,7 @@ export function createIncident(payload: {
   longitude?: number;
   photoData?: string;
   incidentAt?: string;
+  clientRequestId?: string;
 }) {
   return post<any>('/incidents', payload);
 }
@@ -1847,6 +1848,7 @@ export function submitIllegalMineReport(payload: {
   photoData?: string;
   latitude?: number;
   longitude?: number;
+  clientRequestId?: string;
 }) {
   return post<IllegalMineReport>('/illegal-mine-reports', payload);
 }
