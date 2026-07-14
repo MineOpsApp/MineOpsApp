@@ -24,7 +24,7 @@ import type {
 import type { AuthPayload, AuthSession } from '../types/auth';
 import type { AuthUser } from '../types/auth';
 
-const API_BASE_URL = 'http://172.20.10.4:8080/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 const AUDIT_API_BASE_URL = API_BASE_URL.replace(':8080/api', ':8081/api');
 const REQUEST_TIMEOUT_MS = 30000;
 const REFRESH_THRESHOLD_SECS = 5 * 60; // refresh access token when < 5 min left
