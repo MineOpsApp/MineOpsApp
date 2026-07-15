@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SwipeBackView } from '../../components/SwipeBackView';
 import * as ImagePicker from 'expo-image-picker';
 
 import { getMyProfile, getInsuranceStatus, applyForInsurance, parseApiError, updateMyProfile } from '../../services/api';
@@ -157,8 +158,9 @@ export function WorkerProfileScreen({ session: _ }: Props) {
   // ── ID Card view ──────────────────────────────────────────────
   if (showIdCard) {
     return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <Pressable onPress={() => setShowIdCard(false)} style={styles.backBtn}>
+      <SwipeBackView onBack={() => setShowIdCard(false)}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <Pressable onPress={() => setShowIdCard(false)} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Back to Profile</Text>
         </Pressable>
 
@@ -211,6 +213,7 @@ export function WorkerProfileScreen({ session: _ }: Props) {
           This card is for identification purposes within the mine site only.
         </Text>
       </ScrollView>
+      </SwipeBackView>
     );
   }
 

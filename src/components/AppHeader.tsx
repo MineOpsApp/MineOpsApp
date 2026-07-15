@@ -1,4 +1,5 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
@@ -180,9 +181,14 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
       >
         <SafeAreaView style={[styles.modalSafe, { backgroundColor: theme.bgHero }]}>
           <View style={[styles.modalHeader, { borderBottomColor: 'rgba(255,255,255,0.1)' }]}>
-            <Text style={styles.modalTitle}>Notifications</Text>
+            <View>
+              <Text style={[styles.modalTitle, { fontSize: 20, letterSpacing: -0.2 }]}>Notifications</Text>
+              <Text style={styles.notifSubtitle}>
+                {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+              </Text>
+            </View>
             <Pressable onPress={() => setNotifVisible(false)} hitSlop={12} style={styles.closeBtn}>
-              <Text style={styles.closeIcon}>✕</Text>
+              <Ionicons name="close" size={20} color="rgba(255,255,255,0.6)" />
             </Pressable>
           </View>
           <NotificationsScreen onUnreadChange={setUnreadCount} />
@@ -247,6 +253,7 @@ function makeStyles(theme: Theme) {
       paddingVertical: 14,
     },
     modalTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
+    notifSubtitle: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 1 },
     closeBtn: { padding: 4 },
     closeIcon: { color: 'rgba(255,255,255,0.6)', fontSize: 18, fontWeight: '700' },
     siteRow: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, flexDirection: 'row', padding: 14 },

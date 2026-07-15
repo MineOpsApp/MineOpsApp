@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import { ImageBackground, View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import {
   getStoredEmail,
@@ -80,25 +82,31 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={styles.splash}>
+      <ImageBackground source={require('./assets/auth-background.jpg')} style={styles.splash} resizeMode="cover">
+        <LinearGradient
+          colors={['rgba(20,13,8,0.40)', 'rgba(20,13,8,0.68)', 'rgba(20,13,8,0.92)']}
+          style={StyleSheet.absoluteFill}
+        />
         <StatusBar style="light" />
-        <ActivityIndicator color="#1f6f5b" size="large" />
-      </View>
+        <ActivityIndicator color="#e0a83a" size="large" style={{ zIndex: 1 }} />
+      </ImageBackground>
     );
   }
 
   return (
-    <ThemeProvider>
-      <ThemedRoot
-        session={session}
-        storedEmail={storedEmail}
-        onAuthenticated={handleAuthenticated}
-        onLogout={handleLogout}
-      />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <ThemedRoot
+          session={session}
+          storedEmail={storedEmail}
+          onAuthenticated={handleAuthenticated}
+          onLogout={handleLogout}
+        />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  splash: { alignItems: 'center', backgroundColor: '#0d1117', flex: 1, justifyContent: 'center' },
+  splash: { alignItems: 'center', flex: 1, justifyContent: 'center' },
 });

@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SwipeBackView } from '../../components/SwipeBackView';
 
 import { getWorkerProfileByEmail } from '../../services/api';
 import type { UserProfile } from '../../services/api';
@@ -76,8 +77,9 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
   // ── ID Card view ──────────────────────────────────────────────
   if (showIdCard) {
     return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <Pressable onPress={() => setShowIdCard(false)} style={styles.backBtn}>
+      <SwipeBackView onBack={() => setShowIdCard(false)}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <Pressable onPress={() => setShowIdCard(false)} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Back to Profile</Text>
         </Pressable>
 
@@ -125,6 +127,7 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
           ) : null}
         </View>
       </ScrollView>
+      </SwipeBackView>
     );
   }
 

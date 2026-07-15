@@ -1,5 +1,6 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import * as IntentLauncher from 'expo-intent-launcher';
 import { Platform } from 'react-native';
 
 // Configure how notifications appear when app is in foreground
@@ -44,8 +45,18 @@ export async function registerForPushNotifications(): Promise<string | null> {
     await Notifications.setNotificationChannelAsync('sos', {
       name: 'SOS Emergency',
       importance: Notifications.AndroidImportance.MAX,
+      bypassDnd: true,
       vibrationPattern: [0, 500, 250, 500],
       lightColor: '#b42318',
+      sound: 'default',
+    });
+
+    await Notifications.setNotificationChannelAsync('danger-zone', {
+      name: 'Danger Zone Alerts',
+      importance: Notifications.AndroidImportance.MAX,
+      bypassDnd: true,
+      vibrationPattern: [0, 400, 200, 400],
+      lightColor: '#e0a83a',
       sound: 'default',
     });
   }
@@ -65,6 +76,15 @@ export function addNotificationListener(
   handler: (notification: Notifications.Notification) => void
 ) {
   return Notifications.addNotificationReceivedListener(handler);
+}
+
+export async function openDndAccessSettings(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  try {
+    await IntentLauncher.startActivityAsync('android.settings.NOTIFICATION_POLICY_ACCESS_SETTINGS');
+  } catch (error) {
+    console.log('Could not open DND access settings:', error);
+  }
 }
 
 export function addNotificationResponseListener(

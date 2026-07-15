@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, Text, View } from 'react-native';
+import { SwipeBackView } from '../components/SwipeBackView';
 
 import { WorkerHomeScreen } from '../screens/worker/WorkerHomeScreen';
 import { WorkerHazardsScreen } from '../screens/worker/WorkerHazardsScreen';
@@ -71,17 +72,17 @@ function WorkerMoreStack({
     </Pressable>
   );
 
-  if (screen === 'shift') return <View style={{ flex: 1 }}>{backBtn}<WorkerShiftScreen session={session} /></View>;
-  if (screen === 'handover') return <View style={{ flex: 1 }}>{backBtn}<WorkerHandoverScreen session={session} /></View>;
-  if (screen === 'drill') return <View style={{ flex: 1 }}>{backBtn}<WorkerDrillScreen session={session} /></View>;
-  if (screen === 'attendance') return <View style={{ flex: 1 }}>{backBtn}<WorkerAttendanceScreen session={session} /></View>;
-  if (screen === 'incident') return <View style={{ flex: 1 }}>{backBtn}<WorkerIncidentScreen session={session} /></View>;
-  if (screen === 'checklist') return <View style={{ flex: 1 }}>{backBtn}<WorkerSafetyChecklistScreen session={session} /></View>;
-  if (screen === 'messages') return <View style={{ flex: 1 }}>{backBtn}<WorkerMessagesScreen session={session} /></View>;
-  if (screen === 'loneWorker') return <View style={{ flex: 1 }}>{backBtn}<WorkerLoneWorkerScreen /></View>;
-  if (screen === 'community') return <View style={{ flex: 1 }}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></View>;
-  if (screen === 'search') return <View style={{ flex: 1 }}>{backBtn}<SearchScreen session={session} /></View>;
-  if (screen === 'illegalReport') return <View style={{ flex: 1 }}>{backBtn}<IllegalMineReportScreen /></View>;
+  if (screen === 'shift') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerShiftScreen session={session} /></SwipeBackView>;
+  if (screen === 'handover') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerHandoverScreen session={session} /></SwipeBackView>;
+  if (screen === 'drill') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerDrillScreen session={session} /></SwipeBackView>;
+  if (screen === 'attendance') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerAttendanceScreen session={session} /></SwipeBackView>;
+  if (screen === 'incident') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerIncidentScreen session={session} /></SwipeBackView>;
+  if (screen === 'checklist') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerSafetyChecklistScreen session={session} /></SwipeBackView>;
+  if (screen === 'messages') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerMessagesScreen session={session} /></SwipeBackView>;
+  if (screen === 'loneWorker') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerLoneWorkerScreen /></SwipeBackView>;
+  if (screen === 'community') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></SwipeBackView>;
+  if (screen === 'search') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SearchScreen session={session} /></SwipeBackView>;
+  if (screen === 'illegalReport') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<IllegalMineReportScreen /></SwipeBackView>;
 
   return (
     <MoreScreen

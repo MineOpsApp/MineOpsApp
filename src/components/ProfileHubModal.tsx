@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SwipeBackView } from './SwipeBackView';
 
 import { WorkerProfileScreen } from '../screens/worker/WorkerProfileScreen';
 import { WorkerEmergencyContactsScreen } from '../screens/worker/WorkerEmergencyContactsScreen';
@@ -58,77 +59,99 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
   if (screen === 'profile') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<WorkerProfileScreen session={session} /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerProfileScreen session={session} /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'emergencyContacts') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<WorkerEmergencyContactsScreen session={session} /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerEmergencyContactsScreen session={session} /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'pay') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<WorkerPayScreen session={session} /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerPayScreen session={session} /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'certifications') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<WorkerCertificationsScreen session={session} /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerCertificationsScreen session={session} /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'buyerProfile') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<BuyerProfileScreen session={session} /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<BuyerProfileScreen session={session} /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'sessions') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<ActiveSessionsScreen /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<ActiveSessionsScreen /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'notifications') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<NotificationPreferencesScreen /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<NotificationPreferencesScreen /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'terms') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<TermsOfServiceScreen /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<TermsOfServiceScreen /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'privacy') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<PrivacyPolicyScreen /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<PrivacyPolicyScreen /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'dataPrivacy') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<DataPrivacyScreen onAccountDeleted={() => { handleClose(); onLogout(); }} /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<DataPrivacyScreen onAccountDeleted={() => { handleClose(); onLogout(); }} /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }
   if (screen === 'help') {
     return (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-        <SafeAreaView style={styles.safe}>{backBtn}<HelpSupportScreen /></SafeAreaView>
+        <SafeAreaView style={styles.safe}>
+          <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<HelpSupportScreen /></SwipeBackView>
+        </SafeAreaView>
       </Modal>
     );
   }

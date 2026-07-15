@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { SwipeBackView } from '../../components/SwipeBackView';
 import {
   View,
   Text,
@@ -117,10 +118,11 @@ export default function ForumScreen() {
 
   if (selectedPost) {
     return (
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedPost(null)}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
+      <SwipeBackView onBack={() => setSelectedPost(null)}>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedPost(null)}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
           <Text style={styles.postTitle}>{selectedPost.title}</Text>
           <Text style={styles.postMeta}>{selectedPost.authorName} · {selectedPost.subforum}</Text>
@@ -154,7 +156,8 @@ export default function ForumScreen() {
             <Text style={styles.sendBtnText}>Send</Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SwipeBackView>
     );
   }
 

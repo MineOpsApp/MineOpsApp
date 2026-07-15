@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { getNotificationPreferences, updateNotificationPreferences, parseApiError } from '../../services/api';
+import { openDndAccessSettings } from '../../utils/notifications';
 import type { NotificationPreferences } from '../../services/api';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
@@ -10,6 +11,7 @@ const ALWAYS_ON: { icon: string; label: string; desc: string }[] = [
   { icon: '🆘', label: 'SOS Alerts', desc: 'Sent to supervisors and safety officers when a worker triggers an SOS. Cannot be muted.' },
   { icon: '🚨', label: 'Incident Alerts', desc: 'Serious and Critical incident reports. Cannot be muted.' },
   { icon: '💥', label: 'Blast Warnings', desc: 'Scheduled and cancelled blasts — clearing the area is safety-critical. Cannot be muted.' },
+  { icon: '🚧', label: 'Danger Zone Alerts', desc: 'Active danger zones at your site. Cannot be muted.' },
 ];
 
 export function NotificationPreferencesScreen() {
@@ -84,6 +86,25 @@ export function NotificationPreferencesScreen() {
         ))}
       </View>
 
+      {Platform.OS === 'android' && (
+        <>
+          <Text style={styles.sectionLabel}>DO NOT DISTURB</Text>
+          <View style={styles.list}>
+            <View style={styles.row}>
+              <View style={styles.body}>
+                <Text style={styles.label}>Bypass Do Not Disturb</Text>
+                <Text style={styles.desc}>
+                  Let SOS and Danger Zone alerts sound even when your phone is on silent or Do Not Disturb. Requires a one-time permission from Android.
+                </Text>
+              </View>
+            </View>
+            <Pressable onPress={openDndAccessSettings} style={styles.dndBtn}>
+              <Text style={styles.dndBtnText}>Open Do Not Disturb Settings</Text>
+            </Pressable>
+          </View>
+        </>
+      )}
+
       <Text style={styles.disclaimer}>
         Turning off a preference only affects push alerts on this device — you'll still see these updates in your in-app notification list.
       </Text>
@@ -106,6 +127,8 @@ function makeStyles(theme: Theme) {
     body: { flex: 1 },
     label: { color: theme.text, fontSize: 14, fontWeight: '800' },
     desc: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
+    dndBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, margin: 14, marginTop: 0, paddingVertical: 12 },
+    dndBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
     disclaimer: { color: theme.textMuted, fontSize: 11, fontWeight: '600', lineHeight: 16, textAlign: 'center' },
   });
 }

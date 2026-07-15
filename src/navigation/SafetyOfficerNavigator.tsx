@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, Text, View } from 'react-native';
+import { SwipeBackView } from '../components/SwipeBackView';
 
 import { SafetyHomeScreen } from '../screens/safety/SafetyHomeScreen';
 import { SafetyHazardsScreen } from '../screens/safety/SafetyHazardsScreen';
@@ -70,31 +71,31 @@ function SafetyMoreStack({
     </Pressable>
   );
 
-  if (screen === 'incidents') return <View style={{ flex: 1 }}>{backBtn}<SupervisorIncidentScreen session={session} /></View>;
-  if (screen === 'safetyIntelligence') return <View style={{ flex: 1 }}>{backBtn}<SafetyIntelligenceScreen session={session} /></View>;
-  if (screen === 'audit') return <View style={{ flex: 1 }}>{backBtn}<SafetyAuditScreen session={session} /></View>;
-  if (screen === 'reset') return <View style={{ flex: 1 }}>{backBtn}<SupervisorResetPasswordScreen session={session} /></View>;
+  if (screen === 'incidents') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorIncidentScreen session={session} /></SwipeBackView>;
+  if (screen === 'safetyIntelligence') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SafetyIntelligenceScreen session={session} /></SwipeBackView>;
+  if (screen === 'audit') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SafetyAuditScreen session={session} /></SwipeBackView>;
+  if (screen === 'reset') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorResetPasswordScreen session={session} /></SwipeBackView>;
   if (screen === 'workerContacts') return (
-    <View style={{ flex: 1 }}>
+    <SwipeBackView onBack={() => setScreen('menu')}>
       {backBtn}
       <SupervisorWorkerContactsScreen
         session={session}
         onViewProfile={(email) => { setViewingWorkerEmail(email); setScreen('workerProfile'); }}
       />
-    </View>
+    </SwipeBackView>
   );
   if (screen === 'workerProfile') return (
-    <View style={{ flex: 1 }}>
+    <SwipeBackView onBack={() => setScreen('workerContacts')}>
       <Pressable onPress={() => setScreen('workerContacts')} style={{ padding: 16, paddingBottom: 0 }}>
         <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back to Contacts</Text>
       </Pressable>
       <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
-    </View>
+    </SwipeBackView>
   );
-  if (screen === 'messages') return <View style={{ flex: 1 }}>{backBtn}<SupervisorMessagesScreen session={session} /></View>;
-  if (screen === 'community') return <View style={{ flex: 1 }}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></View>;
-  if (screen === 'search') return <View style={{ flex: 1 }}>{backBtn}<SearchScreen session={session} /></View>;
-  if (screen === 'illegalReport') return <View style={{ flex: 1 }}>{backBtn}<IllegalMineReportScreen /></View>;
+  if (screen === 'messages') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorMessagesScreen session={session} /></SwipeBackView>;
+  if (screen === 'community') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></SwipeBackView>;
+  if (screen === 'search') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SearchScreen session={session} /></SwipeBackView>;
+  if (screen === 'illegalReport') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<IllegalMineReportScreen /></SwipeBackView>;
 
   return (
     <MoreScreen

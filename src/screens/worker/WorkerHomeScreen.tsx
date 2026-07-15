@@ -9,7 +9,8 @@ import type { InventoryTransaction } from '../../services/api';
 import type { HazardReport, Notice, ShiftAnnouncement } from '../../types/actions';
 import { formatAgo, formatDateTime } from '../../utils/time';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession; onGoToLoneWorker?: () => void; onGoToSearch?: () => void };
@@ -81,7 +82,7 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
 
         {onGoToSearch ? (
           <Pressable onPress={onGoToSearch} style={styles.searchPill}>
-            <Text style={styles.searchPillIcon}>🔍</Text>
+            <Ionicons name="search" size={15} color={theme.textMuted} />
             <Text style={styles.searchPillText}>Search workers, hazards, incidents...</Text>
             <Text style={styles.searchPillArrow}>›</Text>
           </Pressable>
@@ -96,7 +97,7 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
             ]}
             onPress={onGoToLoneWorker}
           >
-            <Text style={styles.loneWorkerBannerIcon}>🛡</Text>
+            <MaterialCommunityIcons name="shield-account" size={22} color={loneWorker.deadline && new Date(loneWorker.deadline).getTime() < Date.now() ? theme.danger : theme.success} />
             <View style={styles.loneWorkerBannerBody}>
               <Text style={styles.loneWorkerBannerTitle}>Lone Worker Active</Text>
               <Text style={styles.loneWorkerBannerSub}>
@@ -110,23 +111,26 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
 
         {hazardError ? (
           <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+            <Ionicons name="warning" size={18} color={theme.danger} />
+            <Text style={styles.errorBannerText}>Cannot reach server — check your connection</Text>
           </View>
         ) : null}
 
         {expiredCerts > 0 ? (
           <View style={styles.certExpiredBanner}>
-            <Text style={styles.certBannerText}>🎓 {expiredCerts} certification{expiredCerts !== 1 ? 's' : ''} expired — visit More → My Certifications</Text>
+            <MaterialCommunityIcons name="certificate-outline" size={16} color={theme.danger} />
+            <Text style={styles.certBannerText}>{expiredCerts} certification{expiredCerts !== 1 ? 's' : ''} expired — visit More → My Certifications</Text>
           </View>
         ) : expiringCerts > 0 ? (
           <View style={styles.certExpiringBanner}>
-            <Text style={styles.certBannerText}>🎓 {expiringCerts} certification{expiringCerts !== 1 ? 's' : ''} expiring within 30 days</Text>
+            <MaterialCommunityIcons name="certificate-outline" size={16} color={theme.amber} />
+            <Text style={styles.certBannerText}>{expiringCerts} certification{expiringCerts !== 1 ? 's' : ''} expiring within 30 days</Text>
           </View>
         ) : null}
 
         {!hasContacts && !loadingCore ? (
           <View style={styles.contactsWarning}>
-            <Text style={styles.contactsWarningIcon}>📞</Text>
+            <Ionicons name="call" size={24} color={theme.amber} />
             <View style={styles.contactsWarningBody}>
               <Text style={styles.contactsWarningTitle}>No emergency contacts set</Text>
               <Text style={styles.contactsWarningSub}>Add contacts so supervisors can reach someone if you're in danger → My Account · Emergency Contacts</Text>
@@ -163,7 +167,7 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
             <Text style={styles.sectionTitle}>Announcements</Text>
             {announcements.map((a) => (
               <View key={a.id} style={styles.announcementCard}>
-                <Text style={styles.announcementIcon}>📢</Text>
+                <Ionicons name="megaphone" size={16} color={theme.amber} />
                 <View style={styles.announcementBody}>
                   <Text style={styles.announcementContent}>{a.content}</Text>
                   <Text style={styles.announcementMeta}>{a.createdByName} · {formatAgo(a.createdAt)}</Text>
@@ -188,7 +192,7 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
             <View style={styles.emptyCard}><Text style={styles.emptyText}>Loading...</Text></View>
           ) : hazards.length === 0 ? (
             <View style={styles.clearCard}>
-              <Text style={styles.clearIcon}>✓</Text>
+              <Ionicons name="checkmark-circle" size={22} color={theme.success} />
               <View>
                 <Text style={styles.clearTitle}>All Clear</Text>
                 <Text style={styles.clearSub}>No active hazards on site</Text>
@@ -257,7 +261,10 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
           ) : blastHistory.slice(0, 5).map((b) => (
             <View key={b.id} style={styles.blastCard}>
               <View style={styles.blastLeft}>
-                <Text style={styles.blastZone}>💥 {b.zone}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <MaterialCommunityIcons name="bomb" size={14} color={theme.text} />
+                  <Text style={styles.blastZone}>{b.zone}</Text>
+                </View>
                 <Text style={styles.blastTime}>{formatDateTime(b.blastTime)}</Text>
               </View>
               <View style={[styles.blastStatus,
@@ -279,67 +286,63 @@ function makeStyles(theme: Theme) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: theme.bg },
     container: { paddingBottom: 110 },
-    hero: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
+    hero: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingVertical: 14 },
     heroLeft: {},
     greeting: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
     site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
-    shiftBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
+    shiftBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: spacing.md, paddingVertical: 6 },
     shiftDot: { backgroundColor: '#4ade80', borderRadius: 4, height: 7, width: 7 },
     shiftText: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
-    strip: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 12 },
+    strip: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: spacing.md },
     stripItem: { alignItems: 'center', flex: 1 },
-    stripValue: { color: theme.text, fontSize: 18, fontWeight: '900' },
+    stripValue: { ...typography.h1, color: theme.text },
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 1, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
-    section: { paddingHorizontal: 20, paddingTop: 20 },
+    section: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
     sectionHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 10 },
-    sectionTitle: { color: theme.text, flex: 1, fontSize: 15, fontWeight: '900', letterSpacing: -0.2 },
+    sectionTitle: { ...typography.h2, color: theme.text, flex: 1 },
     alertBadge: { backgroundColor: '#b42318', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },
     alertBadgeText: { color: '#fff', fontSize: 11, fontWeight: '900' },
-    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 14 },
-    clearIcon: { color: theme.success, fontSize: 22 },
+    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, padding: 14 },
     clearTitle: { color: theme.success, fontSize: 14, fontWeight: '900' },
     clearSub: { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 1 },
     emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 14 },
     emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
-    alertCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, overflow: 'hidden' },
+    alertCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm, overflow: 'hidden' },
     severityBar: { alignSelf: 'stretch', width: 4 },
-    alertBody: { flex: 1, paddingHorizontal: 12, paddingVertical: 10 },
+    alertBody: { flex: 1, paddingHorizontal: spacing.md, paddingVertical: 10 },
     alertType: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 2 },
     alertLocation: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
-    severityPill: { borderRadius: 6, marginRight: 12, paddingHorizontal: 8, paddingVertical: 3 },
+    severityPill: { borderRadius: 6, marginRight: spacing.md, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     severityPillText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
-    noticeCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: 8, overflow: 'hidden' },
+    noticeCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: spacing.sm, overflow: 'hidden' },
     noticeAccent: { backgroundColor: theme.accent, width: 3 },
-    noticeBody: { flex: 1, padding: 12 },
+    noticeBody: { flex: 1, padding: spacing.md },
     noticeTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 3 },
     noticeMeta: { color: theme.textSub, fontSize: 12, fontWeight: '600', lineHeight: 17 },
-    searchPill: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: 16, marginBottom: 0, paddingHorizontal: 14, paddingVertical: 12 },
-    searchPillIcon: { fontSize: 15 },
+    searchPill: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: spacing.lg, marginBottom: 0, paddingHorizontal: 14, paddingVertical: spacing.md },
     searchPillText: { color: theme.textMuted, flex: 1, fontSize: 13, fontWeight: '600' },
     searchPillArrow: { color: theme.textMuted, fontSize: 18 },
-    loneWorkerBanner: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 16, marginBottom: 0, padding: 14 },
+    loneWorkerBanner: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, margin: spacing.lg, marginBottom: 0, padding: 14 },
     loneWorkerBannerGreen: { backgroundColor: theme.successLight, borderColor: theme.success },
     loneWorkerBannerRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
-    loneWorkerBannerIcon: { fontSize: 22 },
     loneWorkerBannerBody: { flex: 1 },
     loneWorkerBannerTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 2 },
     loneWorkerBannerSub: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
-    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
-    errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
-    contactsWarning: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: '#fcd34d', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 20, marginBottom: 0, padding: 14 },
-    contactsWarningIcon: { fontSize: 24 },
+    errorBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md },
+    errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700' },
+    contactsWarning: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: '#fcd34d', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, margin: spacing.xl, marginBottom: 0, padding: 14 },
     contactsWarningBody: { flex: 1 },
     contactsWarningTitle: { color: theme.amber, fontSize: 13, fontWeight: '900', marginBottom: 2 },
     contactsWarningSub: { color: theme.amber, fontSize: 12, fontWeight: '600', lineHeight: 17 },
-    certExpiredBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
-    certExpiringBanner: { backgroundColor: theme.amberLight, borderColor: '#fcd34d', borderRadius: 8, borderWidth: 1, margin: 20, marginBottom: 0, padding: 12 },
-    certBannerText: { color: theme.amber, fontSize: 12, fontWeight: '700', textAlign: 'center' },
-    blastCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: 12 },
+    certExpiredBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md },
+    certExpiringBanner: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: '#fcd34d', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md },
+    certBannerText: { color: theme.amber, fontSize: 12, fontWeight: '700' },
+    blastCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: spacing.md },
     blastLeft: {},
-    blastZone: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    blastZone: { color: theme.text, fontSize: 13, fontWeight: '800' },
     blastTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
-    blastStatus: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+    blastStatus: { borderRadius: 8, paddingHorizontal: spacing.sm, paddingVertical: 4 },
     statusExecuted: { backgroundColor: theme.successLight },
     statusCancelled: { backgroundColor: theme.bgInput },
     statusScheduled: { backgroundColor: theme.dangerLight },
@@ -349,8 +352,7 @@ function makeStyles(theme: Theme) {
     contribVol: { color: theme.success, fontSize: 14, fontWeight: '900' },
     contribUnit: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
     contribSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
-    announcementCard: { alignItems: 'flex-start', backgroundColor: theme.amberLight, borderColor: '#fde68a', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
-    announcementIcon: { fontSize: 16, marginTop: 1 },
+    announcementCard: { alignItems: 'flex-start', backgroundColor: theme.amberLight, borderColor: '#fde68a', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: spacing.sm, padding: spacing.md },
     announcementBody: { flex: 1 },
     announcementContent: { color: theme.text, fontSize: 14, fontWeight: '600', lineHeight: 19, marginBottom: 3 },
     announcementMeta: { color: theme.amber, fontSize: 11, fontWeight: '600' },

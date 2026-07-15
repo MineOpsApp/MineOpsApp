@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SwipeBackView } from '../../components/SwipeBackView';
 
 import { createOffer, type MineralListing } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
@@ -52,9 +53,10 @@ export function BuyerListingDetailScreen({ session, listing, onBack }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Pressable onPress={onBack} style={styles.backBtn}>
+    <SwipeBackView onBack={onBack}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <Pressable onPress={onBack} style={styles.backBtn}>
           <Text style={styles.backText}>← Back to listings</Text>
         </Pressable>
 
@@ -137,6 +139,7 @@ export function BuyerListingDetailScreen({ session, listing, onBack }: Props) {
         )}
       </ScrollView>
     </KeyboardAvoidingView>
+    </SwipeBackView>
   );
 }
 
