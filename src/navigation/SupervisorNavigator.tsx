@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { SwipeBackView } from '../components/SwipeBackView';
 
 import { SupervisorHomeScreen } from '../screens/supervisor/SupervisorHomeScreen';
@@ -45,6 +47,7 @@ import { SupervisorPermitStatusScreen } from '../screens/supervisor/SupervisorPe
 import { SupervisorBulkPurchaseScreen } from '../screens/supervisor/SupervisorBulkPurchaseScreen';
 import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
 import { SupervisorSubscriptionScreen } from '../screens/supervisor/SupervisorSubscriptionScreen';
+import { SupervisorStaffScreen } from '../screens/supervisor/SupervisorStaffScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -57,15 +60,8 @@ export type SupervisorTabParamList = {
 
 const Tab = createBottomTabNavigator<SupervisorTabParamList>();
 
-const TAB_ICONS: Record<string, string> = {
-  Home: '⌂',
-  Hazards: '⚠',
-  SOS: '🚨',
-  Notices: '📢',
-  More: '☰',
-};
 
-type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'multiSite' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription';
+type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'multiSite' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription' | 'staffAccounts';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -78,6 +74,8 @@ function SupervisorMoreStack({
   pendingRef: React.MutableRefObject<SupervisorMoreSubScreen | null>;
   onRegisterSetter: (setter: (s: SupervisorMoreSubScreen) => void) => void;
 }) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
   const [screen, setScreen] = useState<SupervisorMoreSubScreen>(() => {
     const pending = pendingRef.current;
     pendingRef.current = null;
@@ -90,8 +88,12 @@ function SupervisorMoreStack({
   }, [onRegisterSetter]);
 
   const backBtn = (
-    <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-      <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+    <Pressable
+      onPress={() => setScreen('menu')}
+      style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
+    >
+      <Ionicons name="chevron-back" size={16} color={theme.accent} />
+      <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Back</Text>
     </Pressable>
   );
 
@@ -120,8 +122,12 @@ function SupervisorMoreStack({
   if (screen === 'certifications') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorCertificationsScreen session={session} /></SwipeBackView>;
   if (screen === 'workerProfile') return (
     <SwipeBackView onBack={() => setScreen('workerContacts')}>
-      <Pressable onPress={() => setScreen('workerContacts')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back to Contacts</Text>
+      <Pressable
+        onPress={() => setScreen('workerContacts')}
+        style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
+      >
+        <Ionicons name="chevron-back" size={16} color={theme.accent} />
+        <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Contacts</Text>
       </Pressable>
       <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
     </SwipeBackView>
@@ -144,6 +150,7 @@ function SupervisorMoreStack({
   if (screen === 'bulkPurchase') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorBulkPurchaseScreen session={session} /></SwipeBackView>;
   if (screen === 'illegalReport') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<IllegalMineReportScreen /></SwipeBackView>;
   if (screen === 'subscription') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorSubscriptionScreen session={session} /></SwipeBackView>;
+  if (screen === 'staffAccounts') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorStaffScreen session={session} /></SwipeBackView>;
 
   return (
     <MoreScreen
@@ -152,6 +159,7 @@ function SupervisorMoreStack({
           title: 'Approvals & Access',
           items: [
             { icon: '✅', label: 'Worker Approvals', description: 'Approve or reject new worker registrations', onPress: () => setScreen('approvals') },
+            { icon: '🔐', label: 'Staff Accounts', description: 'Create supervisor and safety officer accounts', onPress: () => setScreen('staffAccounts') },
             { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for locked out worker', onPress: () => setScreen('reset') },
             { icon: '👤', label: 'Guest Access', description: 'Create and manage guest accounts', onPress: () => setScreen('guests') },
             { icon: '🎟', label: 'Guest Codes', description: 'Generate QR / PIN codes for site visitors and inspectors', onPress: () => setScreen('guestCodes') },
@@ -228,6 +236,7 @@ function SupervisorMoreStack({
 export function SupervisorNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
+  const isDark = mode === 'dark';
   const moreSetterRef = useRef<((s: SupervisorMoreSubScreen) => void) | null>(null);
   const pendingMoreScreenRef = useRef<SupervisorMoreSubScreen | null>(null);
 
@@ -235,18 +244,28 @@ export function SupervisorNavigator({ session, onLogout }: Props) {
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <AppHeader session={session} onLogout={onLogout} />
       <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: theme.accent,
-          tabBarInactiveTintColor: theme.textMuted,
-          tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder, borderTopWidth: 1, height: 64, paddingBottom: 10, paddingTop: 6 },
-          tabBarLabel: ({ color }) => (
-            <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
-          ),
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>{TAB_ICONS[route.name]}</Text>
-          ),
-        })}
+        screenOptions={({ route }) => {
+          const ICON_MAP: Record<string, [string, string]> = {
+            Home: ['home', 'home-outline'],
+            Hazards: ['warning', 'warning-outline'],
+            SOS: ['alert-circle', 'alert-circle-outline'],
+            Notices: ['megaphone', 'megaphone-outline'],
+            More: ['grid', 'grid-outline'],
+          };
+          const [active, inactive] = ICON_MAP[route.name] ?? ['ellipse', 'ellipse-outline'];
+          return {
+            headerShown: false,
+            tabBarActiveTintColor: theme.accent,
+            tabBarInactiveTintColor: theme.textMuted,
+            tabBarStyle: { backgroundColor: theme.tabBar, borderTopWidth: 0, elevation: 8, height: 64, paddingBottom: 10, paddingTop: 6, shadowColor: '#000', shadowOffset: { width: 0, height: -1 }, shadowOpacity: isDark ? 0.2 : 0.06, shadowRadius: 4 },
+            tabBarLabel: ({ color }) => (
+              <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
+            ),
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={(focused ? active : inactive) as ComponentProps<typeof Ionicons>['name']} size={22} color={color} />
+            ),
+          };
+        }}
       >
         <Tab.Screen name="Home">
           {({ navigation }) => (

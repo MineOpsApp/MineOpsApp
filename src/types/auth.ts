@@ -8,6 +8,7 @@ export type AuthUser = {
   assignedSite?: string;
   guestSubRole?: string;
   goldbodLicenseNumber?: string | null;
+  mustChangePassword?: boolean;
 };
 
 export type AuthSession = {

@@ -25,7 +25,8 @@ const SEVERITY_COLOR: Record<string, string> = {
 export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
@@ -77,6 +78,24 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
           <View style={styles.shiftBadge}>
             <View style={styles.shiftDot} />
             <Text style={styles.shiftText}>On Shift</Text>
+          </View>
+        </View>
+
+        {/* Status strip — floats over hero bottom edge */}
+        <View style={styles.strip}>
+          <View style={styles.stripItem}>
+            <Text style={[styles.stripValue, hazards.length > 0 && { color: '#b42318' }]}>{hazards.length}</Text>
+            <Text style={styles.stripLabel}>Alerts</Text>
+          </View>
+          <View style={styles.stripDivider} />
+          <View style={styles.stripItem}>
+            <Text style={styles.stripValue}>{notices.length}</Text>
+            <Text style={styles.stripLabel}>Notices</Text>
+          </View>
+          <View style={styles.stripDivider} />
+          <View style={styles.stripItem}>
+            <Text style={[styles.stripValue, { color: theme.accent }]}>Active</Text>
+            <Text style={styles.stripLabel}>Site Status</Text>
           </View>
         </View>
 
@@ -137,24 +156,6 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
             </View>
           </View>
         ) : null}
-
-        {/* Status strip */}
-        <View style={styles.strip}>
-          <View style={styles.stripItem}>
-            <Text style={[styles.stripValue, hazards.length > 0 && { color: '#b42318' }]}>{hazards.length}</Text>
-            <Text style={styles.stripLabel}>Alerts</Text>
-          </View>
-          <View style={styles.stripDivider} />
-          <View style={styles.stripItem}>
-            <Text style={styles.stripValue}>{notices.length}</Text>
-            <Text style={styles.stripLabel}>Notices</Text>
-          </View>
-          <View style={styles.stripDivider} />
-          <View style={styles.stripItem}>
-            <Text style={[styles.stripValue, { color: theme.accent }]}>Active</Text>
-            <Text style={styles.stripLabel}>Site Status</Text>
-          </View>
-        </View>
 
         <BlastAlert />
 
@@ -282,18 +283,36 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: theme.bg },
     container: { paddingBottom: 110 },
-    hero: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingVertical: 14 },
-    heroLeft: {},
-    greeting: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
-    site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+    hero: {
+      alignItems: 'center',
+      backgroundColor: theme.bgHero,
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.xl,
+      paddingVertical: 14,
+      ...cardShadow,
+      shadowOpacity: isDark ? 0.4 : 0.12,
+    },
+    heroLeft: { alignSelf: 'stretch', justifyContent: 'center', paddingBottom: 10 },
+    greeting: { ...typography.h2, color: '#ffffff' },
+    site: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '700', letterSpacing: 0.2, marginTop: 3 },
     shiftBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: spacing.md, paddingVertical: 6 },
     shiftDot: { backgroundColor: '#4ade80', borderRadius: 4, height: 7, width: 7 },
     shiftText: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
-    strip: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: spacing.md },
+    strip: { backgroundColor: theme.bgCard, borderRadius: 14, flexDirection: 'row', marginHorizontal: spacing.lg, marginTop: -16, paddingVertical: spacing.md, ...cardShadow },
     stripItem: { alignItems: 'center', flex: 1 },
     stripValue: { ...typography.h1, color: theme.text },
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 1, textTransform: 'uppercase' },
@@ -303,42 +322,42 @@ function makeStyles(theme: Theme) {
     sectionTitle: { ...typography.h2, color: theme.text, flex: 1 },
     alertBadge: { backgroundColor: '#b42318', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },
     alertBadgeText: { color: '#fff', fontSize: 11, fontWeight: '900' },
-    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, padding: 14 },
+    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, padding: 14, ...cardShadow },
     clearTitle: { color: theme.success, fontSize: 14, fontWeight: '900' },
     clearSub: { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 1 },
-    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 14 },
+    emptyCard: { backgroundColor: theme.bgCard, borderRadius: 10, padding: 14, ...cardShadow },
     emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
-    alertCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm, overflow: 'hidden' },
+    alertCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderRadius: 10, flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm, overflow: 'hidden', ...cardShadow },
     severityBar: { alignSelf: 'stretch', width: 4 },
     alertBody: { flex: 1, paddingHorizontal: spacing.md, paddingVertical: 10 },
     alertType: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 2 },
     alertLocation: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
     severityPill: { borderRadius: 6, marginRight: spacing.md, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     severityPillText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
-    noticeCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: spacing.sm, overflow: 'hidden' },
+    noticeCard: { backgroundColor: theme.bgCard, borderRadius: 10, flexDirection: 'row', marginBottom: spacing.sm, overflow: 'hidden', ...cardShadow },
     noticeAccent: { backgroundColor: theme.accent, width: 3 },
     noticeBody: { flex: 1, padding: spacing.md },
     noticeTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 3 },
     noticeMeta: { color: theme.textSub, fontSize: 12, fontWeight: '600', lineHeight: 17 },
-    searchPill: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: spacing.lg, marginBottom: 0, paddingHorizontal: 14, paddingVertical: spacing.md },
+    searchPill: { alignItems: 'center', backgroundColor: theme.bgCard, borderRadius: 10, flexDirection: 'row', gap: 10, margin: spacing.lg, marginBottom: 0, paddingHorizontal: 14, paddingVertical: spacing.md, ...cardShadow },
     searchPillText: { color: theme.textMuted, flex: 1, fontSize: 13, fontWeight: '600' },
     searchPillArrow: { color: theme.textMuted, fontSize: 18 },
     loneWorkerBanner: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, margin: spacing.lg, marginBottom: 0, padding: 14 },
-    loneWorkerBannerGreen: { backgroundColor: theme.successLight, borderColor: theme.success },
-    loneWorkerBannerRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
+    loneWorkerBannerGreen: { backgroundColor: theme.successLight, borderColor: theme.success, ...cardShadow },
+    loneWorkerBannerRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger, ...cardShadow },
     loneWorkerBannerBody: { flex: 1 },
     loneWorkerBannerTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 2 },
     loneWorkerBannerSub: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
-    errorBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md },
+    errorBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: '#f5c6c6', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md, ...cardShadow },
     errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700' },
-    contactsWarning: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: '#fcd34d', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, margin: spacing.xl, marginBottom: 0, padding: 14 },
+    contactsWarning: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: '#fcd34d', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, margin: spacing.xl, marginBottom: 0, padding: 14, ...cardShadow },
     contactsWarningBody: { flex: 1 },
     contactsWarningTitle: { color: theme.amber, fontSize: 13, fontWeight: '900', marginBottom: 2 },
     contactsWarningSub: { color: theme.amber, fontSize: 12, fontWeight: '600', lineHeight: 17 },
-    certExpiredBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md },
-    certExpiringBanner: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: '#fcd34d', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md },
+    certExpiredBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md, ...cardShadow },
+    certExpiringBanner: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: '#fcd34d', borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', margin: spacing.xl, marginBottom: 0, padding: spacing.md, ...cardShadow },
     certBannerText: { color: theme.amber, fontSize: 12, fontWeight: '700' },
-    blastCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: spacing.md },
+    blastCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderRadius: 10, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: spacing.md, ...cardShadow },
     blastLeft: {},
     blastZone: { color: theme.text, fontSize: 13, fontWeight: '800' },
     blastTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
@@ -347,12 +366,12 @@ function makeStyles(theme: Theme) {
     statusCancelled: { backgroundColor: theme.bgInput },
     statusScheduled: { backgroundColor: theme.dangerLight },
     blastStatusText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
-    contribCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 8, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, paddingHorizontal: 14, paddingVertical: 10 },
+    contribCard: { alignItems: 'center', backgroundColor: theme.successLight, borderRadius: 8, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, paddingHorizontal: 14, paddingVertical: 10, ...cardShadow },
     contribMineral: { color: theme.text, fontSize: 13, fontWeight: '800' },
     contribVol: { color: theme.success, fontSize: 14, fontWeight: '900' },
     contribUnit: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
     contribSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
-    announcementCard: { alignItems: 'flex-start', backgroundColor: theme.amberLight, borderColor: '#fde68a', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: spacing.sm, padding: spacing.md },
+    announcementCard: { alignItems: 'flex-start', backgroundColor: theme.amberLight, borderColor: '#fde68a', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: spacing.sm, padding: spacing.md, ...cardShadow },
     announcementBody: { flex: 1 },
     announcementContent: { color: theme.text, fontSize: 14, fontWeight: '600', lineHeight: 19, marginBottom: 3 },
     announcementMeta: { color: theme.amber, fontSize: 11, fontWeight: '600' },

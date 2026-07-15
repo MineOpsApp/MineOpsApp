@@ -1,11 +1,11 @@
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AuthSession } from '../types/auth';
-import { getUnreadNotificationCount, getMySites, switchSite, type SiteAccess } from '../services/api';
+import { getUnreadNotificationCount, getMySites, switchSite, getMyProfile, type SiteAccess, type UserProfile } from '../services/api';
 import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { getQueue } from '../utils/offlineQueue';
 import { ProfileHubModal } from './ProfileHubModal';
@@ -35,6 +35,7 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
   const [accessibleSites, setAccessibleSites] = useState<SiteAccess[]>([]);
   const [switching, setSwitching] = useState(false);
   const [profileHubVisible, setProfileHubVisible] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   const isSupervisor = session.user.role === 'supervisor';
 
@@ -67,6 +68,18 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
     getMySites().then(setAccessibleSites).catch(() => {});
   }, [isSupervisor]);
 
+  useEffect(() => {
+    getMyProfile().then(setProfile).catch(() => {});
+  }, []);
+
+  const prevHubVisible = useRef(false);
+  useEffect(() => {
+    if (prevHubVisible.current && !profileHubVisible) {
+      getMyProfile().then(setProfile).catch(() => {});
+    }
+    prevHubVisible.current = profileHubVisible;
+  }, [profileHubVisible]);
+
   const initials = session.user.fullName
     .split(' ')
     .filter(Boolean)
@@ -77,7 +90,6 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: theme.bgHero }]}>
-      <View style={[styles.accentLine, { backgroundColor: theme.accent }]} />
       {queueLength > 0 && (
         <View style={styles.syncBanner}>
           <Text style={styles.syncBannerText}>
@@ -90,7 +102,9 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
         <Pressable style={styles.left} onPress={() => setProfileHubVisible(true)} hitSlop={8}>
           <View style={styles.avatarRow}>
             <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitials}>{initials}</Text>
+              {profile?.profilePhoto
+                ? <Image source={{ uri: profile.profilePhoto }} style={styles.avatarImage} />
+                : <Text style={styles.avatarInitials}>{initials}</Text>}
             </View>
             <View>
               <Text style={styles.userName}>{session.user.fullName}</Text>
@@ -209,7 +223,6 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     safeArea: {},
-    accentLine: { height: 3, width: '100%' },
     header: {
       alignItems: 'center',
       flexDirection: 'row',
@@ -220,8 +233,9 @@ function makeStyles(theme: Theme) {
     },
     left: { flex: 1 },
     avatarRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-    avatarCircle: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 20, height: 38, justifyContent: 'center', width: 38 },
+    avatarCircle: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 20, height: 38, justifyContent: 'center', overflow: 'hidden', width: 38 },
     avatarInitials: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+    avatarImage: { borderRadius: 19, height: 38, width: 38 },
     userName: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
     userRole: { color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '600', marginTop: 1 },
     actions: { alignItems: 'center', flexDirection: 'row', gap: 4 },

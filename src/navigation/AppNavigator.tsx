@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { WorkerNavigator } from './WorkerNavigator';
@@ -8,6 +8,7 @@ import { GuestNavigator } from './GuestNavigator';
 import { BuyerNavigator } from './BuyerNavigator';
 import { GovernmentNavigator } from './GovernmentNavigator';
 import { drainQueue } from '../utils/offlineQueue';
+import { ChangePasswordScreen } from '../screens/shared/ChangePasswordScreen';
 import type { AuthSession } from '../types/auth';
 
 type AppNavigatorProps = {
@@ -16,6 +17,8 @@ type AppNavigatorProps = {
 };
 
 export function AppNavigator({ session, onLogout }: AppNavigatorProps) {
+  const [mustChange, setMustChange] = useState(Boolean(session.user.mustChangePassword));
+
   useEffect(() => {
     const unsubNet = NetInfo.addEventListener(state => {
       if (state.isConnected && state.isInternetReachable !== false) {
@@ -32,6 +35,10 @@ export function AppNavigator({ session, onLogout }: AppNavigatorProps) {
       unsubApp.remove();
     };
   }, []);
+
+  if (mustChange) {
+    return <ChangePasswordScreen forced onDone={() => setMustChange(false)} />;
+  }
 
   switch (session.user.role) {
     case 'worker':

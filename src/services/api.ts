@@ -685,6 +685,16 @@ export function getSiteDrillOperations() {
   return request<any[]>('/drill-operations');
 }
 
+export function createStaffAccount(payload: {
+  fullName: string;
+  email: string;
+  password: string;
+  role: 'supervisor' | 'safetyOfficer';
+  assignedSite: string;
+}) {
+  return post<any>('/admin/staff/create', payload);
+}
+
 export function createGuestAccount(payload: {
   fullName: string;
   email: string;
@@ -696,6 +706,10 @@ export function createGuestAccount(payload: {
   createdByName: string;
 }) {
   return post<any>('/admin/guests/create', payload);
+}
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return post<{ success: boolean }>('/auth/change-password', { currentPassword, newPassword });
 }
 
 export function savePushToken(token: string) {

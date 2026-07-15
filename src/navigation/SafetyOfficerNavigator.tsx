@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { SwipeBackView } from '../components/SwipeBackView';
 
 import { SafetyHomeScreen } from '../screens/safety/SafetyHomeScreen';
@@ -33,13 +35,6 @@ export type SafetyOfficerTabParamList = {
 
 const Tab = createBottomTabNavigator<SafetyOfficerTabParamList>();
 
-const TAB_ICONS: Record<string, string> = {
-  Home: '⌂',
-  Hazards: '⚠',
-  Zones: '🗺',
-  Notices: '📢',
-  More: '☰',
-};
 
 type SafetyMoreSubScreen = 'menu' | 'audit' | 'incidents' | 'safetyIntelligence' | 'workerContacts' | 'workerProfile' | 'messages' | 'community' | 'search' | 'illegalReport' | 'reset';
 
@@ -54,6 +49,8 @@ function SafetyMoreStack({
   pendingRef: React.MutableRefObject<SafetyMoreSubScreen | null>;
   onRegisterSetter: (setter: (s: SafetyMoreSubScreen) => void) => void;
 }) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
   const [screen, setScreen] = useState<SafetyMoreSubScreen>(() => {
     const pending = pendingRef.current;
     pendingRef.current = null;
@@ -66,8 +63,12 @@ function SafetyMoreStack({
   }, [onRegisterSetter]);
 
   const backBtn = (
-    <Pressable onPress={() => setScreen('menu')} style={{ padding: 16, paddingBottom: 0 }}>
-      <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back</Text>
+    <Pressable
+      onPress={() => setScreen('menu')}
+      style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
+    >
+      <Ionicons name="chevron-back" size={16} color={theme.accent} />
+      <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Back</Text>
     </Pressable>
   );
 
@@ -86,8 +87,12 @@ function SafetyMoreStack({
   );
   if (screen === 'workerProfile') return (
     <SwipeBackView onBack={() => setScreen('workerContacts')}>
-      <Pressable onPress={() => setScreen('workerContacts')} style={{ padding: 16, paddingBottom: 0 }}>
-        <Text style={{ color: '#1f6f5b', fontSize: 14, fontWeight: '800' }}>← Back to Contacts</Text>
+      <Pressable
+        onPress={() => setScreen('workerContacts')}
+        style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
+      >
+        <Ionicons name="chevron-back" size={16} color={theme.accent} />
+        <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Contacts</Text>
       </Pressable>
       <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
     </SwipeBackView>
@@ -131,6 +136,7 @@ function SafetyMoreStack({
 export function SafetyOfficerNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
+  const isDark = mode === 'dark';
   const moreSetterRef = useRef<((s: SafetyMoreSubScreen) => void) | null>(null);
   const pendingMoreScreenRef = useRef<SafetyMoreSubScreen | null>(null);
 
@@ -138,18 +144,28 @@ export function SafetyOfficerNavigator({ session, onLogout }: Props) {
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <AppHeader session={session} onLogout={onLogout} />
       <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: theme.accent,
-          tabBarInactiveTintColor: theme.textMuted,
-          tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder, borderTopWidth: 1, height: 64, paddingBottom: 10, paddingTop: 6 },
-          tabBarLabel: ({ color }) => (
-            <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
-          ),
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>{TAB_ICONS[route.name]}</Text>
-          ),
-        })}
+        screenOptions={({ route }) => {
+          const ICON_MAP: Record<string, [string, string]> = {
+            Home: ['home', 'home-outline'],
+            Hazards: ['warning', 'warning-outline'],
+            Zones: ['map', 'map-outline'],
+            Notices: ['megaphone', 'megaphone-outline'],
+            More: ['grid', 'grid-outline'],
+          };
+          const [active, inactive] = ICON_MAP[route.name] ?? ['ellipse', 'ellipse-outline'];
+          return {
+            headerShown: false,
+            tabBarActiveTintColor: theme.accent,
+            tabBarInactiveTintColor: theme.textMuted,
+            tabBarStyle: { backgroundColor: theme.tabBar, borderTopWidth: 0, elevation: 8, height: 64, paddingBottom: 10, paddingTop: 6, shadowColor: '#000', shadowOffset: { width: 0, height: -1 }, shadowOpacity: isDark ? 0.2 : 0.06, shadowRadius: 4 },
+            tabBarLabel: ({ color }) => (
+              <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
+            ),
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={(focused ? active : inactive) as ComponentProps<typeof Ionicons>['name']} size={22} color={color} />
+            ),
+          };
+        }}
       >
         <Tab.Screen name="Home">
           {({ navigation }) => (

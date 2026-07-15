@@ -1,5 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
@@ -23,37 +25,41 @@ export type BuyerTabParamList = {
 
 const Tab = createBottomTabNavigator<BuyerTabParamList>();
 
-const TAB_ICONS: Record<string, string> = {
-  Listings: '🛒',
-  Offers: '🤝',
-  Transactions: '📦',
-  Community: '🌐',
-  Search: '🔍',
-  Report: '🚨',
-};
 
 type Props = { session: AuthSession; onLogout: () => void };
 
 export function BuyerNavigator({ session, onLogout }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
+  const isDark = mode === 'dark';
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <AppHeader session={session} onLogout={onLogout} />
       <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: theme.accent,
-          tabBarInactiveTintColor: theme.textMuted,
-          tabBarStyle: { backgroundColor: theme.tabBar, borderTopColor: theme.tabBarBorder, borderTopWidth: 1, height: 64, paddingBottom: 10, paddingTop: 6 },
-          tabBarLabel: ({ color }) => (
-            <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
-          ),
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 20 }}>{TAB_ICONS[route.name]}</Text>
-          ),
-        })}
+        screenOptions={({ route }) => {
+          const ICON_MAP: Record<string, [string, string]> = {
+            Listings: ['storefront', 'storefront-outline'],
+            Offers: ['pricetag', 'pricetag-outline'],
+            Transactions: ['cube', 'cube-outline'],
+            Community: ['people', 'people-outline'],
+            Search: ['search', 'search-outline'],
+            Report: ['alert-circle', 'alert-circle-outline'],
+          };
+          const [active, inactive] = ICON_MAP[route.name] ?? ['ellipse', 'ellipse-outline'];
+          return {
+            headerShown: false,
+            tabBarActiveTintColor: theme.accent,
+            tabBarInactiveTintColor: theme.textMuted,
+            tabBarStyle: { backgroundColor: theme.tabBar, borderTopWidth: 0, elevation: 8, height: 64, paddingBottom: 10, paddingTop: 6, shadowColor: '#000', shadowOffset: { width: 0, height: -1 }, shadowOpacity: isDark ? 0.2 : 0.06, shadowRadius: 4 },
+            tabBarLabel: ({ color }) => (
+              <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
+            ),
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={(focused ? active : inactive) as ComponentProps<typeof Ionicons>['name']} size={22} color={color} />
+            ),
+          };
+        }}
       >
         <Tab.Screen name="Listings" children={() => <BuyerListingsScreen session={session} />} />
         <Tab.Screen name="Offers" children={() => <BuyerOffersScreen session={session} />} />

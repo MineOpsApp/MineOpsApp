@@ -51,17 +51,17 @@ const light: Theme = {
 };
 
 const dark: Theme = {
-  bg: '#1a140d',
-  bgCard: '#241b12',
-  bgHero: '#140d08',
-  bgStrip: '#241b12',
-  bgInput: '#2e2216',
-  border: '#3d2f20',
-  text: '#f2e6d3',
-  textSub: '#c2ac8e',
-  textMuted: '#8a7660',
+  bg: '#0a0a0a',
+  bgCard: '#161616',
+  bgHero: '#000000',
+  bgStrip: '#161616',
+  bgInput: '#1c1c1c',
+  border: '#2a2a2a',
+  text: '#f2f2f2',
+  textSub: '#a3a3a3',
+  textMuted: '#6b6b6b',
   accent: '#e0a83a',
-  accentLight: '#332616',
+  accentLight: '#2a2416',
   danger: '#e5534b',
   dangerLight: '#3a1c17',
   amber: '#d99a2b',
@@ -70,8 +70,8 @@ const dark: Theme = {
   successLight: '#1f2e17',
   info: '#6fb3b8',
   infoLight: '#16292a',
-  tabBar: '#241b12',
-  tabBarBorder: '#3d2f20',
+  tabBar: '#161616',
+  tabBarBorder: '#2a2a2a',
 };
 
 export function useTheme(mode: ThemeMode): Theme {
