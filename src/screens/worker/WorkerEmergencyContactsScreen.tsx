@@ -29,10 +29,11 @@ function validatePhone(raw: string): PhoneCheck {
   };
 }
 
+import { Ionicons } from '@expo/vector-icons';
 import { getMyEmergencyContacts, saveEmergencyContact, deleteEmergencyContact } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -186,9 +187,16 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
         return (
           <View key={type} style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                {type === 'PRIMARY' ? '★ Primary Contact' : '◎ Backup Contact'}
-              </Text>
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, flex: 1 }}>
+                <Ionicons
+                  name={type === 'PRIMARY' ? 'star' : 'disc-outline'}
+                  size={14}
+                  color={type === 'PRIMARY' ? theme.accent : theme.textMuted}
+                />
+                <Text style={styles.sectionTitle}>
+                  {type === 'PRIMARY' ? 'Primary Contact' : 'Backup Contact'}
+                </Text>
+              </View>
               {contact && !isEditing && (
                 <Pressable onPress={() => startEdit(type)} style={styles.editBtn}>
                   <Text style={styles.editBtnText}>Edit</Text>
@@ -245,7 +253,7 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
                   <Text style={styles.contactPhone}>{contact.phone}</Text>
                 </View>
                 <Pressable onPress={() => handleDelete(contact)} style={styles.deleteBtn}>
-                  <Text style={styles.deleteBtnText}>✕</Text>
+                  <Ionicons name="close" size={16} color={theme.danger} />
                 </Pressable>
               </View>
             ) : (
@@ -264,39 +272,38 @@ export function WorkerEmergencyContactsScreen({ session: _ }: Props) {
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageHeader: { marginBottom: 16 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900' },
-    pageSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
-    infoCard: { backgroundColor: theme.infoLight, borderColor: theme.info, borderRadius: 10, borderWidth: 1, marginBottom: 20, padding: 14 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageHeader: { marginBottom: spacing.lg },
+    pageTitle: { ...typography.h1, color: theme.text },
+    pageSub: { ...typography.caption, color: theme.textMuted, marginTop: 2 },
+    infoCard: { backgroundColor: theme.infoLight, borderColor: theme.info, borderRadius: 10, borderWidth: 1, marginBottom: spacing.xl, padding: 14 },
     infoText: { color: theme.info, fontSize: 13, fontWeight: '600', lineHeight: 19 },
-    section: { marginBottom: 16 },
-    sectionHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 8 },
-    sectionTitle: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '900' },
-    editBtn: { backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5 },
-    editBtnText: { color: theme.accent, fontSize: 13, fontWeight: '800' },
-    contactCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 14 },
+    section: { marginBottom: spacing.lg },
+    sectionHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: spacing.sm },
+    sectionTitle: { ...typography.bodyBold, color: theme.text },
+    editBtn: { backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: spacing.md, paddingVertical: 5 },
+    editBtnText: { ...typography.bodyBold, color: theme.accent, fontSize: 13 },
+    contactCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: spacing.md, padding: 14 },
     contactAvatar: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
     contactAvatarText: { color: '#ffffff', fontSize: 18, fontWeight: '900' },
     contactBody: { flex: 1 },
     contactName: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
-    contactMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 2 },
-    contactPhone: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    contactMeta: { ...typography.caption, color: theme.textMuted, fontWeight: '700', marginBottom: 2 },
+    contactPhone: { ...typography.bodyBold, color: theme.accent },
     deleteBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderRadius: 16, height: 32, justifyContent: 'center', width: 32 },
-    deleteBtnText: { color: theme.danger, fontSize: 13, fontWeight: '900' },
-    addCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderStyle: 'dashed', borderWidth: 1.5, flexDirection: 'row', gap: 10, padding: 16 },
+    addCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderStyle: 'dashed', borderWidth: 1.5, flexDirection: 'row', gap: 10, padding: spacing.lg },
     addIcon: { color: theme.accent, fontSize: 22, fontWeight: '300' },
-    addLabel: { color: theme.accent, fontSize: 14, fontWeight: '800' },
-    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 16 },
-    formLabel: { color: theme.text, fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 10, textTransform: 'uppercase' },
-    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 10 },
-    inputHint: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
-    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginTop: 10 },
-    formActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
-    cancelBtn: { backgroundColor: theme.bgInput, borderRadius: 8, flex: 1, paddingVertical: 12, alignItems: 'center' },
-    cancelBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
-    saveBtn: { backgroundColor: theme.accent, borderRadius: 8, flex: 2, paddingVertical: 12, alignItems: 'center' },
+    addLabel: { ...typography.bodyBold, color: theme.accent },
+    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: spacing.lg },
+    formLabel: { ...typography.label, color: theme.text, marginBottom: 6, marginTop: 10 },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '600', paddingHorizontal: spacing.md, paddingVertical: 10 },
+    inputHint: { ...typography.label, color: theme.textMuted, marginTop: 4, textTransform: 'none' as const },
+    errorText: { ...typography.bodyBold, color: theme.danger, marginTop: 10 },
+    formActions: { flexDirection: 'row', gap: 10, marginTop: spacing.lg },
+    cancelBtn: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 8, flex: 1, paddingVertical: spacing.md },
+    cancelBtnText: { ...typography.bodyBold, color: theme.textSub },
+    saveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 2, paddingVertical: spacing.md },
     saveBtnDisabled: { opacity: 0.6 },
-    saveBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+    saveBtnText: { ...typography.bodyBold, color: '#ffffff' },
   });
 }

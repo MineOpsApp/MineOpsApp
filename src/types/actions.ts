@@ -65,6 +65,9 @@ export type WorkerMessage = {
   repliedAt?: string | null;
   readAt?: string | null;
   createdAt: string;
+  recipientEmail?: string | null;
+  recipientName?: string | null;
+  initiatedBy?: string;
 };
 
 export type DangerZone = {

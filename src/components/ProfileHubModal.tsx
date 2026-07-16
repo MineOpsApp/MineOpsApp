@@ -42,6 +42,15 @@ type Props = {
   onLogout: () => void;
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  worker: 'Field Worker',
+  supervisor: 'Supervisor',
+  safetyOfficer: 'Safety Officer',
+  guest: 'Guest',
+  buyer: 'Mineral Buyer',
+  government: 'Government Official',
+};
+
 export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) {
   const [screen, setScreen] = useState<Screen>('menu');
   const { mode, setMode } = useThemeMode();
@@ -211,22 +220,25 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
       <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Account</Text>
-          <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={12}>
-            <Ionicons name="close" size={20} color="rgba(255,255,255,0.6)" />
-          </Pressable>
-        </View>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.avatarCard}>
-            <View style={styles.avatar}>
-              {profile?.profilePhoto
-                ? <Image source={{ uri: profile.profilePhoto }} style={styles.avatarImage} />
-                : <Text style={styles.avatarInitials}>{initials}</Text>}
-            </View>
-            <View style={styles.avatarInfo}>
-              <Text style={styles.avatarName}>{session.user.fullName}</Text>
-              {session.user.assignedSite ? <Text style={styles.avatarSite}>{session.user.assignedSite}</Text> : null}
+          <View style={styles.hero}>
+            <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={12}>
+              <Ionicons name="close" size={20} color={theme.textMuted} />
+            </Pressable>
+            {profile?.profilePhoto
+              ? <Image source={{ uri: profile.profilePhoto }} style={styles.heroPhoto} />
+              : <View style={styles.heroPhotoPlaceholder}>
+                  <Text style={styles.heroInitialsText}>{initials}</Text>
+                </View>}
+            <View style={styles.heroInfo}>
+              <Text style={styles.heroName}>{session.user.fullName}</Text>
+              <Text style={styles.heroRole}>
+                {ROLE_LABELS[role] ?? role}
+                {session.user.assignedSite ? ` · ${session.user.assignedSite}` : ''}
+              </Text>
+              {profile?.createdAt ? (
+                <Text style={styles.heroSince}>Member since {new Date(profile.createdAt).getFullYear()}</Text>
+              ) : null}
             </View>
           </View>
 
@@ -316,7 +328,7 @@ export function ProfileHubModal({ visible, session, onClose, onLogout }: Props) 
               <Text style={styles.arrow}>›</Text>
             </Pressable>
             <Pressable onPress={() => { handleClose(); onLogout(); }} style={styles.row}>
-              <View style={styles.iconWrap}><Ionicons name="log-out-outline" size={20} color={theme.danger} /></View>
+              <View style={[styles.iconWrap, { backgroundColor: theme.dangerLight }]}><Ionicons name="log-out-outline" size={20} color={theme.danger} /></View>
               <View style={styles.body}>
                 <Text style={[styles.label, styles.signOutLabel]}>Sign Out</Text>
                 <Text style={styles.desc}>End your current session</Text>
@@ -339,45 +351,32 @@ function makeStyles(theme: Theme, isDark: boolean) {
   };
   return StyleSheet.create({
     safe: { backgroundColor: theme.bg, flex: 1 },
-    header: {
-      alignItems: 'center',
-      backgroundColor: theme.bgHero,
-      borderBottomColor: 'rgba(255,255,255,0.08)',
-      borderBottomWidth: 1,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.md,
-    },
-    headerTitle: { ...typography.h2, color: '#ffffff' },
-    closeBtn: { padding: spacing.xs },
-    content: { padding: spacing.xl, paddingBottom: 40 },
-    avatarCard: {
+    hero: {
       alignItems: 'center',
       backgroundColor: theme.bgCard,
-      borderRadius: 16,
+      borderRadius: 12,
       flexDirection: 'row',
       gap: spacing.md,
-      marginBottom: spacing.xxl,
-      padding: spacing.lg,
+      marginBottom: spacing.lg,
+      padding: spacing.md,
       ...cardShadow,
     },
-    avatar: {
+    closeBtn: { position: 'absolute', top: spacing.xs, right: spacing.xs, padding: spacing.xs, zIndex: 1 },
+    heroPhoto: { borderRadius: 10, height: 64, width: 64 },
+    heroPhotoPlaceholder: {
       alignItems: 'center',
-      backgroundColor: theme.bgHero,
-      borderColor: theme.accent,
-      borderRadius: 28,
-      borderWidth: 2,
-      height: 56,
+      backgroundColor: theme.bgInput,
+      borderRadius: 10,
+      height: 64,
       justifyContent: 'center',
-      overflow: 'hidden',
-      width: 56,
+      width: 64,
     },
-    avatarImage: { borderRadius: 28, height: 56, width: 56 },
-    avatarInitials: { color: '#ffffff', fontSize: 20, fontWeight: '900' },
-    avatarInfo: { flex: 1 },
-    avatarName: { ...typography.h3, color: theme.text, marginBottom: 3 },
-    avatarSite: { ...typography.caption, color: theme.textMuted },
+    heroInitialsText: { color: theme.text, fontSize: 22, fontWeight: '900' },
+    heroInfo: { flex: 1 },
+    heroName: { ...typography.h3, color: theme.text, marginBottom: 3 },
+    heroRole: { color: theme.textMuted, fontSize: 12, fontWeight: '700' },
+    heroSince: { color: theme.textMuted, fontSize: 11, marginTop: 4 },
+    content: { padding: spacing.xl, paddingBottom: 40 },
     sectionLabel: { ...typography.label, color: theme.textMuted, marginBottom: spacing.sm, marginLeft: spacing.xs },
     list: {
       backgroundColor: theme.bgCard,

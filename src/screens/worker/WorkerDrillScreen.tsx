@@ -7,7 +7,9 @@ import { InputField } from '../../components/InputField';
 import { startDrillOperation, signOffDrillStep, getMyDrillOperations } from '../../services/api';
 import { enqueue } from '../../utils/offlineQueue';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type DrillOp = {
@@ -31,11 +33,15 @@ type Props = { session: AuthSession };
 const DRILL_TYPES = ['Rotary', 'Percussion', 'Diamond Core', 'DTH', 'Auger'];
 const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D'];
 
-const STEPS: { key: string; label: string; description: string; icon: string }[] = [
-  { key: 'setup', label: 'Setup & Safety Check', description: 'Equipment inspected, area secured', icon: '🔧' },
-  { key: 'drilling', label: 'Drilling', description: 'Active drilling in progress', icon: '⛏' },
-  { key: 'blasting', label: 'Blasting', description: 'Controlled blasting executed', icon: '💥' },
-  { key: 'cleanup', label: 'Cleanup & Close', description: 'Area cleared, equipment secured', icon: '✅' },
+type StepIcon =
+  | { lib: 'ionicons'; name: ComponentProps<typeof Ionicons>['name'] }
+  | { lib: 'material'; name: ComponentProps<typeof MaterialCommunityIcons>['name'] };
+
+const STEPS: { key: string; label: string; description: string; icon: StepIcon }[] = [
+  { key: 'setup', label: 'Setup & Safety Check', description: 'Equipment inspected, area secured', icon: { lib: 'ionicons', name: 'build' } },
+  { key: 'drilling', label: 'Drilling', description: 'Active drilling in progress', icon: { lib: 'material', name: 'pickaxe' } },
+  { key: 'blasting', label: 'Blasting', description: 'Controlled blasting executed', icon: { lib: 'material', name: 'bomb' } },
+  { key: 'cleanup', label: 'Cleanup & Close', description: 'Area cleared, equipment secured', icon: { lib: 'ionicons', name: 'checkmark-circle' } },
 ];
 
 function getStepStatus(drill: DrillOp, stepKey: string): StepStatus {
@@ -141,7 +147,10 @@ export function WorkerDrillScreen({ session }: Props) {
       <Text style={styles.pageTitle}>Drill Operations</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>⛏ Start New Operation</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', gap: spacing.sm, marginBottom: 14 }}>
+          <MaterialCommunityIcons name="pickaxe" size={18} color={theme.text} />
+          <Text style={styles.cardTitle}>Start New Operation</Text>
+        </View>
 
         <Text style={styles.fieldLabel}>Zone</Text>
         <View style={styles.pillRow}>
@@ -187,7 +196,11 @@ export function WorkerDrillScreen({ session }: Props) {
                   <View key={step.key} style={[styles.step, status === 'done' && styles.stepDone, status === 'locked' && styles.stepLocked]}>
                     <View style={styles.stepLeft}>
                       <View style={[styles.stepDot, status === 'done' ? styles.stepDotDone : status === 'active' ? styles.stepDotActive : styles.stepDotLocked]}>
-                        <Text style={styles.stepDotText}>{status === 'done' ? '✓' : step.icon}</Text>
+                        {status === 'done'
+                          ? <Ionicons name="checkmark" size={18} color="#ffffff" />
+                          : step.icon.lib === 'ionicons'
+                            ? <Ionicons name={step.icon.name} size={18} color="#ffffff" />
+                            : <MaterialCommunityIcons name={step.icon.name as ComponentProps<typeof MaterialCommunityIcons>['name']} size={18} color="#ffffff" />}
                       </View>
                       <View style={styles.stepBody}>
                         <Text style={[styles.stepLabel, status === 'done' && styles.stepLabelDone, status === 'locked' && styles.stepLabelLocked]}>
@@ -205,7 +218,10 @@ export function WorkerDrillScreen({ session }: Props) {
                           value={stepNotes[`${drill.id}-${step.key}`] ?? ''}
                         />
                         <Pressable onPress={() => signOff(drill.id, step.key)} style={styles.signOffBtn}>
-                          <Text style={styles.signOffBtnText}>Sign Off ✓</Text>
+                          <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                            <Text style={styles.signOffBtnText}>Sign Off</Text>
+                            <Ionicons name="checkmark" size={14} color="#ffffff" />
+                          </View>
                         </Pressable>
                       </View>
                     ) : null}
@@ -224,7 +240,7 @@ export function WorkerDrillScreen({ session }: Props) {
             <View key={drill.id} style={styles.completedCard}>
               <View style={styles.completedLeft}>
                 <View style={styles.completedCheck}>
-                  <Text style={styles.completedCheckText}>✓</Text>
+                  <Ionicons name="checkmark" size={16} color={theme.accent} />
                 </View>
                 <View>
                   <Text style={styles.drillType}>{drill.drillType} — {drill.zone}</Text>
@@ -238,7 +254,7 @@ export function WorkerDrillScreen({ session }: Props) {
 
       {drills.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>⛏</Text>
+          <MaterialCommunityIcons name="pickaxe" size={40} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No drill operations yet</Text>
           <Text style={styles.emptySub}>Start one above</Text>
         </View>
@@ -249,48 +265,45 @@ export function WorkerDrillScreen({ session }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
-    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageTitle: { ...typography.h1, color: theme.text, marginBottom: spacing.lg },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg },
+    cardTitle: { ...typography.bodyBold, color: theme.text },
+    fieldLabel: { ...typography.label, color: theme.textSub, marginBottom: spacing.sm },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
     pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
-    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
-    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 12 },
-    drillCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, overflow: 'hidden' },
+    sectionTitle: { ...typography.h3, color: theme.text, marginBottom: spacing.md },
+    drillCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, overflow: 'hidden' },
     drillHeader: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
     drillType: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
-    drillMeta: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+    drillMeta: { color: 'rgba(255,255,255,0.5)', ...typography.caption, marginTop: 2 },
     inProgressBadge: { backgroundColor: 'rgba(74,222,128,0.15)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
     inProgressText: { color: '#4ade80', fontSize: 11, fontWeight: '800' },
-    drillStarted: { color: theme.textMuted, fontSize: 11, fontWeight: '700', paddingHorizontal: 14, paddingVertical: 8 },
+    drillStarted: { ...typography.label, color: theme.textMuted, paddingHorizontal: 14, paddingVertical: spacing.sm, textTransform: 'none' as const },
     step: { borderTopColor: theme.bg, borderTopWidth: 1, padding: 14 },
     stepDone: { backgroundColor: theme.bgCard },
     stepLocked: { opacity: 0.45 },
-    stepLeft: { alignItems: 'flex-start', flexDirection: 'row', gap: 12 },
+    stepLeft: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md },
     stepDot: { alignItems: 'center', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
     stepDotDone: { backgroundColor: theme.accent },
     stepDotActive: { backgroundColor: theme.bgHero },
     stepDotLocked: { backgroundColor: theme.border },
-    stepDotText: { fontSize: 16 },
     stepBody: { flex: 1 },
-    stepLabel: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 2 },
+    stepLabel: { ...typography.bodyBold, color: theme.text, marginBottom: 2 },
     stepLabelDone: { color: theme.accent },
     stepLabelLocked: { color: theme.textMuted },
-    stepDesc: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
-    stepAction: { marginTop: 12 },
+    stepDesc: { ...typography.caption, color: theme.textMuted },
+    stepAction: { marginTop: spacing.md },
     signOffBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, marginTop: 6, paddingVertical: 10 },
     signOffBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
-    completedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 8, padding: 12 },
-    completedLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
+    completedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.sm, padding: spacing.md },
+    completedLeft: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
     completedCheck: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
-    completedCheckText: { color: theme.accent, fontSize: 14, fontWeight: '900' },
-    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
-    emptyIcon: { fontSize: 32, marginBottom: 10 },
-    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
-    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: spacing.xxxl },
+    emptyTitle: { ...typography.bodyBold, color: theme.text, marginBottom: spacing.xs },
+    emptySub: { ...typography.caption, color: theme.textMuted },
   });
 }

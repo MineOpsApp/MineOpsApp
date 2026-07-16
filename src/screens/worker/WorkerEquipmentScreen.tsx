@@ -6,7 +6,9 @@ import { ActionButton } from '../../components/ActionButton';
 import { getWorkerProfile, updateWorkerEquipmentStatus, reportEquipmentFault, requestEquipmentMaintenance, logEquipmentShift, getEquipmentShiftLogs, parseApiError } from '../../services/api';
 import type { WorkerProfile } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type EquipmentStatus = 'Operational' | 'Idle' | 'Maintenance' | 'Flagged';
@@ -21,11 +23,11 @@ type ShiftLog = {
   loggedAt: string;
 };
 
-const STATUS_CONFIG: Record<EquipmentStatus, { color: string; bg: string; icon: string }> = {
-  Operational: { color: '#15803d', bg: '#f0fdf4', icon: '✓' },
-  Idle: { color: '#a15c00', bg: '#fffbeb', icon: '⏸' },
-  Maintenance: { color: '#1d5f99', bg: '#eff6ff', icon: '⚙' },
-  Flagged: { color: '#b42318', bg: '#fff5f5', icon: '⚑' },
+const STATUS_CONFIG: Record<EquipmentStatus, { color: string; bg: string; icon: ComponentProps<typeof Ionicons>['name'] }> = {
+  Operational: { color: '#15803d', bg: '#f0fdf4', icon: 'checkmark-circle' },
+  Idle: { color: '#a15c00', bg: '#fffbeb', icon: 'pause-circle' },
+  Maintenance: { color: '#1d5f99', bg: '#eff6ff', icon: 'construct' },
+  Flagged: { color: '#b42318', bg: '#fff5f5', icon: 'flag' },
 };
 
 const CHECK_LABELS: Record<ShiftCheckType, string> = {
@@ -57,7 +59,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
 
   const equipment = profile?.assignedEquipment[0];
   const currentStatus = equipment?.status ?? 'Unknown';
-  const statusConfig = STATUS_CONFIG[currentStatus as EquipmentStatus] ?? { color: theme.textSub, bg: theme.bgInput, icon: '?' };
+  const statusConfig = STATUS_CONFIG[currentStatus as EquipmentStatus] ?? { color: theme.textSub, bg: theme.bgInput, icon: 'help-circle' as ComponentProps<typeof Ionicons>['name'] };
 
   async function logShift() {
     if (!equipment) { Alert.alert('No equipment', 'No equipment assigned.'); return; }
@@ -110,7 +112,8 @@ export function WorkerEquipmentScreen({ session }: Props) {
               <Text style={styles.equipCode}>{equipment.code}</Text>
             </View>
             <View style={[styles.statusPill, { backgroundColor: statusConfig.color }]}>
-              <Text style={styles.statusPillText}>{statusConfig.icon} {currentStatus}</Text>
+              <Ionicons name={statusConfig.icon} size={13} color="#ffffff" />
+              <Text style={styles.statusPillText}>{currentStatus}</Text>
             </View>
           </View>
           <Text style={styles.equipInstructions}>{equipment.instructions}</Text>
@@ -136,7 +139,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
             const active = shiftStatus === s;
             return (
               <Pressable key={s} onPress={() => setShiftStatus(s)} style={[styles.statusBtn, active && { backgroundColor: cfg.bg, borderColor: cfg.color }]}>
-                <Text style={[styles.statusBtnIcon, active && { color: cfg.color }]}>{cfg.icon}</Text>
+                <Ionicons name={cfg.icon} size={20} color={active ? cfg.color : theme.textMuted} style={{ marginBottom: 3 }} />
                 <Text style={[styles.statusBtnText, active && { color: cfg.color }]}>{s}</Text>
               </Pressable>
             );
@@ -150,7 +153,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Recent Checks</Text>
           {shiftLogs.slice(0, 5).map((log) => {
-            const cfg = STATUS_CONFIG[log.status as EquipmentStatus] ?? { color: theme.textSub, bg: theme.bgInput, icon: '?' };
+            const cfg = STATUS_CONFIG[log.status as EquipmentStatus] ?? { color: theme.textSub, bg: theme.bgInput, icon: 'help-circle' as ComponentProps<typeof Ionicons>['name'] };
             return (
               <View key={log.id} style={styles.logRow}>
                 <View style={[styles.logDot, { backgroundColor: cfg.color }]} />
@@ -182,34 +185,33 @@ export function WorkerEquipmentScreen({ session }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
-    equipCard: { borderRadius: 12, borderWidth: 2, marginBottom: 16, padding: 16 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageTitle: { ...typography.h1, color: theme.text, marginBottom: spacing.lg },
+    equipCard: { borderRadius: 12, borderWidth: 2, marginBottom: spacing.lg, padding: spacing.lg },
     equipTop: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-    equipName: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 2 },
-    equipCode: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
-    statusPill: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
+    equipName: { ...typography.h3, color: theme.text, marginBottom: 2 },
+    equipCode: { ...typography.bodyBold, color: theme.textSub },
+    statusPill: { alignItems: 'center', borderRadius: 20, flexDirection: 'row', gap: 4, paddingHorizontal: spacing.md, paddingVertical: 5 },
     statusPillText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
-    equipInstructions: { color: theme.textSub, fontSize: 12, fontWeight: '600', lineHeight: 18 },
-    loadingCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-    loadingText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
-    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
-    pillRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, flex: 1, alignItems: 'center', paddingVertical: 8 },
+    equipInstructions: { ...typography.caption, color: theme.textSub, lineHeight: 18 },
+    loadingCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg },
+    loadingText: { ...typography.caption, color: theme.textMuted },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg },
+    cardTitle: { ...typography.bodyBold, color: theme.text, marginBottom: 14 },
+    fieldLabel: { ...typography.label, color: theme.textSub, marginBottom: spacing.sm },
+    pillRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: 14 },
+    pill: { alignItems: 'center', borderColor: theme.border, borderRadius: 20, borderWidth: 1, flex: 1, paddingVertical: spacing.sm },
     pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
-    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
-    statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+    statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
     statusBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 10, borderWidth: 1, paddingVertical: 10, width: '48%' },
-    statusBtnIcon: { color: theme.textMuted, fontSize: 16, marginBottom: 3 },
-    statusBtnText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    statusBtnText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
     logRow: { alignItems: 'center', flexDirection: 'row', marginBottom: 10 },
     logDot: { borderRadius: 5, height: 10, marginRight: 10, width: 10 },
     logBody: { flex: 1 },
-    logCheck: { color: theme.text, fontSize: 13, fontWeight: '800' },
-    logStatus: { fontSize: 12, fontWeight: '700' },
-    logTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
+    logCheck: { ...typography.bodyBold, color: theme.text, fontSize: 13 },
+    logStatus: { ...typography.caption, fontWeight: '700' },
+    logTime: { ...typography.label, color: theme.textMuted, textTransform: 'none' as const },
   });
 }

@@ -4,12 +4,14 @@ import NetInfo from '@react-native-community/netinfo';
 import { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { ActionButton } from '../../components/ActionButton';
 import { createIncident, getMyIncidents, parseApiError } from '../../services/api';
 import { enqueue } from '../../utils/offlineQueue';
 import type { AuthSession } from '../../types/auth';
 import { useEffect } from 'react';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Incident = {
@@ -36,12 +38,16 @@ const SEVERITY_COLORS: Record<string, string> = {
   Critical: '#b42318',
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  'Injury': '🤕',
-  'Near Miss': '⚠️',
-  'Equipment Damage': '🔧',
-  'Environmental': '🌿',
+const CATEGORY_ICON_MAP: Record<string, ComponentProps<typeof Ionicons>['name']> = {
+  'Injury': 'body',
+  'Near Miss': 'warning',
+  'Equipment Damage': 'construct',
+  'Environmental': 'leaf',
 };
+
+function CategoryIcon({ category, size = 14, color }: { category: string; size?: number; color: string }) {
+  return <Ionicons name={CATEGORY_ICON_MAP[category] ?? 'alert-circle'} size={size} color={color} />;
+}
 
 function IncidentPhoto({ photoData }: { photoData: string }) {
   const { mode } = useThemeMode();
@@ -52,8 +58,9 @@ function IncidentPhoto({ photoData }: { photoData: string }) {
       {expanded ? (
         <Image source={{ uri: `data:image/jpeg;base64,${photoData}` }} style={{ borderRadius: 8, height: 180, width: '100%' }} resizeMode="cover" />
       ) : (
-        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
-          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', paddingVertical: 10 }}>
+          <Ionicons name="camera" size={16} color={theme.textSub} />
+          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>Tap to view photo</Text>
         </View>
       )}
     </Pressable>
@@ -163,7 +170,10 @@ export function WorkerIncidentScreen({ session }: Props) {
         <View style={styles.pillRow}>
           {CATEGORIES.map((c) => (
             <Pressable key={c} onPress={() => setCategory(c)} style={[styles.pill, category === c && styles.pillActive]}>
-              <Text style={[styles.pillText, category === c && styles.pillActiveText]}>{CATEGORY_ICONS[c]} {c}</Text>
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                <CategoryIcon category={c} size={13} color={category === c ? '#ffffff' : theme.textMuted} />
+                <Text style={[styles.pillText, category === c && styles.pillActiveText]}>{c}</Text>
+              </View>
             </Pressable>
           ))}
         </View>
@@ -221,7 +231,8 @@ export function WorkerIncidentScreen({ session }: Props) {
           </View>
         ) : (
           <Pressable onPress={takePhoto} style={styles.photoBtn}>
-            <Text style={styles.photoBtnText}>📷 Take Photo</Text>
+            <Ionicons name="camera" size={18} color={theme.textSub} />
+            <Text style={styles.photoBtnText}>Take Photo</Text>
           </Pressable>
         )}
 
@@ -236,7 +247,10 @@ export function WorkerIncidentScreen({ session }: Props) {
         <View key={inc.id} style={styles.incidentCard}>
           <View style={styles.incidentHeader}>
             <View>
-              <Text style={styles.incidentCategory}>{CATEGORY_ICONS[inc.category]} {inc.category}</Text>
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 2 }}>
+                <CategoryIcon category={inc.category} size={14} color={theme.text} />
+                <Text style={styles.incidentCategory}>{inc.category}</Text>
+              </View>
               <Text style={styles.incidentZone}>{inc.zone}</Text>
             </View>
             <View style={[styles.severityBadge, { backgroundColor: SEVERITY_COLORS[inc.severity] + '22', borderColor: SEVERITY_COLORS[inc.severity] }]}>
@@ -244,8 +258,18 @@ export function WorkerIncidentScreen({ session }: Props) {
             </View>
           </View>
           <View style={styles.incidentMedical}>
-            {inc.firstAidGiven ? <Text style={styles.medicalTag}>🩹 First Aid</Text> : null}
-            {inc.hospitalRequired ? <Text style={[styles.medicalTag, { color: theme.danger }]}>🏥 Hospital</Text> : null}
+            {inc.firstAidGiven ? (
+              <View style={styles.medicalTagView}>
+                <Ionicons name="bandage" size={12} color={theme.accent} />
+                <Text style={styles.medicalTag}>First Aid</Text>
+              </View>
+            ) : null}
+            {inc.hospitalRequired ? (
+              <View style={styles.medicalTagView}>
+                <Ionicons name="medical" size={12} color={theme.danger} />
+                <Text style={[styles.medicalTag, { color: theme.danger }]}>Hospital</Text>
+              </View>
+            ) : null}
           </View>
           <View style={styles.incidentFooter}>
             <Text style={styles.incidentTime}>{formatDate(inc.reportedAt)}</Text>
@@ -261,41 +285,42 @@ export function WorkerIncidentScreen({ session }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
-    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
-    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageTitle: { ...typography.h1, color: theme.text, marginBottom: spacing.lg },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg },
+    cardTitle: { ...typography.bodyBold, color: theme.text, marginBottom: 14 },
+    fieldLabel: { ...typography.label, color: theme.textSub, marginBottom: spacing.sm, marginTop: spacing.xs },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: spacing.md },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
     pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
-    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
-    textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 80, padding: 12 },
-    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 44, paddingHorizontal: 12 },
-    toggleRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
+    textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: spacing.md, minHeight: 80, padding: spacing.md },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: spacing.md, minHeight: 44, paddingHorizontal: spacing.md },
+    toggleRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.md },
     toggleLeft: { flex: 1 },
-    toggleLabel: { color: theme.text, fontSize: 14, fontWeight: '700' },
-    toggleSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-    photoBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, marginBottom: 14, paddingVertical: 14 },
-    photoBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '700' },
-    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 12 },
-    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 20 },
-    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-    incidentCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 8, padding: 12 },
+    toggleLabel: { ...typography.bodyBold, color: theme.text },
+    toggleSub: { ...typography.label, color: theme.textMuted, marginTop: 2, textTransform: 'none' as const },
+    photoBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', marginBottom: 14, paddingVertical: 14 },
+    photoBtnText: { ...typography.bodyBold, color: theme.textSub },
+    sectionTitle: { ...typography.h3, color: theme.text, marginBottom: spacing.md },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: spacing.xl },
+    emptyText: { ...typography.caption, color: theme.textMuted, textAlign: 'center' },
+    incidentCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.sm, padding: spacing.md },
     incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-    incidentCategory: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 2 },
-    incidentZone: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
-    severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    incidentCategory: { ...typography.bodyBold, color: theme.text },
+    incidentZone: { ...typography.label, color: theme.textMuted, textTransform: 'none' as const },
+    severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     severityText: { fontSize: 11, fontWeight: '900' },
-    incidentMedical: { flexDirection: 'row', gap: 8, marginBottom: 6 },
-    medicalTag: { color: theme.accent, fontSize: 12, fontWeight: '700' },
+    incidentMedical: { flexDirection: 'row', gap: spacing.sm, marginBottom: 6 },
+    medicalTagView: { alignItems: 'center', flexDirection: 'row', gap: 4 },
+    medicalTag: { ...typography.caption, color: theme.accent, fontWeight: '700' },
     incidentFooter: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-    incidentTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
-    statusPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+    incidentTime: { ...typography.label, color: theme.textMuted, textTransform: 'none' as const },
+    statusPill: { borderRadius: 8, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     statusOpen: { backgroundColor: '#fff5f5' },
     statusInvestigating: { backgroundColor: '#fffbeb' },
     statusClosed: { backgroundColor: '#f0fdf4' },
-    statusText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+    statusText: { ...typography.label, color: theme.textSub },
   });
 }

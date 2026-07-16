@@ -42,15 +42,15 @@ const EMOJI_ICONS: Record<string, IconSpec> = {
   '🔐': { lib: 'ionicons', name: 'person-add-outline' },
 };
 
-function RowIcon({ emoji, color }: { emoji: string; color: string }) {
-  const spec = EMOJI_ICONS[emoji];
-  if (!spec) return <Text style={{ fontSize: 18 }}>{emoji}</Text>;
+function RowIcon({ emoji, color }: { emoji: string | IconSpec; color: string }) {
+  const spec: IconSpec | undefined = typeof emoji === 'object' ? emoji : EMOJI_ICONS[emoji];
+  if (!spec) return <Text style={{ fontSize: 18 }}>{emoji as string}</Text>;
   if (spec.lib === 'ionicons') return <Ionicons name={spec.name} size={20} color={color} />;
   return <MaterialCommunityIcons name={spec.name as ComponentProps<typeof MaterialCommunityIcons>['name']} size={20} color={color} />;
 }
 
 type MoreItem = {
-  icon: string;
+  icon: string | IconSpec;
   label: string;
   description: string;
   onPress: () => void;

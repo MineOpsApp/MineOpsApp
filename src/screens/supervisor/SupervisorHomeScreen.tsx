@@ -59,7 +59,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
         {/* Hero */}
         <View style={styles.hero}>
           <View>
-            <Text style={styles.greeting}>{greeting}, {session.user.fullName.split(' ')[0]}</Text>
+            <Text style={styles.greeting}>{greeting}, <Text style={styles.greetingName}>{session.user.fullName.split(' ')[0]}</Text></Text>
             <Text style={styles.site}>{session.user.assignedSite ?? 'Mine Site'}</Text>
           </View>
           <View style={styles.heroBadges}>
@@ -291,7 +291,8 @@ function makeStyles(theme: Theme) {
     container: { paddingBottom: 110 },
 
     hero: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
-    greeting: { color: '#fff', fontSize: 16, fontWeight: '800' },
+    greeting: { fontFamily: 'DancingScript_400Regular', fontSize: 28, color: 'rgba(255,255,255,0.85)' },
+    greetingName: { fontFamily: 'DancingScript_700Bold', fontSize: 28, color: '#ffffff' },
     site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
     heroBadges: { alignItems: 'center', flexDirection: 'row', gap: 8 },
     scoreBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },

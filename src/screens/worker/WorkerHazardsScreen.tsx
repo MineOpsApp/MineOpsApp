@@ -12,7 +12,8 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'react-native';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -168,7 +169,8 @@ export function WorkerHazardsScreen({ session }: Props) {
           </View>
         ) : (
           <Pressable onPress={takePhoto} style={styles.photoBtn}>
-            <Text style={styles.photoBtnText}>📷 Take Photo</Text>
+            <Ionicons name="camera" size={18} color={theme.textSub} />
+            <Text style={styles.photoBtnText}>Take Photo</Text>
           </Pressable>
         )}
         <ActionButton label={loading ? 'Submitting...' : 'Submit Hazard Report'} onPress={submit} tone="danger" />
@@ -182,7 +184,7 @@ export function WorkerHazardsScreen({ session }: Props) {
 
       {hazards.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>📋</Text>
+          <Ionicons name="clipboard-outline" size={40} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No reports yet</Text>
           <Text style={styles.emptySub}>Use the form above to report a hazard</Text>
         </View>
@@ -201,30 +203,29 @@ export function WorkerHazardsScreen({ session }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
-    pageTitle: { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: spacing.lg },
+    pageTitle: { ...typography.h1, color: theme.text, flex: 1 },
     countBadge: { backgroundColor: theme.bgHero, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
     countText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
-    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 24, padding: 16 },
-    fieldLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', letterSpacing: 0.3, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
-    severityRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.xxl, padding: spacing.lg },
+    fieldLabel: { ...typography.label, color: theme.textSub, marginBottom: spacing.sm, marginTop: spacing.xs },
+    severityRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
     severityBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 10 },
-    severityBtnText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
-    historyHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 12 },
-    sectionTitle: { color: theme.text, flex: 1, fontSize: 16, fontWeight: '900' },
-    sectionCount: { color: theme.textMuted, fontSize: 13, fontWeight: '700' },
-    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
-    emptyIcon: { fontSize: 32, marginBottom: 10 },
-    emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
-    emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-    photoBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, marginBottom: 16, paddingVertical: 16 },
-    photoBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '700' },
-    photoPreview: { marginBottom: 16 },
+    severityBtnText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
+    historyHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: spacing.md },
+    sectionTitle: { ...typography.h3, color: theme.text, flex: 1 },
+    sectionCount: { ...typography.bodyBold, color: theme.textMuted },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: spacing.xxxl },
+    emptyTitle: { ...typography.bodyBold, color: theme.text, marginBottom: spacing.xs },
+    emptySub: { ...typography.caption, color: theme.textMuted, textAlign: 'center' },
+    photoBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', marginBottom: spacing.lg, paddingVertical: spacing.lg },
+    photoBtnText: { ...typography.bodyBold, color: theme.textSub },
+    photoPreview: { marginBottom: spacing.lg },
     photoImage: { borderRadius: 8, height: 180, width: '100%' },
-    removePhoto: { alignItems: 'center', marginTop: 8 },
-    removePhotoText: { color: theme.danger, fontSize: 13, fontWeight: '700' },
-    loadMoreBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginTop: 8, paddingVertical: 12 },
-    loadMoreText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    removePhoto: { alignItems: 'center', marginTop: spacing.sm },
+    removePhotoText: { ...typography.bodyBold, color: theme.danger },
+    loadMoreBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginTop: spacing.sm, paddingVertical: spacing.md },
+    loadMoreText: { ...typography.bodyBold, color: theme.accent },
   });
 }

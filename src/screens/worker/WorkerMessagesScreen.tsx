@@ -13,11 +13,12 @@ import {
   View,
 } from 'react-native';
 
-import { getMyWorkerMessages, parseApiError, sendWorkerMessage } from '../../services/api';
+import { getMyWorkerMessages, parseApiError, replyAsWorker, sendWorkerMessage } from '../../services/api';
 import type { WorkerMessage } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 import { formatAgo } from '../../utils/time';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -33,6 +34,8 @@ export function WorkerMessagesScreen({ session }: Props) {
   const [sending, setSending] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [replyText, setReplyText] = useState<Record<number, string>>({});
+  const [replySending, setReplySending] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   async function load() {
@@ -74,6 +77,21 @@ export function WorkerMessagesScreen({ session }: Props) {
     }
   }
 
+  async function handleWorkerReply(msg: WorkerMessage) {
+    const reply = (replyText[msg.id] ?? '').trim();
+    if (!reply) return;
+    setReplySending(msg.id);
+    try {
+      const updated = await replyAsWorker(msg.id, reply);
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? updated : m)));
+      setReplyText((prev) => ({ ...prev, [msg.id]: '' }));
+    } catch (e) {
+      Alert.alert('Failed to send reply', parseApiError(e));
+    } finally {
+      setReplySending(null);
+    }
+  }
+
   const charCount = text.length;
 
   return (
@@ -89,9 +107,9 @@ export function WorkerMessagesScreen({ session }: Props) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.accent} />}
       >
         <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>Message Supervisor</Text>
+          <Text style={styles.pageTitle}>Messages</Text>
           <Text style={styles.pageSub}>
-            {session.user.assignedSite ?? 'Your site'} · Messages are private to your supervisor
+            {session.user.assignedSite ?? 'Your site'} · Messages with your supervisor
           </Text>
         </View>
 
@@ -131,36 +149,87 @@ export function WorkerMessagesScreen({ session }: Props) {
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyIcon}>💬</Text>
+            <Ionicons name="chatbubbles-outline" size={40} color={theme.textMuted} />
             <Text style={styles.emptyTitle}>No messages yet</Text>
             <Text style={styles.emptySub}>Type a message above to contact your supervisor</Text>
           </View>
         ) : (
           <>
-            <Text style={styles.historyLabel}>Your messages</Text>
-            {messages.map((m) => (
-              <View key={m.id} style={styles.msgCard}>
-                <View style={styles.msgBubble}>
-                  <Text style={styles.msgText}>{m.content}</Text>
-                  <Text style={styles.msgTime}>{formatAgo(m.createdAt)}</Text>
-                </View>
+            <Text style={styles.historyLabel}>All messages</Text>
+            {messages.map((m) => {
+              const isStaffInitiated = m.initiatedBy === 'STAFF';
 
-                {m.reply ? (
-                  <View style={styles.replyBubble}>
-                    <Text style={styles.replyLabel}>Supervisor replied</Text>
-                    <Text style={styles.replyText}>{m.reply}</Text>
-                    {m.repliedAt && (
-                      <Text style={styles.replyTime}>{formatAgo(m.repliedAt)}</Text>
+              if (isStaffInitiated) {
+                const replyCharCount = (replyText[m.id] ?? '').length;
+                return (
+                  <View key={m.id} style={styles.msgCard}>
+                    <View style={styles.inboundBubble}>
+                      <Text style={styles.inboundLabel}>{m.senderName}</Text>
+                      <Text style={styles.inboundText}>{m.content}</Text>
+                      <Text style={styles.inboundTime}>{formatAgo(m.createdAt)}</Text>
+                    </View>
+
+                    {m.reply ? (
+                      <View style={styles.msgBubble}>
+                        <Text style={styles.msgText}>{m.reply}</Text>
+                        {m.repliedAt && <Text style={styles.msgTime}>{formatAgo(m.repliedAt)}</Text>}
+                      </View>
+                    ) : (
+                      <View style={styles.inboundReplySection}>
+                        <TextInput
+                          style={styles.inboundReplyInput}
+                          placeholder="Reply…"
+                          placeholderTextColor={theme.textMuted}
+                          value={replyText[m.id] ?? ''}
+                          onChangeText={(t) => setReplyText((prev) => ({ ...prev, [m.id]: t }))}
+                          multiline
+                          maxLength={500}
+                        />
+                        <View style={styles.inboundReplyFooter}>
+                          <Text style={[styles.charCount, replyCharCount > 450 && styles.charCountWarn]}>
+                            {replyCharCount}/500
+                          </Text>
+                          <Pressable
+                            style={[styles.sendBtn, (!(replyText[m.id] ?? '').trim() || replySending === m.id) && styles.sendBtnDisabled]}
+                            onPress={() => handleWorkerReply(m)}
+                            disabled={!(replyText[m.id] ?? '').trim() || replySending === m.id}
+                          >
+                            {replySending === m.id
+                              ? <ActivityIndicator size="small" color="#fff" />
+                              : <Text style={styles.sendBtnText}>Reply →</Text>
+                            }
+                          </Pressable>
+                        </View>
+                      </View>
                     )}
                   </View>
-                ) : (
-                  <View style={styles.pendingRow}>
-                    <View style={styles.pendingDot} />
-                    <Text style={styles.pendingText}>Awaiting reply</Text>
+                );
+              }
+
+              return (
+                <View key={m.id} style={styles.msgCard}>
+                  <View style={styles.msgBubble}>
+                    <Text style={styles.msgText}>{m.content}</Text>
+                    <Text style={styles.msgTime}>{formatAgo(m.createdAt)}</Text>
                   </View>
-                )}
-              </View>
-            ))}
+
+                  {m.reply ? (
+                    <View style={styles.replyBubble}>
+                      <Text style={styles.replyLabel}>Supervisor replied</Text>
+                      <Text style={styles.replyText}>{m.reply}</Text>
+                      {m.repliedAt && (
+                        <Text style={styles.replyTime}>{formatAgo(m.repliedAt)}</Text>
+                      )}
+                    </View>
+                  ) : (
+                    <View style={styles.pendingRow}>
+                      <View style={styles.pendingDot} />
+                      <Text style={styles.pendingText}>Awaiting reply</Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </>
         )}
       </ScrollView>
@@ -170,19 +239,19 @@ export function WorkerMessagesScreen({ session }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 16, paddingBottom: 40 },
+    container: { backgroundColor: theme.bg, padding: spacing.lg, paddingBottom: 40 },
 
-    pageHeader: { marginBottom: 16 },
-    pageTitle: { color: theme.text, fontSize: 20, fontWeight: '800' },
-    pageSub: { color: theme.textMuted, fontSize: 13, marginTop: 2 },
+    pageHeader: { marginBottom: spacing.lg },
+    pageTitle: { ...typography.h2, color: theme.text },
+    pageSub: { ...typography.caption, color: theme.textMuted, marginTop: 2 },
 
     composeCard: {
       backgroundColor: theme.bgCard,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: theme.border,
-      padding: 12,
-      marginBottom: 20,
+      padding: spacing.md,
+      marginBottom: spacing.xl,
     },
     composeInput: {
       color: theme.text,
@@ -225,17 +294,16 @@ function makeStyles(theme: Theme) {
     emptyCard: {
       alignItems: 'center',
       backgroundColor: theme.bgCard,
+      borderColor: theme.border,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: theme.border,
-      padding: 32,
-      gap: 8,
+      gap: spacing.sm,
+      padding: spacing.xxxl,
     },
-    emptyIcon: { fontSize: 32 },
-    emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '700' },
-    emptySub: { color: theme.textMuted, fontSize: 13, textAlign: 'center' },
+    emptyTitle: { ...typography.h3, color: theme.text },
+    emptySub: { ...typography.caption, color: theme.textMuted, textAlign: 'center' },
 
-    historyLabel: { color: theme.textMuted, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 },
+    historyLabel: { ...typography.label, color: theme.textMuted, marginBottom: 10 },
 
     msgCard: { marginBottom: 16 },
     msgBubble: {
@@ -267,5 +335,38 @@ function makeStyles(theme: Theme) {
     pendingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 },
     pendingDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.amber },
     pendingText: { color: theme.textMuted, fontSize: 12 },
+
+    inboundBubble: {
+      backgroundColor: theme.bgCard,
+      borderRadius: 12,
+      borderBottomLeftRadius: 2,
+      borderWidth: 1,
+      borderColor: theme.border,
+      padding: 12,
+      alignSelf: 'flex-start',
+      maxWidth: '90%',
+    },
+    inboundLabel: { color: theme.accent, fontSize: 11, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.3 },
+    inboundText: { color: theme.text, fontSize: 15, lineHeight: 20 },
+    inboundTime: { color: theme.textMuted, fontSize: 11, marginTop: 4 },
+
+    inboundReplySection: { marginTop: 8 },
+    inboundReplyInput: {
+      backgroundColor: theme.bgCard,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+      color: theme.text,
+      fontSize: 14,
+      padding: 10,
+      minHeight: 60,
+      textAlignVertical: 'top',
+      marginBottom: 6,
+    },
+    inboundReplyFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
   });
 }

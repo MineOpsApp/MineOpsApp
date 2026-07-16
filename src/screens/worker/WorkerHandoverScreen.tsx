@@ -3,7 +3,8 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 
 import { getMyShiftLogs, getHazardReports, getNotices, getEquipmentShiftLogs } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -95,7 +96,10 @@ export function WorkerHandoverScreen({ session }: Props) {
       <Text style={styles.handoverSub}>Summary of the last 24 hours for {session.user.fullName}</Text>
       {connectionError ? (
         <View style={styles.errorBanner}>
-          <Text style={styles.errorBannerText}>⚠ Cannot reach server — check your connection</Text>
+          <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, justifyContent: 'center' }}>
+            <Ionicons name="warning" size={14} color={theme.danger} />
+            <Text style={styles.errorBannerText}>Cannot reach server — check your connection</Text>
+          </View>
         </View>
       ) : null}
       {loading ? (
@@ -104,7 +108,7 @@ export function WorkerHandoverScreen({ session }: Props) {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionIcon}>📋</Text>
+          <Ionicons name="clipboard" size={16} color={theme.accent} />
           <Text style={styles.sectionTitle}>Production</Text>
           <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>{recentShifts.length} shifts</Text></View>
         </View>
@@ -138,13 +142,16 @@ export function WorkerHandoverScreen({ session }: Props) {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionIcon}>⚠</Text>
+          <Ionicons name="warning" size={16} color={theme.accent} />
           <Text style={styles.sectionTitle}>Hazards Reported</Text>
           {recentHazards.length > 0 && <View style={styles.sectionBadgeRed}><Text style={styles.sectionBadgeText}>{recentHazards.length}</Text></View>}
         </View>
         {recentHazards.length === 0 ? (
           <View style={styles.clearRow}>
-            <Text style={styles.clearRowText}>✓ No hazards reported</Text>
+            <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+            <Ionicons name="checkmark-circle" size={14} color={theme.accent} />
+            <Text style={styles.clearRowText}>No hazards reported</Text>
+          </View>
           </View>
         ) : recentHazards.slice(0, 3).map((h) => (
           <View key={h.id} style={styles.hazardRow}>
@@ -159,7 +166,7 @@ export function WorkerHandoverScreen({ session }: Props) {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionIcon}>⚙</Text>
+          <Ionicons name="construct" size={16} color={theme.accent} />
           <Text style={styles.sectionTitle}>Equipment Checks</Text>
           <View style={styles.sectionBadge}><Text style={styles.sectionBadgeText}>{recentEquipment.length}</Text></View>
         </View>
@@ -179,12 +186,15 @@ export function WorkerHandoverScreen({ session }: Props) {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionIcon}>📢</Text>
+          <Ionicons name="megaphone" size={16} color={theme.accent} />
           <Text style={styles.sectionTitle}>Unread Notices</Text>
           {unreadNotices.length > 0 && <View style={styles.sectionBadgeRed}><Text style={styles.sectionBadgeText}>{unreadNotices.length}</Text></View>}
         </View>
         {unreadNotices.length === 0 ? (
-          <View style={styles.clearRow}><Text style={styles.clearRowText}>✓ All notices acknowledged</Text></View>
+          <View style={[styles.clearRow, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+            <Ionicons name="checkmark-circle" size={14} color={theme.accent} />
+            <Text style={styles.clearRowText}>All notices acknowledged</Text>
+          </View>
         ) : unreadNotices.slice(0, 3).map((n) => (
           <View key={n.id} style={styles.noticeRow}>
             <View style={styles.noticeAccent} />
@@ -201,39 +211,38 @@ export function WorkerHandoverScreen({ session }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-    pageTitle: { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
-    pageDate: { color: theme.textMuted, fontSize: 12, fontWeight: '700' },
-    handoverSub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', marginBottom: 20 },
-    loadingCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-    loadingText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
-    section: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
-    sectionHeader: { alignItems: 'center', borderBottomColor: theme.bgInput, borderBottomWidth: 1, flexDirection: 'row', gap: 8, padding: 14 },
-    sectionIcon: { fontSize: 16 },
-    sectionTitle: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '900' },
-    sectionBadge: { backgroundColor: theme.bgInput, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
-    sectionBadgeRed: { backgroundColor: theme.dangerLight, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
-    sectionBadgeText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
-    summaryRow: { flexDirection: 'row', padding: 14, paddingBottom: 8 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 4 },
+    pageTitle: { ...typography.h1, color: theme.text, flex: 1 },
+    pageDate: { ...typography.caption, color: theme.textMuted, fontWeight: '700' },
+    handoverSub: { ...typography.caption, color: theme.textMuted, marginBottom: spacing.xl },
+    loadingCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg },
+    loadingText: { ...typography.caption, color: theme.textMuted },
+    section: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.md, overflow: 'hidden' },
+    sectionHeader: { alignItems: 'center', borderBottomColor: theme.bgInput, borderBottomWidth: 1, flexDirection: 'row', gap: spacing.sm, padding: 14 },
+    sectionTitle: { ...typography.bodyBold, color: theme.text, flex: 1, fontSize: 14 },
+    sectionBadge: { backgroundColor: theme.bgInput, borderRadius: 10, paddingHorizontal: spacing.sm, paddingVertical: 3 },
+    sectionBadgeRed: { backgroundColor: theme.dangerLight, borderRadius: 10, paddingHorizontal: spacing.sm, paddingVertical: 3 },
+    sectionBadgeText: { ...typography.label, color: theme.textSub },
+    summaryRow: { flexDirection: 'row', padding: 14, paddingBottom: spacing.sm },
     summaryItem: { flex: 1 },
     summaryValue: { color: theme.text, fontSize: 18, fontWeight: '900', marginBottom: 2 },
-    summaryLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+    summaryLabel: { ...typography.label, color: theme.textMuted },
     logRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10 },
     hazardRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10 },
     noticeRow: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', overflow: 'hidden' },
-    noticeAccent: { backgroundColor: theme.accent, alignSelf: 'stretch', width: 3 },
+    noticeAccent: { alignSelf: 'stretch', backgroundColor: theme.accent, width: 3 },
     logDot: { backgroundColor: theme.accent, borderRadius: 5, height: 10, marginRight: 10, width: 10 },
     severityDot: { borderRadius: 5, height: 10, marginRight: 10, width: 10 },
     logBody: { flex: 1, paddingLeft: 4 },
-    logTitle: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 1 },
-    logMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
-    logTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginLeft: 8 },
+    logTitle: { ...typography.bodyBold, color: theme.text, fontSize: 13, marginBottom: 1 },
+    logMeta: { ...typography.caption, color: theme.textMuted },
+    logTime: { ...typography.label, color: theme.textMuted, marginLeft: spacing.sm, textTransform: 'none' as const },
     emptyRow: { padding: 14 },
-    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    emptyText: { ...typography.caption, color: theme.textMuted },
     clearRow: { padding: 14 },
-    clearRowText: { color: theme.accent, fontSize: 13, fontWeight: '700' },
-    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 16, padding: 12 },
-    errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    clearRowText: { ...typography.bodyBold, color: theme.accent, fontSize: 13 },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.md },
+    errorBannerText: { ...typography.bodyBold, color: theme.danger, textAlign: 'center' },
   });
 }

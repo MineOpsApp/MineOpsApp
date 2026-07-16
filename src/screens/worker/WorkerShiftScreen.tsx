@@ -7,7 +7,8 @@ import { enqueue } from '../../utils/offlineQueue';
 import NetInfo from '@react-native-community/netinfo';
 import type { ShiftLog } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -206,9 +207,15 @@ export function WorkerShiftScreen({ session: _ }: Props) {
         value={volume}
       />
       {volumeError ? (
-        <Text style={styles.errorText}>⚠ {volumeError}</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4, marginBottom: 8 }}>
+          <Ionicons name="warning" size={13} color={theme.danger} />
+          <Text style={styles.errorText}>{volumeError}</Text>
+        </View>
       ) : isVolumeValid ? (
-        <Text style={styles.validText}>✓ Valid volume</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4, marginBottom: 8 }}>
+          <Ionicons name="checkmark-circle" size={13} color={theme.success} />
+          <Text style={styles.validText}>Valid volume</Text>
+        </View>
       ) : null}
 
       <Text style={styles.label}>Equipment</Text>
@@ -296,36 +303,36 @@ export function WorkerShiftScreen({ session: _ }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
-    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 4 },
-    sectionTitle: { color: theme.text, fontSize: 18, fontWeight: '800', marginBottom: 10, marginTop: 12 },
-    label: { color: theme.textSub, fontSize: 13, fontWeight: '800', marginBottom: 6, marginTop: 4 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    title: { ...typography.h1, color: theme.text, marginBottom: 4 },
+    sectionTitle: { ...typography.h2, color: theme.text, marginBottom: 10, marginTop: spacing.md },
+    label: { ...typography.bodyBold, color: theme.textSub, marginBottom: 6, marginTop: spacing.xs, fontSize: 13 },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
     pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
-    pillText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
+    pillText: { ...typography.caption, color: theme.textSub, fontWeight: '800' },
     pillActiveText: { color: '#fff' },
-    volumeLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, marginTop: 4 },
-    maxHint: { color: theme.accent, fontSize: 12, fontWeight: '700' },
+    volumeLabelRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, marginTop: spacing.xs },
+    maxHint: { ...typography.caption, color: theme.accent, fontWeight: '700' },
     volumeInput: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1.5, color: theme.text, fontSize: 22, fontWeight: '800', marginBottom: 4, minHeight: 54, paddingHorizontal: 14 },
     inputError: { borderColor: theme.danger, backgroundColor: theme.dangerLight },
     inputValid: { borderColor: theme.success },
-    errorText: { color: theme.danger, fontSize: 12, fontWeight: '700', marginBottom: 8 },
-    validText: { color: theme.success, fontSize: 12, fontWeight: '700', marginBottom: 8 },
+    errorText: { ...typography.caption, color: theme.danger, fontWeight: '700' },
+    validText: { ...typography.caption, color: theme.success, fontWeight: '700' },
     equipRow: { flexDirection: 'row', marginBottom: 10 },
-    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, minHeight: 44, paddingHorizontal: 12, marginBottom: 10 },
-    textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 80, padding: 12 },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 10, minHeight: 44, paddingHorizontal: spacing.md },
+    textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: spacing.md, minHeight: 80, padding: spacing.md },
     card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 10, padding: 14 },
-    logCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: 8, padding: 12 },
+    logCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, marginBottom: spacing.sm, padding: spacing.md },
     logHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
     logMineral: { color: theme.text, fontSize: 15, fontWeight: '900' },
-    logWorkerMeta: { color: theme.textSub, fontSize: 11, fontWeight: '700', marginTop: 2 },
+    logWorkerMeta: { ...typography.label, color: theme.textSub, marginTop: 2, textTransform: 'none' as const },
     logVolume: { color: theme.accent, fontSize: 15, fontWeight: '900' },
     statusBadge: { borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
     statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
-    logMeta: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 1 },
-    logNotes: { color: theme.text, fontSize: 13, fontWeight: '600', marginTop: 4 },
-    logTime: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 4 },
-    meta: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
+    logMeta: { ...typography.caption, color: theme.textSub, fontWeight: '700', marginBottom: 1 },
+    logNotes: { color: theme.text, fontSize: 13, fontWeight: '600', marginTop: spacing.xs },
+    logTime: { ...typography.label, color: theme.textMuted, marginTop: spacing.xs, textTransform: 'none' as const },
+    meta: { ...typography.caption, color: theme.textSub },
   });
 }

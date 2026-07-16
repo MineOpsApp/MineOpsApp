@@ -6,7 +6,8 @@ import { getMyChecklistToday, submitSafetyChecklist } from '../../services/api';
 import { enqueue } from '../../utils/offlineQueue';
 import type { ChecklistPayload, SafetyChecklist } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -145,7 +146,7 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
 
       {isReadOnly ? (
         <View style={styles.doneCard}>
-          <Text style={styles.doneIcon}>✓</Text>
+          <Ionicons name="checkmark-circle" size={26} color={theme.success} />
           <View style={styles.doneBody}>
             <Text style={styles.doneTitle}>Checklist submitted</Text>
             <Text style={styles.doneSub}>Submitted at {formatTime(existing!.submittedAt)}</Text>
@@ -174,7 +175,7 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
               disabled={isReadOnly}
             >
               <View style={[styles.checkbox, checked && styles.checkboxDone]}>
-                {checked && <Text style={styles.checkmark}>✓</Text>}
+                {checked && <Ionicons name="checkmark" size={16} color="#ffffff" />}
               </View>
               <View style={styles.itemBody}>
                 <Text style={[styles.itemLabel, checked && styles.itemLabelDone]}>{item.label}</Text>
@@ -203,32 +204,30 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageHeader: { marginBottom: 16 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900' },
-    pageSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
-    doneCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 16, padding: 14 },
-    doneIcon: { color: theme.success, fontSize: 26, fontWeight: '900' },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageHeader: { marginBottom: spacing.lg },
+    pageTitle: { ...typography.h1, color: theme.text },
+    pageSub: { ...typography.caption, color: theme.textMuted, marginTop: 2 },
+    doneCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg, padding: 14 },
     doneBody: { flex: 1 },
-    doneTitle: { color: theme.success, fontSize: 14, fontWeight: '900' },
-    doneSub: { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 2 },
-    updateBtn: { backgroundColor: theme.successLight, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-    updateBtnText: { color: theme.success, fontSize: 12, fontWeight: '800' },
-    progressCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
-    progressText: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 10 },
+    doneTitle: { ...typography.bodyBold, color: theme.success },
+    doneSub: { ...typography.caption, color: theme.success, marginTop: 2 },
+    updateBtn: { backgroundColor: theme.successLight, borderRadius: 8, paddingHorizontal: spacing.md, paddingVertical: 6 },
+    updateBtnText: { ...typography.caption, color: theme.success, fontWeight: '800' },
+    progressCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: 14 },
+    progressText: { ...typography.bodyBold, color: theme.text, marginBottom: 10 },
     progressBar: { backgroundColor: theme.border, borderRadius: 4, height: 6, overflow: 'hidden' },
     progressFill: { backgroundColor: theme.accent, borderRadius: 4, height: 6 },
-    itemsCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
+    itemsCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.xl, overflow: 'hidden' },
     item: { alignItems: 'center', flexDirection: 'row', gap: 14, padding: 14 },
     itemBorder: { borderBottomColor: theme.bg, borderBottomWidth: 1 },
     checkbox: { alignItems: 'center', borderColor: theme.border, borderRadius: 6, borderWidth: 2, height: 26, justifyContent: 'center', width: 26 },
     checkboxDone: { backgroundColor: theme.accent, borderColor: theme.accent },
-    checkmark: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
     itemBody: { flex: 1 },
-    itemLabel: { color: theme.text, fontSize: 14, fontWeight: '800' },
+    itemLabel: { ...typography.bodyBold, color: theme.text },
     itemLabelDone: { color: theme.accent },
-    itemSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2 },
-    submitBtn: { backgroundColor: theme.accent, borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+    itemSub: { ...typography.caption, color: theme.textMuted, marginTop: 2 },
+    submitBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 12, paddingVertical: spacing.lg },
     submitBtnDisabled: { backgroundColor: theme.textMuted },
     submitBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
   });

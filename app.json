@@ -35,9 +35,13 @@
         }
       ],
       "expo-secure-store",
-      ["expo-local-authentication", {
-        "faceIDPermission": "MineOps uses Face ID to securely sign you in."
-      }]
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "MineOps uses Face ID to securely sign you in."
+        }
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

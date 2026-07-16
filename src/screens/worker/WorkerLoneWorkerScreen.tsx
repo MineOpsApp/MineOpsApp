@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { checkInLoneWorker, getLoneWorkerStatus, parseApiError, startLoneWorker, stopLoneWorker, type LoneWorkerStatus } from '../../services/api';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 const INTERVALS = [
@@ -137,9 +138,10 @@ export function WorkerLoneWorkerScreen() {
 
           {isOverdue && (
             <View style={styles.overdueWarning}>
-              <Text style={styles.overdueText}>
-                ⚠ You are overdue — your supervisor has been notified. Tap "I'm OK" immediately.
-              </Text>
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, justifyContent: 'center' }}>
+                <Ionicons name="warning" size={14} color={theme.danger} />
+                <Text style={styles.overdueText}>You are overdue — your supervisor has been notified. Tap "I'm OK" immediately.</Text>
+              </View>
             </View>
           )}
 
@@ -150,7 +152,10 @@ export function WorkerLoneWorkerScreen() {
           >
             {busy
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.checkInBtnText}>I'm OK ✓</Text>
+              : <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                  <Text style={styles.checkInBtnText}>I'm OK</Text>
+                  <Ionicons name="checkmark" size={20} color="#ffffff" />
+                </View>
             }
           </Pressable>
 
@@ -181,7 +186,7 @@ export function WorkerLoneWorkerScreen() {
       ) : (
         <View style={styles.inactiveContainer}>
           <View style={styles.infoBox}>
-            <Text style={styles.infoBoxIcon}>🛡</Text>
+            <MaterialCommunityIcons name="shield-account" size={40} color={theme.accent} style={{ marginBottom: 12 }} />
             <Text style={styles.infoBoxTitle}>Lone Worker Protection</Text>
             <Text style={styles.infoBoxBody}>
               Working underground or in an isolated area? Enable this mode and check in at regular intervals.
@@ -225,14 +230,14 @@ function makeStyles(theme: Theme) {
     flex: { flex: 1, backgroundColor: theme.bg },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-    header: { backgroundColor: theme.bgHero, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
-    headerTitle: { color: '#fff', fontSize: 20, fontWeight: '900' },
+    header: { backgroundColor: theme.bgHero, paddingBottom: spacing.lg, paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+    headerTitle: { ...typography.h2, color: '#fff' },
     headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '500', marginTop: 4 },
 
-    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: 16, padding: 12 },
-    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, margin: spacing.lg, padding: spacing.md },
+    errorText: { ...typography.bodyBold, color: theme.danger, textAlign: 'center' },
 
-    activeContainer: { alignItems: 'center', flex: 1, padding: 24 },
+    activeContainer: { alignItems: 'center', flex: 1, padding: spacing.xxl },
 
     countdownRing: {
       alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.accent,
@@ -276,18 +281,17 @@ function makeStyles(theme: Theme) {
 
     btnDisabled: { opacity: 0.5 },
 
-    inactiveContainer: { flex: 1, padding: 20 },
+    inactiveContainer: { flex: 1, padding: spacing.xl },
 
     infoBox: {
       alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border,
-      borderRadius: 16, borderWidth: 1, marginBottom: 24, padding: 24,
+      borderRadius: 16, borderWidth: 1, marginBottom: spacing.xxl, padding: spacing.xxl,
     },
-    infoBoxIcon: { fontSize: 40, marginBottom: 12 },
-    infoBoxTitle: { color: theme.text, fontSize: 17, fontWeight: '900', marginBottom: 10 },
+    infoBoxTitle: { ...typography.h3, color: theme.text, marginBottom: 10 },
     infoBoxBody: { color: theme.textSub, fontSize: 13, fontWeight: '500', lineHeight: 20, textAlign: 'center' },
 
-    intervalTitle: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' },
-    intervalRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
+    intervalTitle: { ...typography.label, color: theme.text, marginBottom: 10 },
+    intervalRow: { flexDirection: 'row', gap: 10, marginBottom: spacing.xxl },
     intervalBtn: {
       alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border,
       borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 14,

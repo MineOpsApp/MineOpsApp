@@ -1155,6 +1155,18 @@ export function markWorkerMessageRead(id: number) {
   return post<WorkerMessage>(`/worker-messages/${id}/read`, {});
 }
 
+export function getSiteWorkersForMessaging() {
+  return request<{ email: string; fullName: string }[]>('/worker-messages/site-workers');
+}
+
+export function sendMessageToWorker(workerEmail: string, content: string) {
+  return post<WorkerMessage>('/worker-messages/to-worker', { workerEmail, content });
+}
+
+export function replyAsWorker(id: number, reply: string) {
+  return post<WorkerMessage>(`/worker-messages/${id}/worker-reply`, { reply });
+}
+
 // Supervisor dashboard
 export type SupervisorDashboard = {
   hazardCount: number;

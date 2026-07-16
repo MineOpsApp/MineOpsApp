@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ImageBackground, View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import { useFonts, DancingScript_400Regular, DancingScript_700Bold } from '@expo-google-fonts/dancing-script';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
@@ -42,6 +43,7 @@ function ThemedRoot({ session, storedEmail, onAuthenticated, onLogout }: RootPro
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({ DancingScript_400Regular, DancingScript_700Bold });
   const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [storedEmail, setStoredEmail] = useState<string | null>(null);
@@ -57,6 +59,8 @@ export default function App() {
       if (restored) {
         setAuthToken(restored.token, restored.refreshToken);
         setSession(restored);
+      } else {
+        setStoredEmail(null);
       }
       setLoading(false);
     }
@@ -80,7 +84,7 @@ export default function App() {
     setStoredEmail(null);
   }
 
-  if (loading) {
+  if (loading || !fontsLoaded) {
     return (
       <ImageBackground source={require('./assets/auth-background.jpg')} style={styles.splash} resizeMode="cover">
         <LinearGradient

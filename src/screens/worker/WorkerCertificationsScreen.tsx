@@ -4,7 +4,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, Toucha
 import { getCertificationHistory, getMyCertifications } from '../../services/api';
 import type { Certification, CertificationHistory } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -196,35 +196,35 @@ export function WorkerCertificationsScreen({ session: _ }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
-    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
-    title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 2 },
-    subtitle: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
-    strip: { backgroundColor: theme.bgCard, borderRadius: 10, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', marginBottom: 16, paddingVertical: 12 },
-    stripItem: { flex: 1, alignItems: 'center' },
+    center: { alignItems: 'center', backgroundColor: theme.bg, flex: 1, justifyContent: 'center' },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    title: { ...typography.h1, color: theme.text, marginBottom: 2 },
+    subtitle: { ...typography.caption, color: theme.textMuted, marginBottom: spacing.lg },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: spacing.lg, paddingVertical: spacing.md },
+    stripItem: { alignItems: 'center', flex: 1 },
     stripValue: { color: theme.text, fontSize: 20, fontWeight: '900' },
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2 },
-    stripDivider: { width: 1, backgroundColor: theme.border },
-    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 20, alignItems: 'center' },
-    emptyTitle: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 6 },
+    stripDivider: { backgroundColor: theme.border, width: 1 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: spacing.xl },
+    emptyTitle: { ...typography.bodyBold, color: theme.text, marginBottom: 6 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: spacing.md, padding: 14 },
     errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
-    certCard: { borderRadius: 10, borderWidth: 1.5, marginBottom: 12, padding: 14 },
-    certHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
+    certCard: { borderRadius: 10, borderWidth: 1.5, marginBottom: spacing.md, padding: 14 },
+    certHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: spacing.sm },
     certName: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
-    certAuthority: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
-    statusBadge: { borderRadius: 5, paddingHorizontal: 8, paddingVertical: 3 },
+    certAuthority: { ...typography.caption, color: theme.textSub, fontWeight: '700' },
+    statusBadge: { borderRadius: 5, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     statusText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
     datesRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-    dateLabel: { color: theme.textSub, fontSize: 11, fontWeight: '700' },
+    dateLabel: { ...typography.label, color: theme.textSub, textTransform: 'none' as const },
     dateValue: { color: theme.text, fontWeight: '800' },
     daysRow: { marginBottom: 6 },
     daysText: { fontSize: 12, fontWeight: '800' },
-    notes: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 8, fontStyle: 'italic' },
+    notes: { ...typography.caption, color: theme.textSub, fontStyle: 'italic', marginBottom: spacing.sm },
     historyBtn: { paddingVertical: 6 },
     historyBtnText: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
-    noHistory: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 4 },
+    noHistory: { ...typography.caption, color: theme.textMuted, marginTop: 4 },
     historyRow: { backgroundColor: theme.bgCard, borderRadius: 6, marginTop: 6, padding: 10 },
     historyTitle: { color: theme.text, fontSize: 12, fontWeight: '800', marginBottom: 2 },
     historyMeta: { color: theme.textSub, fontSize: 11, fontWeight: '700', marginBottom: 1 },

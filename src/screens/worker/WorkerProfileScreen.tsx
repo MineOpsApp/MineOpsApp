@@ -16,7 +16,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { getMyProfile, getInsuranceStatus, applyForInsurance, parseApiError, updateMyProfile } from '../../services/api';
 import type { UserProfile, InsuranceStatus } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -169,7 +170,7 @@ export function WorkerProfileScreen({ session: _ }: Props) {
 
         <View style={styles.idCard}>
           <View style={styles.idCardHeader}>
-            <Text style={styles.idCardHeaderIcon}>⛏</Text>
+            <MaterialCommunityIcons name="pickaxe" size={28} color="#ffffff" />
             <View>
               <Text style={styles.idCardOrgName}>MINEOPS OPERATIONS</Text>
               <Text style={styles.idCardSite}>{profile.assignedSite.toUpperCase()}</Text>
@@ -273,7 +274,7 @@ export function WorkerProfileScreen({ session: _ }: Props) {
 
       {/* ID card shortcut */}
       <Pressable onPress={() => setShowIdCard(true)} style={styles.idCardBtn}>
-        <Text style={styles.idCardBtnIcon}>🪪</Text>
+        <Ionicons name="card" size={24} color={theme.accent} />
         <View style={{ flex: 1 }}>
           <Text style={styles.idCardBtnLabel}>View Digital ID Card</Text>
           <Text style={styles.idCardBtnSub}>ID: {idNumber(profile.id)}</Text>
@@ -408,29 +409,29 @@ export function WorkerProfileScreen({ session: _ }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    centered: { alignItems: 'center', flex: 1, justifyContent: 'center', backgroundColor: theme.bg },
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 48 },
-    errorText: { color: theme.danger, fontSize: 14, fontWeight: '700' },
-    pageTitle: { color: theme.text, fontSize: 26, fontWeight: '900', marginBottom: 4 },
-    pageSub: { color: theme.textSub, fontSize: 13, fontWeight: '600', marginBottom: 20 },
-    backBtn: { marginBottom: 12 },
-    backBtnText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
+    centered: { alignItems: 'center', backgroundColor: theme.bg, flex: 1, justifyContent: 'center' },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 48 },
+    errorText: { ...typography.bodyBold, color: theme.danger },
+    pageTitle: { ...typography.h1, color: theme.text, marginBottom: 4 },
+    pageSub: { color: theme.textSub, fontSize: 13, fontWeight: '600', marginBottom: spacing.xl },
+    backBtn: { marginBottom: spacing.md },
+    backBtnText: { ...typography.bodyBold, color: theme.accent },
 
     // Photo
-    photoSection: { alignItems: 'center', marginBottom: 20, marginTop: 8 },
+    photoSection: { alignItems: 'center', marginBottom: spacing.xl, marginTop: spacing.sm },
     photoCircle: {
       alignItems: 'center',
       backgroundColor: theme.bgHero,
       borderRadius: 52,
       height: 104,
       justifyContent: 'center',
-      marginBottom: 12,
+      marginBottom: spacing.md,
       overflow: 'hidden',
       width: 104,
     },
     photoInitials: { color: '#ffffff', fontSize: 36, fontWeight: '900' },
     profileName: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
-    profileMeta: { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: 12 },
+    profileMeta: { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: spacing.md },
     photoActions: { flexDirection: 'row', gap: 10 },
     photoBtn: { backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 18, paddingVertical: 9 },
     photoBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
@@ -438,29 +439,28 @@ function makeStyles(theme: Theme) {
     photoBtnAltText: { color: theme.danger, fontSize: 13, fontWeight: '800' },
 
     // Stats
-    statsRow: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 14, paddingVertical: 16 },
+    statsRow: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: spacing.md, paddingVertical: spacing.lg },
     statItem: { alignItems: 'center', flex: 1 },
-    statValue: { color: theme.text, fontSize: 26, fontWeight: '900' },
+    statValue: { ...typography.h1, color: theme.text },
     statLabel: { color: theme.textSub, fontSize: 10, fontWeight: '800', marginTop: 2, textTransform: 'uppercase' },
     statDivider: { backgroundColor: theme.border, width: 1 },
 
     // ID card button
-    idCardBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 16, padding: 14 },
-    idCardBtnIcon: { fontSize: 24 },
-    idCardBtnLabel: { color: theme.text, fontSize: 14, fontWeight: '800' },
-    idCardBtnSub: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginTop: 1 },
+    idCardBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg, padding: 14 },
+    idCardBtnLabel: { ...typography.bodyBold, color: theme.text },
+    idCardBtnSub: { ...typography.caption, color: theme.textSub, marginTop: 1 },
     idCardBtnChevron: { color: theme.textSub, fontSize: 22 },
 
     // Section
-    section: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 14, padding: 16 },
+    section: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.md, padding: spacing.lg },
     sectionHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-    sectionTitle: { color: theme.text, fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
-    editLink: { color: theme.accent, fontSize: 13, fontWeight: '800' },
+    sectionTitle: { color: theme.text, fontSize: 14, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
+    editLink: { ...typography.bodyBold, color: theme.accent, fontSize: 13 },
 
     // Bio
     bioText: { color: theme.text, fontSize: 14, fontWeight: '600', lineHeight: 22 },
     bioEmpty: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
-    bioInput: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, minHeight: 90, padding: 12 },
+    bioInput: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, minHeight: 90, padding: spacing.md },
     bioCount: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginTop: 4, textAlign: 'right' },
     bioActions: { flexDirection: 'row', gap: 10, marginTop: 10 },
     bioSaveBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 9 },
@@ -481,8 +481,8 @@ function makeStyles(theme: Theme) {
       backgroundColor: theme.bgHero,
       borderRadius: 16,
       elevation: 6,
-      marginBottom: 16,
-      marginTop: 8,
+      marginBottom: spacing.lg,
+      marginTop: spacing.sm,
       overflow: 'hidden',
       padding: 22,
       shadowColor: '#000',
@@ -490,12 +490,11 @@ function makeStyles(theme: Theme) {
       shadowOpacity: 0.2,
       shadowRadius: 8,
     },
-    idCardHeader: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 14 },
-    idCardHeaderIcon: { fontSize: 28 },
+    idCardHeader: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, marginBottom: 14 },
     idCardOrgName: { color: '#ffffff', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
     idCardSite: { color: '#6fcfae', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginTop: 2 },
     idCardDivider: { backgroundColor: '#2e3f50', height: 1, marginBottom: 14 },
-    idCardBody: { alignItems: 'flex-start', flexDirection: 'row', gap: 16, marginBottom: 14 },
+    idCardBody: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.lg, marginBottom: 14 },
     idCardPhotoWrap: {
       borderColor: '#2e3f50',
       borderRadius: 8,
@@ -510,12 +509,12 @@ function makeStyles(theme: Theme) {
     idCardInfo: { flex: 1, justifyContent: 'center' },
     idCardName: { color: '#ffffff', fontSize: 16, fontWeight: '900', letterSpacing: 0.5, marginBottom: 3 },
     idCardRole: { color: '#9cbdcf', fontSize: 12, fontWeight: '700', marginBottom: 10 },
-    idCardIdLabel: { color: '#5d7a8c', fontSize: 9, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 },
+    idCardIdLabel: { color: '#5d7a8c', fontSize: 9, fontWeight: '900', letterSpacing: 1, marginBottom: 2, textTransform: 'uppercase' },
     idCardIdNumber: { color: '#6fcfae', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
-    idCardFooter: { alignItems: 'center', flexDirection: 'row', gap: 8, marginBottom: 6 },
+    idCardFooter: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, marginBottom: 6 },
     statusDot: { borderRadius: 5, height: 10, width: 10 },
     idCardStatus: { color: '#9cbdcf', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
     idCardSince: { color: '#5d7a8c', fontSize: 11, fontWeight: '600' },
-    idCardNote: { color: theme.textMuted, fontSize: 11, fontWeight: '600', textAlign: 'center' },
+    idCardNote: { ...typography.caption, color: theme.textMuted, textAlign: 'center' },
   });
 }

@@ -19,7 +19,8 @@ import {
   type WorkerPayRecord,
 } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -181,7 +182,7 @@ export function WorkerPayScreen({ session: _ }: Props) {
       <Text style={s.sectionHeader}>Payment History</Text>
       {records.length === 0 ? (
         <View style={s.emptyCard}>
-          <Text style={s.emptyIcon}>💳</Text>
+          <Ionicons name="card-outline" size={40} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={s.emptyText}>No payments yet.</Text>
           <Text style={s.emptySubText}>Pay records will appear here once a supervisor disburses a pay cycle.</Text>
         </View>
@@ -236,56 +237,55 @@ export function WorkerPayScreen({ session: _ }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 48 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
-    pageSub: { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: 20 },
+    centered: { alignItems: 'center', backgroundColor: theme.bg, flex: 1, justifyContent: 'center' },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 48 },
+    pageTitle: { ...typography.h1, color: theme.text, marginBottom: 2 },
+    pageSub: { ...typography.bodyBold, color: theme.textSub, marginBottom: spacing.xl },
 
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: 16 },
-    sectionTitle: { color: theme.text, fontSize: 13, fontWeight: '900', letterSpacing: 0.5, marginBottom: 12, textTransform: 'uppercase' },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: spacing.lg },
+    sectionTitle: { ...typography.label, color: theme.text, marginBottom: spacing.md },
     sectionHeader: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 10 },
 
-    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderTopColor: theme.bgInput, borderTopWidth: 1 },
-    label: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
-    value: { color: theme.text, fontSize: 13, fontWeight: '700' },
+    row: { alignItems: 'center', borderTopColor: theme.bgInput, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+    label: { ...typography.bodyBold, color: theme.textSub, fontSize: 13 },
+    value: { ...typography.bodyBold, color: theme.text, fontSize: 13 },
 
     netRow: { borderTopColor: theme.border, borderTopWidth: 1, marginTop: 4, paddingTop: 10 },
     netLabel: { color: theme.text, fontSize: 15, fontWeight: '900' },
     netValue: { color: theme.accent, fontSize: 17, fontWeight: '900' },
 
-    recordHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-    recordDate: { color: theme.text, fontSize: 14, fontWeight: '800' },
-    statusPill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    recordHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    recordDate: { ...typography.bodyBold, color: theme.text },
+    statusPill: { borderRadius: 6, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     statusText: { fontSize: 11, fontWeight: '800' },
 
-    failureReason: { color: theme.danger, fontSize: 12, fontWeight: '700', marginTop: 6 },
+    failureReason: { ...typography.caption, color: theme.danger, fontWeight: '700', marginTop: 6 },
 
-    inputLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 4, textTransform: 'uppercase' },
+    inputLabel: { ...typography.label, color: theme.textSub, marginBottom: 4, marginTop: 10 },
     input: { borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '700', padding: 10 },
 
-    networkRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
-    networkBtn: { borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+    networkRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: 4 },
+    networkBtn: { borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: spacing.sm },
     networkBtnActive: { backgroundColor: theme.accent, borderColor: theme.accent },
-    networkBtnText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    networkBtnText: { ...typography.bodyBold, color: theme.textSub, fontSize: 13 },
     networkBtnTextActive: { color: '#fff' },
 
     actionRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
-    cancelBtn: { flex: 1, alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, padding: 12 },
-    cancelBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
-    saveBtn: { flex: 1, alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, padding: 12 },
-    saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+    cancelBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, padding: spacing.md },
+    cancelBtnText: { ...typography.bodyBold, color: theme.textSub },
+    saveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, padding: spacing.md },
+    saveBtnText: { ...typography.bodyBold, color: '#fff' },
 
-    editBtn: { marginTop: 12, alignSelf: 'flex-start', borderColor: theme.accent, borderRadius: 8, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-    editBtnText: { color: theme.accent, fontSize: 13, fontWeight: '800' },
+    editBtn: { alignSelf: 'flex-start', borderColor: theme.accent, borderRadius: 8, borderWidth: 1, marginTop: spacing.md, paddingHorizontal: 14, paddingVertical: spacing.sm },
+    editBtnText: { ...typography.bodyBold, color: theme.accent, fontSize: 13 },
 
-    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginTop: 8 },
-    successText: { color: theme.success, fontSize: 13, fontWeight: '700', marginBottom: 8 },
+    errorText: { ...typography.bodyBold, color: theme.danger, marginTop: spacing.sm },
+    successText: { ...typography.bodyBold, color: theme.success, marginBottom: spacing.sm },
 
-    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32, marginBottom: 14 },
-    emptyIcon: { fontSize: 36, marginBottom: 10 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 14, padding: spacing.xxxl },
     emptyText: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
-    emptySubText: { color: theme.textSub, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    emptySubText: { ...typography.caption, color: theme.textSub, textAlign: 'center' },
     errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 14 },
-    errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    errorBannerText: { ...typography.bodyBold, color: theme.danger, textAlign: 'center' },
   });
 }

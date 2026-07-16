@@ -6,7 +6,8 @@ import { clockIn, clockOut, getMyAttendanceStatus, getMyAttendanceHistory } from
 import { enqueue } from '../../utils/offlineQueue';
 import NetInfo from '@react-native-community/netinfo';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type AttendanceRecord = {
@@ -148,7 +149,7 @@ export function WorkerAttendanceScreen({ session }: Props) {
               </Pressable>
             ))}
           </View>
-          <ActionButton label={loading ? 'Clocking in...' : '✓ Clock In'} onPress={handleClockIn} />
+          <ActionButton label={loading ? 'Clocking in...' : 'Clock In'} onPress={handleClockIn} />
         </View>
       ) : (
         <View style={styles.card}>
@@ -156,7 +157,10 @@ export function WorkerAttendanceScreen({ session }: Props) {
           <Text style={styles.onSiteInfo}>Zone: {activeRecord?.zone}</Text>
           <Text style={styles.onSiteInfo}>Time on site: {activeRecord ? getDuration(activeRecord.clockInAt, null) : '—'}</Text>
           <Pressable onPress={handleClockOut} style={styles.clockOutBtn}>
-            <Text style={styles.clockOutBtnText}>{loading ? 'Clocking out...' : '↩ Clock Out'}</Text>
+            <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+              {!loading && <Ionicons name="exit-outline" size={16} color="#ffffff" />}
+              <Text style={styles.clockOutBtnText}>{loading ? 'Clocking out...' : 'Clock Out'}</Text>
+            </View>
           </Pressable>
         </View>
       )}
@@ -190,34 +194,34 @@ export function WorkerAttendanceScreen({ session }: Props) {
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
-    statusCard: { borderRadius: 12, borderWidth: 2, marginBottom: 16, padding: 16 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageTitle: { ...typography.h1, color: theme.text, marginBottom: spacing.lg },
+    statusCard: { borderRadius: 12, borderWidth: 2, marginBottom: spacing.lg, padding: spacing.lg },
     statusCardGreen: { backgroundColor: theme.successLight, borderColor: theme.success },
     statusCardGrey: { backgroundColor: theme.bgInput, borderColor: theme.border },
-    statusLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
+    statusLeft: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
     statusDot: { borderRadius: 8, height: 16, width: 16 },
-    statusTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 2 },
-    statusSub: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 12 },
-    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    statusTitle: { ...typography.h3, color: theme.text, marginBottom: 2 },
+    statusSub: { ...typography.caption, color: theme.textSub },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg },
+    cardTitle: { ...typography.bodyBold, color: theme.text, marginBottom: spacing.md },
+    fieldLabel: { ...typography.label, color: theme.textSub, marginBottom: spacing.sm },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
     pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
-    pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
+    pillText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
-    onSiteInfo: { color: theme.text, fontSize: 14, fontWeight: '700', marginBottom: 6 },
-    clockOutBtn: { alignItems: 'center', backgroundColor: theme.danger, borderRadius: 8, marginTop: 8, paddingVertical: 12 },
-    clockOutBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-    sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 12 },
-    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 16 },
-    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-    historyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, padding: 12 },
+    onSiteInfo: { ...typography.bodyBold, color: theme.text, marginBottom: 6 },
+    clockOutBtn: { alignItems: 'center', backgroundColor: theme.danger, borderRadius: 8, marginTop: spacing.sm, paddingVertical: spacing.md },
+    clockOutBtnText: { ...typography.bodyBold, color: '#ffffff' },
+    sectionTitle: { ...typography.h3, color: theme.text, marginBottom: spacing.md },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: spacing.lg },
+    emptyText: { ...typography.caption, color: theme.textMuted, textAlign: 'center' },
+    historyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm, padding: spacing.md },
     historyLeft: { alignItems: 'center', flexDirection: 'row', gap: 10 },
     historyDot: { borderRadius: 5, height: 10, width: 10 },
-    historyZone: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
-    historyTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    historyZone: { ...typography.bodyBold, color: theme.text, fontSize: 13, marginBottom: 2 },
+    historyTime: { ...typography.label, color: theme.textMuted, textTransform: 'none' as const },
     historyRight: { alignItems: 'flex-end' },
     historyDuration: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 2 },
     historyStatus: { fontSize: 11, fontWeight: '700' },

@@ -72,7 +72,7 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.heroLeft}>
-            <Text style={styles.greeting}>{greeting}, {session.user.fullName.split(' ')[0]}</Text>
+            <Text style={styles.greeting}>{greeting}, <Text style={styles.greetingName}>{session.user.fullName.split(' ')[0]}</Text></Text>
             <Text style={styles.site}>{session.user.assignedSite ?? 'Obuasi Mine'}</Text>
           </View>
           <View style={styles.shiftBadge}>
@@ -307,7 +307,8 @@ function makeStyles(theme: Theme, isDark: boolean) {
       shadowOpacity: isDark ? 0.4 : 0.12,
     },
     heroLeft: { alignSelf: 'stretch', justifyContent: 'center', paddingBottom: 10 },
-    greeting: { ...typography.h2, color: '#ffffff' },
+    greeting: { fontFamily: 'DancingScript_400Regular', fontSize: 28, color: 'rgba(255,255,255,0.85)' },
+    greetingName: { fontFamily: 'DancingScript_700Bold', fontSize: 28, color: '#ffffff' },
     site: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '700', letterSpacing: 0.2, marginTop: 3 },
     shiftBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: spacing.md, paddingVertical: 6 },
     shiftDot: { backgroundColor: '#4ade80', borderRadius: 4, height: 7, width: 7 },

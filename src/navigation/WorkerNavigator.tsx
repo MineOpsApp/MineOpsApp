@@ -91,26 +91,26 @@ function WorkerMoreStack({
         {
           title: 'Work & Shifts',
           items: [
-            { icon: '📋', label: 'Shift Production', description: 'Log minerals extracted this shift', onPress: () => setScreen('shift') },
-            { icon: '🔄', label: 'Shift Handover', description: 'View last 24h summary for handover', onPress: () => setScreen('handover') },
-            { icon: '⛏', label: 'Drill Operations', description: 'Step-by-step drill sign-off', onPress: () => setScreen('drill') },
-            { icon: '🕐', label: 'Attendance', description: 'Clock in and out of site', onPress: () => setScreen('attendance') },
+            { icon: { lib: 'ionicons', name: 'clipboard' }, label: 'Shift Production', description: 'Log minerals extracted this shift', onPress: () => setScreen('shift') },
+            { icon: { lib: 'ionicons', name: 'sync' }, label: 'Shift Handover', description: 'View last 24h summary for handover', onPress: () => setScreen('handover') },
+            { icon: { lib: 'material', name: 'pickaxe' }, label: 'Drill Operations', description: 'Step-by-step drill sign-off', onPress: () => setScreen('drill') },
+            { icon: { lib: 'ionicons', name: 'time' }, label: 'Attendance', description: 'Clock in and out of site', onPress: () => setScreen('attendance') },
           ],
         },
         {
           title: 'Safety',
           items: [
-            { icon: '🚨', label: 'Report Incident', description: 'Log injuries, near misses, equipment damage', onPress: () => setScreen('incident') },
-            { icon: '✅', label: 'Safety Checklist', description: 'Complete your shift safety check before starting work', onPress: () => setScreen('checklist') },
-            { icon: '🛡', label: 'Lone Worker', description: 'Enable check-in timer when working alone or underground', onPress: () => setScreen('loneWorker') },
-            { icon: '🚨', label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
+            { icon: { lib: 'ionicons', name: 'alert-circle' }, label: 'Report Incident', description: 'Log injuries, near misses, equipment damage', onPress: () => setScreen('incident') },
+            { icon: { lib: 'ionicons', name: 'checkmark-circle' }, label: 'Safety Checklist', description: 'Complete your shift safety check before starting work', onPress: () => setScreen('checklist') },
+            { icon: { lib: 'material', name: 'shield-account' }, label: 'Lone Worker', description: 'Enable check-in timer when working alone or underground', onPress: () => setScreen('loneWorker') },
+            { icon: { lib: 'ionicons', name: 'alert-circle' }, label: 'Report Illegal Mining', description: 'Submit a tip about unlicensed mining activity to GoldBod regulators', onPress: () => setScreen('illegalReport') },
           ],
         },
         {
           title: 'Connect',
           items: [
-            { icon: '💬', label: 'Message Supervisor', description: 'Send a quick message to your site supervisor', onPress: () => setScreen('messages') },
-            { icon: '🌐', label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
+            { icon: { lib: 'ionicons', name: 'chatbubbles' }, label: 'Message Supervisor', description: 'Send a quick message to your site supervisor', onPress: () => setScreen('messages') },
+            { icon: { lib: 'ionicons', name: 'globe' }, label: 'Community', description: 'Mine directory, forum, events, and job board', onPress: () => setScreen('community') },
           ],
         },
       ]}
