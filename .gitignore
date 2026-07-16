@@ -37,6 +37,10 @@ yarn-error.*
 # local assistant workspace
 .claude/
 
+# planning/brief docs (local only, never pushed to GitHub)
+*_BRIEF.md
+*_REQUEST.md
+
 # typescript
 *.tsbuildinfo
 
