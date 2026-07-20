@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ImageBackground, View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import { Image, ImageBackground, View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
 import { useFonts, DancingScript_400Regular, DancingScript_700Bold } from '@expo-google-fonts/dancing-script';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -92,7 +92,8 @@ export default function App() {
           style={StyleSheet.absoluteFill}
         />
         <StatusBar style="light" />
-        <ActivityIndicator color="#e0a83a" size="large" style={{ zIndex: 1 }} />
+        <Image source={require('./assets/icon.png')} style={styles.splashLogo} resizeMode="contain" />
+        <ActivityIndicator color="#e0a83a" size="small" style={{ marginTop: 32, zIndex: 1 }} />
       </ImageBackground>
     );
   }
@@ -113,4 +114,5 @@ export default function App() {
 
 const styles = StyleSheet.create({
   splash: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+  splashLogo: { height: 130, width: 130, zIndex: 1 },
 });

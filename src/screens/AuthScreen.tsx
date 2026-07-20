@@ -593,8 +593,8 @@ function makeStyles(theme: Theme, mode: string) {
     flex: { flex: 1 },
     container: { flexGrow: 1, padding: spacing.xxl, paddingBottom: 40 },
 
-    header: { alignItems: 'center', marginBottom: spacing.xxxl, marginTop: spacing.lg },
-    logoImage: { height: 112, marginBottom: spacing.xs, width: 112 },
+    header: { alignItems: 'center', marginBottom: spacing.xxxl, marginTop: 56 },
+    logoImage: { height: 112, marginBottom: -8, width: 112 },
     brand: { ...typography.display, color: '#ffffff', marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
     tagline: { ...typography.body, color: 'rgba(255,255,255,0.70)', textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
 
