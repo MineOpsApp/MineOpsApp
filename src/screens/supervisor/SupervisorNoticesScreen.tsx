@@ -19,9 +19,9 @@ export function SupervisorNoticesScreen({ session }: Props) {
   const styles = makeStyles(theme);
 
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [title, setTitle] = useState('Zone B restriction');
-  const [message, setMessage] = useState('Zone B is restricted until clearance.');
-  const [briefing, setBriefing] = useState('Avoid Zone B until clearance is completed.');
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [briefing, setBriefing] = useState('');
   const [category, setCategory] = useState('Operational');
   const [expiryDays, setExpiryDays] = useState<number | null>(null);
 
@@ -70,7 +70,10 @@ export function SupervisorNoticesScreen({ session }: Props) {
       <Text style={styles.pageTitle}>Notices</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>📣 Send Briefing</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
+          <Ionicons name="megaphone-outline" size={16} color={theme.text} />
+          <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Send Briefing</Text>
+        </View>
         <Text style={styles.cardSub}>Broadcast a message to all workers on site</Text>
         <InputField label="Message" multiline onChangeText={setBriefing} value={briefing} />
 
@@ -102,7 +105,10 @@ export function SupervisorNoticesScreen({ session }: Props) {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>📌 Post Notice</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
+          <Ionicons name="newspaper-outline" size={16} color={theme.text} />
+          <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Post Notice</Text>
+        </View>
         <Text style={styles.cardSub}>Notices require acknowledgment from workers</Text>
         <InputField label="Title" onChangeText={setTitle} value={title} />
         <InputField label="Message" multiline onChangeText={setMessage} value={message} />

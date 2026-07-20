@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HazardCard } from '../../components/HazardCard';
-import { InputField } from '../../components/InputField';
 import { getSiteHazardReports, reviewHazardReport, closeHazardReport, exportHazardsCsv } from '../../services/api';
 import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { HazardReport } from '../../types/actions';
@@ -47,7 +46,6 @@ export function SupervisorHazardsScreen({ session }: Props) {
   const styles = makeStyles(theme, isDark);
 
   const [hazards, setHazards] = useState<HazardReport[]>([]);
-  const [actionTaken, setActionTaken] = useState('Area isolated and assigned for follow-up');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
@@ -86,7 +84,7 @@ export function SupervisorHazardsScreen({ session }: Props) {
       const data = await getSiteHazardReports(nextPage);
       setHazards((c) => {
         const existingIds = new Set(c.map(h => h.id));
-        const fresh = (data.content ?? []).filter(h => !existingIds.has(h.id));
+        const fresh = (data.content ?? []).filter((h: HazardReport) => !existingIds.has(h.id));
         return [...c, ...fresh];
       });
       setPage(nextPage);
@@ -94,14 +92,14 @@ export function SupervisorHazardsScreen({ session }: Props) {
     } catch {} finally { setLoadingMore(false); }
   }
 
-  async function review(id: number) {
+  async function review(id: number, actionTaken: string) {
     try {
       const updated = await reviewHazardReport(id, { actionTaken: actionTaken.trim() || 'Hazard reviewed', actorEmail: session.user.email, actorName: session.user.fullName, actorRole: session.user.role });
       setHazards((c) => c.map((h) => h.id === updated.id ? updated : h));
     } catch { Alert.alert('Failed', 'Could not review the hazard.'); }
   }
 
-  async function close(id: number) {
+  async function close(id: number, actionTaken: string) {
     try {
       const updated = await closeHazardReport(id, { actionTaken: actionTaken.trim() || 'Hazard cleared', actorEmail: session.user.email, actorName: session.user.fullName, actorRole: session.user.role });
       setHazards((c) => c.map((h) => h.id === updated.id ? updated : h));
@@ -180,11 +178,6 @@ export function SupervisorHazardsScreen({ session }: Props) {
         ))}
       </View>
 
-      <View style={styles.actionCard}>
-        <Text style={styles.actionLabel}>Action taken (applied to reviewed/cleared reports)</Text>
-        <InputField label="" multiline onChangeText={setActionTaken} value={actionTaken} placeholder="Describe the action taken..." />
-      </View>
-
       {loading ? (
         <View style={styles.emptyCard}><Text style={styles.emptyText}>Loading reports...</Text></View>
       ) : hazards.length === 0 ? (
@@ -244,8 +237,6 @@ function makeStyles(theme: Theme, isDark: boolean) {
     chipText: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
     chipTextActive: { color: '#ffffff' },
     resultCount: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: spacing.sm },
-    actionCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: 14, ...cardShadow },
-    actionLabel: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: spacing.sm },
     emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32, ...cardShadow },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },

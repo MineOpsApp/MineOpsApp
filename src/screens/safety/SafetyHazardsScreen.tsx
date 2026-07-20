@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HazardCard } from '../../components/HazardCard';
-import { InputField } from '../../components/InputField';
 import { getHazardReports, reviewHazardReport, closeHazardReport, parseApiError } from '../../services/api';
 import type { HazardReport } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
@@ -18,7 +17,6 @@ export function SafetyHazardsScreen({ session }: Props) {
   const styles = makeStyles(theme, isDark);
 
   const [hazards, setHazards] = useState<HazardReport[]>([]);
-  const [actionTaken, setActionTaken] = useState('Area secured and safety protocols applied');
   const [actioning, setActioning] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -26,7 +24,7 @@ export function SafetyHazardsScreen({ session }: Props) {
   useEffect(() => { load(); }, []);
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
-  async function review(id: number) {
+  async function review(id: number, actionTaken: string) {
     if (actioning !== null) return;
     setActioning(id);
     try {
@@ -36,7 +34,7 @@ export function SafetyHazardsScreen({ session }: Props) {
     finally { setActioning(null); }
   }
 
-  async function close(id: number) {
+  async function close(id: number, actionTaken: string) {
     if (actioning !== null) return;
     setActioning(id);
     try {
@@ -49,7 +47,6 @@ export function SafetyHazardsScreen({ session }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.title}>Hazard Review</Text>
-      <InputField label="Action taken" multiline onChangeText={setActionTaken} value={actionTaken} placeholder="Describe the action taken..." />
       {hazards.length === 0 ? (
         <View style={styles.card}><Text style={styles.meta}>No hazard reports</Text></View>
       ) : null}

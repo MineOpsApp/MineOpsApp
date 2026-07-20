@@ -1,5 +1,6 @@
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import type { HazardReport } from '../types/actions';
@@ -8,8 +9,8 @@ type HazardCardProps = {
   canClear: boolean;
   canReview: boolean;
   hazard: HazardReport;
-  onClear: (id: number) => void;
-  onReview: (id: number) => void;
+  onClear: (id: number, actionTaken: string) => void;
+  onReview: (id: number, actionTaken: string) => void;
 };
 
 // Category color maps — intentional, stay fixed regardless of theme
@@ -47,8 +48,9 @@ function HazardPhoto({ photoData }: { photoData: string }) {
           resizeMode="cover"
         />
       ) : (
-        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
-          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', paddingVertical: 10 }}>
+          <Ionicons name="camera-outline" size={15} color={theme.textSub} />
+          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>Tap to view photo</Text>
         </View>
       )}
     </Pressable>
@@ -59,6 +61,7 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
   const styles = makeStyles(theme);
+  const [actionTaken, setActionTaken] = useState('');
 
   const badge = statusStyle(hazard.status);
   const sevStyle = severityStyle(hazard.severity);
@@ -95,8 +98,13 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
       </Text>
 
       {hazard.latitude && hazard.longitude ? (
-        <Pressable onPress={() => Linking.openURL(`https://maps.google.com/maps?q=${hazard.latitude},${hazard.longitude}`)}>
-          <Text style={[styles.detail, styles.mapLink]}>📍 View on Map</Text>
+        <Pressable
+          onPress={() => Linking.openURL(`https://maps.google.com/maps?q=${hazard.latitude},${hazard.longitude}`)}
+          style={styles.mapBtn}
+        >
+          <Ionicons name="location" size={14} color={theme.info} />
+          <Text style={styles.mapBtnText}>View on Map</Text>
+          <Ionicons name="open-outline" size={12} color={theme.info} />
         </Pressable>
       ) : null}
 
@@ -109,26 +117,37 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
       ) : null}
 
       {(canReview && isOpen) || (canClear && isReviewed) ? (
-        <View style={styles.buttonRow}>
-          {canReview && isOpen ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onReview(hazard.id)}
-              style={[styles.button, styles.reviewButton]}
-            >
-              <Text style={styles.buttonText}>Mark Reviewed</Text>
-            </Pressable>
-          ) : null}
-          {canClear && isReviewed ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onClear(hazard.id)}
-              style={[styles.button, styles.clearButton]}
-            >
-              <Text style={styles.buttonText}>Clear Hazard</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <>
+          <TextInput
+            multiline
+            onChangeText={setActionTaken}
+            placeholder="Describe action taken..."
+            placeholderTextColor={theme.textMuted}
+            style={styles.actionInput}
+            textAlignVertical="top"
+            value={actionTaken}
+          />
+          <View style={styles.buttonRow}>
+            {canReview && isOpen ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onReview(hazard.id, actionTaken)}
+                style={[styles.button, styles.reviewButton]}
+              >
+                <Text style={styles.buttonText}>Mark Reviewed</Text>
+              </Pressable>
+            ) : null}
+            {canClear && isReviewed ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onClear(hazard.id, actionTaken)}
+                style={[styles.button, styles.clearButton]}
+              >
+                <Text style={styles.buttonText}>Clear Hazard</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </>
       ) : null}
     </View>
   );
@@ -199,10 +218,35 @@ function makeStyles(theme: Theme) {
       fontWeight: '700',
       marginTop: 6,
     },
-    mapLink: {
-      color: theme.accent,
-      fontWeight: '700',
-      textDecorationLine: 'underline',
+    mapBtn: {
+      alignItems: 'center',
+      backgroundColor: theme.infoLight,
+      borderColor: theme.info,
+      borderRadius: 8,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: 6,
+      marginTop: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    mapBtnText: {
+      color: theme.info,
+      flex: 1,
+      fontSize: 13,
+      fontWeight: '800',
+    },
+    actionInput: {
+      backgroundColor: theme.bgInput,
+      borderColor: theme.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      color: theme.text,
+      fontSize: 13,
+      fontWeight: '600',
+      marginTop: 10,
+      minHeight: 64,
+      padding: 10,
     },
     buttonRow: {
       flexDirection: 'row',
