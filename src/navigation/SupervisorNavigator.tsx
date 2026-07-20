@@ -84,7 +84,7 @@ function SupervisorMoreStack({
   const backBtn = (
     <Pressable
       onPress={() => setScreen('menu')}
-      style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
+      style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 6 }}
     >
       <Ionicons name="chevron-back" size={16} color={theme.accent} />
       <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Back</Text>
@@ -95,7 +95,7 @@ function SupervisorMoreStack({
   const activeBackBtn = screen === 'workerProfile' ? (
     <Pressable
       onPress={() => setScreen('workerContacts')}
-      style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
+      style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 6 }}
     >
       <Ionicons name="chevron-back" size={16} color={theme.accent} />
       <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Contacts</Text>

@@ -410,8 +410,9 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
       {/* Add / Edit Modal */}
       <Modal visible={showModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <PanGestureHandler onHandlerStateChange={onModalSwipe} activeOffsetY={20} failOffsetY={-20}>
+          <PanGestureHandler onHandlerStateChange={onModalSwipe} activeOffsetY={[0, 15]} failOffsetY={-5}>
           <View style={styles.modalBox}>
+            <View style={styles.dragHandle} />
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>{editingCert ? 'Edit Certification' : 'Add Certification'}</Text>
 
@@ -599,7 +600,8 @@ function makeStyles(theme: Theme) {
     historyDetail: { color: theme.textSub, fontSize: 10, fontWeight: '700' },
     // Modal
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalBox: { backgroundColor: theme.bgCard, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', padding: 20 },
+    modalBox: { backgroundColor: theme.bgCard, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', padding: 20, paddingTop: 12 },
+    dragHandle: { alignSelf: 'center', backgroundColor: theme.border, borderRadius: 3, height: 4, marginBottom: 16, width: 40 },
     modalTitle: { color: theme.text, fontSize: 20, fontWeight: '900', marginBottom: 16 },
     fieldLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginBottom: 6, marginTop: 10 },
     input: { backgroundColor: theme.bgInput, borderRadius: 8, borderWidth: 1, borderColor: theme.border, color: theme.text, fontSize: 14, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 2 },
