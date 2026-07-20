@@ -1115,6 +1115,16 @@ export type UserProfile = {
   businessName?: string | null;
   goldbodLicenseNumber?: string | null;
   buyerVerificationStatus?: string | null;
+  dateOfBirth?: string | null;
+  bloodType?: string | null;
+  medicalNotes?: string | null;
+  homeAddress?: string | null;
+  nationalIdNumber?: string | null;
+  ssnitNumber?: string | null;
+  tinNumber?: string | null;
+  jobTitle?: string | null;
+  employmentType?: string | null;
+  fitForDuty?: boolean;
 };
 
 export function getMyProfile() {
@@ -1126,12 +1136,27 @@ export function updateMyProfile(payload: {
   bio?: string | null;
   businessName?: string | null;
   goldbodLicenseNumber?: string | null;
+  dateOfBirth?: string | null;
+  bloodType?: string | null;
+  medicalNotes?: string | null;
+  homeAddress?: string | null;
 }) {
   return put<UserProfile>('/profile', payload);
 }
 
 export function getWorkerProfileByEmail(email: string) {
   return request<UserProfile>(`/profile/${encodeURIComponent(email)}`);
+}
+
+export function updateHrDetails(email: string, payload: {
+  jobTitle?: string | null;
+  employmentType?: string | null;
+  nationalIdNumber?: string | null;
+  ssnitNumber?: string | null;
+  tinNumber?: string | null;
+  fitForDuty?: boolean;
+}) {
+  return patch<UserProfile>(`/profile/${encodeURIComponent(email)}/hr-details`, payload);
 }
 
 // Worker-to-supervisor messaging

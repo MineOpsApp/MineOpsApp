@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SwipeBackView } from '../../components/SwipeBackView';
 
-import { getWorkerProfileByEmail } from '../../services/api';
+import { getWorkerProfileByEmail, updateHrDetails, parseApiError } from '../../services/api';
 import type { UserProfile } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { email: string; session: AuthSession };
@@ -48,6 +52,9 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showIdCard, setShowIdCard] = useState(false);
+  const [editingHr, setEditingHr] = useState(false);
+  const [hrDraft, setHrDraft] = useState({ jobTitle: '', employmentType: '', nationalIdNumber: '', ssnitNumber: '', tinNumber: '', fitForDuty: true });
+  const [savingHr, setSavingHr] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -57,6 +64,27 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [email]);
+
+  async function saveHr() {
+    if (!profile) return;
+    setSavingHr(true);
+    try {
+      const updated = await updateHrDetails(email, {
+        jobTitle: hrDraft.jobTitle.trim() || null,
+        employmentType: hrDraft.employmentType || null,
+        nationalIdNumber: hrDraft.nationalIdNumber.trim() || null,
+        ssnitNumber: hrDraft.ssnitNumber.trim() || null,
+        tinNumber: hrDraft.tinNumber.trim() || null,
+        fitForDuty: hrDraft.fitForDuty,
+      });
+      setProfile(updated);
+      setEditingHr(false);
+    } catch (e) {
+      Alert.alert('Error', parseApiError(e));
+    } finally {
+      setSavingHr(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -178,12 +206,52 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
         <Text style={styles.idCardBtnChevron}>›</Text>
       </Pressable>
 
+      {profile.fitForDuty === false && (
+        <View style={styles.fitForDutyBanner}>
+          <Ionicons name="warning" size={16} color={theme.danger} />
+          <Text style={styles.fitForDutyBannerText}>Worker is Not Fit for Duty.</Text>
+        </View>
+      )}
+
       {profile.bio ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Bio</Text>
           <Text style={styles.bioText}>{profile.bio}</Text>
         </View>
       ) : null}
+
+      {/* Medical & Personal (read-only reference for emergencies) */}
+      {(profile.dateOfBirth || profile.bloodType || profile.medicalNotes || profile.homeAddress) && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Medical & Personal</Text>
+          {profile.dateOfBirth ? (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Date of Birth</Text>
+              <Text style={styles.detailValue}>{formatDate(profile.dateOfBirth + 'T12:00:00')}</Text>
+            </View>
+          ) : null}
+          {profile.bloodType ? (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Blood Type</Text>
+              <View style={[styles.statusPill, { backgroundColor: theme.dangerLight }]}>
+                <Text style={[styles.statusPillText, { color: theme.danger }]}>{profile.bloodType}</Text>
+              </View>
+            </View>
+          ) : null}
+          {profile.medicalNotes ? (
+            <View style={styles.noteBlock}>
+              <Text style={styles.detailLabel}>Medical Notes</Text>
+              <Text style={styles.noteText}>{profile.medicalNotes}</Text>
+            </View>
+          ) : null}
+          {profile.homeAddress ? (
+            <View style={styles.noteBlock}>
+              <Text style={styles.detailLabel}>Home Address</Text>
+              <Text style={styles.noteText}>{profile.homeAddress}</Text>
+            </View>
+          ) : null}
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account Details</Text>
@@ -209,6 +277,145 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
             <Text style={styles.detailValue}>{formatDate(profile.createdAt)}</Text>
           </View>
         ) : null}
+      </View>
+
+      {/* Employment Details (editable by supervisor) */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Employment Details</Text>
+          {!editingHr && (
+            <Pressable onPress={() => {
+              setHrDraft({
+                jobTitle: profile.jobTitle ?? '',
+                employmentType: profile.employmentType ?? '',
+                nationalIdNumber: profile.nationalIdNumber ?? '',
+                ssnitNumber: profile.ssnitNumber ?? '',
+                tinNumber: profile.tinNumber ?? '',
+                fitForDuty: profile.fitForDuty !== false,
+              });
+              setEditingHr(true);
+            }}>
+              <Text style={styles.editLink}>Edit</Text>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Staff ID</Text>
+          <Text style={styles.detailValue}>{idNumber(profile.id)}</Text>
+        </View>
+
+        {editingHr ? (
+          <>
+            <Text style={styles.fieldLabel}>Job Title</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={hrDraft.jobTitle}
+              onChangeText={(v) => setHrDraft((p) => ({ ...p, jobTitle: v }))}
+              placeholder="e.g. Drill Operator"
+              placeholderTextColor={theme.textMuted}
+            />
+            <Text style={[styles.fieldLabel, { marginTop: 10 }]}>Employment Type</Text>
+            <View style={styles.pillRow}>
+              {(['PERMANENT', 'CONTRACT', 'CASUAL'] as const).map((et) => (
+                <Pressable
+                  key={et}
+                  onPress={() => setHrDraft((p) => ({ ...p, employmentType: et === p.employmentType ? '' : et }))}
+                  style={[styles.pill, hrDraft.employmentType === et && styles.pillActive]}
+                >
+                  <Text style={[styles.pillText, hrDraft.employmentType === et && styles.pillTextActive]}>
+                    {et.charAt(0) + et.slice(1).toLowerCase()}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={[styles.fieldLabel, { marginTop: 10 }]}>National ID Number</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={hrDraft.nationalIdNumber}
+              onChangeText={(v) => setHrDraft((p) => ({ ...p, nationalIdNumber: v }))}
+              placeholder="Ghana Card number"
+              placeholderTextColor={theme.textMuted}
+              autoCapitalize="characters"
+            />
+            <Text style={[styles.fieldLabel, { marginTop: 10 }]}>SSNIT Number</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={hrDraft.ssnitNumber}
+              onChangeText={(v) => setHrDraft((p) => ({ ...p, ssnitNumber: v }))}
+              placeholder="SSNIT number"
+              placeholderTextColor={theme.textMuted}
+            />
+            <Text style={[styles.fieldLabel, { marginTop: 10 }]}>TIN</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={hrDraft.tinNumber}
+              onChangeText={(v) => setHrDraft((p) => ({ ...p, tinNumber: v }))}
+              placeholder="Tax identification number"
+              placeholderTextColor={theme.textMuted}
+            />
+            <View style={[styles.detailRow, { marginTop: spacing.sm }]}>
+              <Text style={styles.detailLabel}>Fit for Duty</Text>
+              <Switch
+                value={hrDraft.fitForDuty}
+                onValueChange={(v) => setHrDraft((p) => ({ ...p, fitForDuty: v }))}
+                trackColor={{ false: theme.dangerLight, true: theme.successLight }}
+                thumbColor={hrDraft.fitForDuty ? theme.success : theme.danger}
+              />
+            </View>
+            <View style={styles.hrActions}>
+              <Pressable onPress={saveHr} style={[styles.saveBtn, savingHr && styles.btnDisabled]} disabled={savingHr}>
+                <Text style={styles.saveBtnText}>{savingHr ? 'Saving…' : 'Save'}</Text>
+              </Pressable>
+              <Pressable onPress={() => setEditingHr(false)} style={styles.cancelBtn}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Job Title</Text>
+              <Text style={[styles.detailValue, !profile.jobTitle && styles.notOnFile]}>
+                {profile.jobTitle ?? 'Not on file'}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Employment Type</Text>
+              <Text style={[styles.detailValue, !profile.employmentType && styles.notOnFile]}>
+                {profile.employmentType
+                  ? profile.employmentType.charAt(0) + profile.employmentType.slice(1).toLowerCase()
+                  : 'Not on file'}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>National ID</Text>
+              <Text style={[styles.detailValue, !profile.nationalIdNumber && styles.notOnFile]}>
+                {profile.nationalIdNumber ?? 'Not on file'}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>SSNIT No.</Text>
+              <Text style={[styles.detailValue, !profile.ssnitNumber && styles.notOnFile]}>
+                {profile.ssnitNumber ?? 'Not on file'}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>TIN</Text>
+              <Text style={[styles.detailValue, !profile.tinNumber && styles.notOnFile]}>
+                {profile.tinNumber ?? 'Not on file'}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Fit for Duty</Text>
+              <View style={[styles.statusPill, { backgroundColor: profile.fitForDuty !== false ? theme.successLight : theme.dangerLight }]}>
+                <Text style={[styles.statusPillText, { color: profile.fitForDuty !== false ? theme.success : theme.danger }]}>
+                  {profile.fitForDuty !== false ? 'Yes' : 'No'}
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -285,5 +492,27 @@ function makeStyles(theme: Theme) {
     statusDot: { borderRadius: 5, height: 10, width: 10 },
     idCardStatus: { color: '#9cbdcf', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
     idCardSince: { color: '#5d7a8c', fontSize: 11, fontWeight: '600' },
+
+    // Employment details editing
+    sectionHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+    editLink: { color: theme.accent, fontSize: 13, fontWeight: '800' },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '900', letterSpacing: 0.5, marginBottom: 5, textTransform: 'uppercase' },
+    fieldInput: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, fontWeight: '700', paddingHorizontal: 12, paddingVertical: 9 },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 2 },
+    pill: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 16, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 },
+    pillActive: { backgroundColor: theme.accentLight, borderColor: theme.accent },
+    pillText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
+    pillTextActive: { color: theme.accent },
+    hrActions: { flexDirection: 'row', gap: 10, marginTop: 12 },
+    saveBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 9 },
+    saveBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+    cancelBtn: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 9 },
+    cancelBtnText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    btnDisabled: { opacity: 0.5 },
+    notOnFile: { color: theme.textMuted },
+    fitForDutyBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 8, marginBottom: 14, padding: 12 },
+    fitForDutyBannerText: { color: theme.danger, flex: 1, fontSize: 13, fontWeight: '700' },
+    noteBlock: { borderTopColor: theme.bgInput, borderTopWidth: 1, paddingVertical: 9 },
+    noteText: { color: theme.text, fontSize: 13, fontWeight: '600', lineHeight: 19, marginTop: 3 },
   });
 }

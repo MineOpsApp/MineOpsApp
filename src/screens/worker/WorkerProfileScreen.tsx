@@ -60,10 +60,23 @@ export function WorkerProfileScreen({ session: _ }: Props) {
   const [savingBio, setSavingBio] = useState(false);
   const [insurance, setInsurance] = useState<InsuranceStatus | null>(null);
   const [applyingInsurance, setApplyingInsurance] = useState(false);
+  const [editingMedical, setEditingMedical] = useState(false);
+  const [dobText, setDobText] = useState('');
+  const [selectedBloodType, setSelectedBloodType] = useState('');
+  const [medicalText, setMedicalText] = useState('');
+  const [homeAddressText, setHomeAddressText] = useState('');
+  const [savingMedical, setSavingMedical] = useState(false);
 
   async function load() {
     await Promise.all([
-      getMyProfile().then((p) => { setProfile(p); setBioText(p.bio ?? ''); }).catch(() => {}),
+      getMyProfile().then((p) => {
+        setProfile(p);
+        setBioText(p.bio ?? '');
+        setDobText(p.dateOfBirth ?? '');
+        setSelectedBloodType(p.bloodType ?? '');
+        setMedicalText(p.medicalNotes ?? '');
+        setHomeAddressText(p.homeAddress ?? '');
+      }).catch(() => {}),
       getInsuranceStatus().then(setInsurance).catch(() => {}),
     ]);
   }
@@ -128,6 +141,24 @@ export function WorkerProfileScreen({ session: _ }: Props) {
         },
       },
     ]);
+  }
+
+  async function saveMedical() {
+    setSavingMedical(true);
+    try {
+      const updated = await updateMyProfile({
+        dateOfBirth: dobText.trim() || null,
+        bloodType: selectedBloodType || null,
+        medicalNotes: medicalText.trim() || null,
+        homeAddress: homeAddressText.trim() || null,
+      });
+      setProfile(updated);
+      setEditingMedical(false);
+    } catch (e) {
+      Alert.alert('Error', parseApiError(e));
+    } finally {
+      setSavingMedical(false);
+    }
   }
 
   async function saveBio() {
@@ -225,6 +256,13 @@ export function WorkerProfileScreen({ session: _ }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.pageTitle}>My Profile</Text>
+
+      {profile.fitForDuty === false && (
+        <View style={styles.fitForDutyBanner}>
+          <Ionicons name="warning" size={16} color={theme.danger} />
+          <Text style={styles.fitForDutyBannerText}>Not Fit for Duty — contact your supervisor before working.</Text>
+        </View>
+      )}
 
       {/* Photo section */}
       <View style={styles.photoSection}>
@@ -331,6 +369,111 @@ export function WorkerProfileScreen({ session: _ }: Props) {
         )}
       </View>
 
+      {/* Personal & Medical */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Personal & Medical</Text>
+          {!editingMedical && (
+            <Pressable onPress={() => {
+              setDobText(profile.dateOfBirth ?? '');
+              setSelectedBloodType(profile.bloodType ?? '');
+              setMedicalText(profile.medicalNotes ?? '');
+              setHomeAddressText(profile.homeAddress ?? '');
+              setEditingMedical(true);
+            }}>
+              <Text style={styles.editLink}>Edit</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {editingMedical ? (
+          <>
+            <Text style={styles.fieldLabel}>Date of Birth</Text>
+            <TextInput
+              style={styles.bioInput}
+              value={dobText}
+              onChangeText={setDobText}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={theme.textMuted}
+              keyboardType="numbers-and-punctuation"
+            />
+            <Text style={[styles.fieldLabel, { marginTop: 10 }]}>Blood Type</Text>
+            <View style={styles.pillRow}>
+              {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'].map((bt) => (
+                <Pressable
+                  key={bt}
+                  onPress={() => setSelectedBloodType(bt === selectedBloodType ? '' : bt)}
+                  style={[styles.pill, selectedBloodType.toUpperCase() === bt.toUpperCase() && styles.pillActive]}
+                >
+                  <Text style={[styles.pillText, selectedBloodType.toUpperCase() === bt.toUpperCase() && styles.pillTextActive]}>{bt}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={[styles.fieldLabel, { marginTop: 10 }]}>Medical Notes</Text>
+            <TextInput
+              style={[styles.bioInput, { minHeight: 72 }]}
+              value={medicalText}
+              onChangeText={setMedicalText}
+              placeholder="Allergies, conditions, medications..."
+              placeholderTextColor={theme.textMuted}
+              multiline
+              textAlignVertical="top"
+            />
+            <Text style={styles.fieldCaption}>Visible to supervisors and safety officers in an emergency.</Text>
+            <Text style={[styles.fieldLabel, { marginTop: 10 }]}>Home Address</Text>
+            <TextInput
+              style={[styles.bioInput, { minHeight: 56 }]}
+              value={homeAddressText}
+              onChangeText={setHomeAddressText}
+              placeholder="Your home address..."
+              placeholderTextColor={theme.textMuted}
+              multiline
+              textAlignVertical="top"
+            />
+            <View style={styles.bioActions}>
+              <Pressable onPress={saveMedical} style={[styles.bioSaveBtn, savingMedical && styles.btnDisabled]} disabled={savingMedical}>
+                <Text style={styles.bioSaveBtnText}>{savingMedical ? 'Saving…' : 'Save'}</Text>
+              </Pressable>
+              <Pressable onPress={() => setEditingMedical(false)} style={styles.bioCancelBtn}>
+                <Text style={styles.bioCancelBtnText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <>
+            {profile.dateOfBirth ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Date of Birth</Text>
+                <Text style={styles.detailValue}>{formatDate(profile.dateOfBirth + 'T12:00:00')}</Text>
+              </View>
+            ) : null}
+            {profile.bloodType ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Blood Type</Text>
+                <View style={[styles.statusPill, { backgroundColor: theme.dangerLight }]}>
+                  <Text style={[styles.statusPillText, { color: theme.danger }]}>{profile.bloodType}</Text>
+                </View>
+              </View>
+            ) : null}
+            {profile.medicalNotes ? (
+              <View style={styles.noteBlock}>
+                <Text style={styles.detailLabel}>Medical Notes</Text>
+                <Text style={styles.noteText}>{profile.medicalNotes}</Text>
+              </View>
+            ) : null}
+            {profile.homeAddress ? (
+              <View style={styles.noteBlock}>
+                <Text style={styles.detailLabel}>Home Address</Text>
+                <Text style={styles.noteText}>{profile.homeAddress}</Text>
+              </View>
+            ) : null}
+            {!profile.dateOfBirth && !profile.bloodType && !profile.medicalNotes && !profile.homeAddress && (
+              <Text style={styles.bioEmpty}>No info on file. Tap "Edit" to add your personal and medical details.</Text>
+            )}
+          </>
+        )}
+      </View>
+
       {/* Account details */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account Details</Text>
@@ -364,6 +507,47 @@ export function WorkerProfileScreen({ session: _ }: Props) {
             <Text style={styles.detailValue}>{formatDate(profile.createdAt)}</Text>
           </View>
         ) : null}
+      </View>
+
+      {/* Employment Details (read-only — set by supervisor) */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Employment Details</Text>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Staff ID</Text>
+          <Text style={styles.detailValue}>{idNumber(profile.id)}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Job Title</Text>
+          <Text style={[styles.detailValue, !profile.jobTitle && styles.notOnFile]}>
+            {profile.jobTitle ?? 'Not on file — contact your supervisor'}
+          </Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Employment Type</Text>
+          <Text style={[styles.detailValue, !profile.employmentType && styles.notOnFile]}>
+            {profile.employmentType
+              ? profile.employmentType.charAt(0) + profile.employmentType.slice(1).toLowerCase()
+              : 'Not on file — contact your supervisor'}
+          </Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>National ID</Text>
+          <Text style={[styles.detailValue, !profile.nationalIdNumber && styles.notOnFile]}>
+            {profile.nationalIdNumber ?? 'Not on file'}
+          </Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>SSNIT No.</Text>
+          <Text style={[styles.detailValue, !profile.ssnitNumber && styles.notOnFile]}>
+            {profile.ssnitNumber ?? 'Not on file'}
+          </Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>TIN</Text>
+          <Text style={[styles.detailValue, !profile.tinNumber && styles.notOnFile]}>
+            {profile.tinNumber ?? 'Not on file'}
+          </Text>
+        </View>
       </View>
 
       {/* Insurance */}
@@ -519,5 +703,21 @@ function makeStyles(theme: Theme) {
     idCardStatus: { color: '#9cbdcf', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
     idCardSince: { color: '#5d7a8c', fontSize: 11, fontWeight: '600' },
     idCardNote: { ...typography.caption, color: theme.textMuted, textAlign: 'center' },
+
+    // Fit-for-duty banner
+    fitForDutyBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 8, marginBottom: spacing.md, padding: 12 },
+    fitForDutyBannerText: { color: theme.danger, flex: 1, fontSize: 13, fontWeight: '700' },
+
+    // Personal & Medical
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '900', letterSpacing: 0.5, marginBottom: 5, textTransform: 'uppercase' },
+    fieldCaption: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 2 },
+    pill: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 16, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 },
+    pillActive: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
+    pillText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
+    pillTextActive: { color: theme.danger },
+    noteBlock: { borderTopColor: theme.border, borderTopWidth: 1, paddingVertical: 9 },
+    noteText: { color: theme.text, fontSize: 13, fontWeight: '600', lineHeight: 19, marginTop: 3 },
+    notOnFile: { color: theme.textMuted },
   });
 }
