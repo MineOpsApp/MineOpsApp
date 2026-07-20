@@ -16,6 +16,13 @@ import { SupervisorMessagesScreen } from '../screens/supervisor/SupervisorMessag
 import { SupervisorIncidentScreen } from '../screens/supervisor/SupervisorIncidentScreen';
 import { SupervisorResetPasswordScreen } from '../screens/supervisor/SupervisorResetPasswordScreen';
 import { SafetyIntelligenceScreen } from '../screens/supervisor/SafetyIntelligenceScreen';
+import { SupervisorRosterScreen } from '../screens/supervisor/SupervisorRosterScreen';
+import { SupervisorBlastScreen } from '../screens/supervisor/SupervisorBlastScreen';
+import { SupervisorEquipmentRegistryScreen } from '../screens/supervisor/SupervisorEquipmentRegistryScreen';
+import { SupervisorDrillScreen } from '../screens/supervisor/SupervisorDrillScreen';
+import { SupervisorSafetyChecklistScreen } from '../screens/supervisor/SupervisorSafetyChecklistScreen';
+import { SupervisorFirstAidKitScreen } from '../screens/supervisor/SupervisorFirstAidKitScreen';
+import { SafetyLoneWorkerScreen } from '../screens/safety/SafetyLoneWorkerScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
@@ -36,7 +43,7 @@ export type SafetyOfficerTabParamList = {
 const Tab = createBottomTabNavigator<SafetyOfficerTabParamList>();
 
 
-type SafetyMoreSubScreen = 'menu' | 'audit' | 'incidents' | 'safetyIntelligence' | 'workerContacts' | 'workerProfile' | 'messages' | 'community' | 'search' | 'illegalReport' | 'reset';
+type SafetyMoreSubScreen = 'menu' | 'audit' | 'incidents' | 'safetyIntelligence' | 'workerContacts' | 'workerProfile' | 'messages' | 'community' | 'search' | 'illegalReport' | 'reset' | 'roster' | 'blast' | 'equipment' | 'drills' | 'checklist' | 'firstAid' | 'loneWorker';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -101,6 +108,13 @@ function SafetyMoreStack({
   if (screen === 'community') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></SwipeBackView>;
   if (screen === 'search') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SearchScreen session={session} /></SwipeBackView>;
   if (screen === 'illegalReport') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<IllegalMineReportScreen /></SwipeBackView>;
+  if (screen === 'roster') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorRosterScreen session={session} /></SwipeBackView>;
+  if (screen === 'blast') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorBlastScreen session={session} /></SwipeBackView>;
+  if (screen === 'equipment') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorEquipmentRegistryScreen session={session} /></SwipeBackView>;
+  if (screen === 'drills') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorDrillScreen session={session} /></SwipeBackView>;
+  if (screen === 'checklist') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorSafetyChecklistScreen session={session} /></SwipeBackView>;
+  if (screen === 'firstAid') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorFirstAidKitScreen session={session} /></SwipeBackView>;
+  if (screen === 'loneWorker') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SafetyLoneWorkerScreen session={session} /></SwipeBackView>;
 
   return (
     <MoreScreen
@@ -110,15 +124,27 @@ function SafetyMoreStack({
           items: [
             { icon: '🧠', label: 'Safety Intelligence', description: 'Hotspots, trending hazard types, and recommendations from the last 30 days', onPress: () => setScreen('safetyIntelligence') },
             { icon: '🚑', label: 'Incident Reports', description: 'Review, investigate, and close incident reports for your site', onPress: () => setScreen('incidents') },
+            { icon: '✅', label: 'Safety Checklists', description: "Today's shift checklist — who has and hasn't submitted", onPress: () => setScreen('checklist') },
+            { icon: '🩺', label: 'First Aid Kits', description: 'Per-zone kit inventory and weekly check status', onPress: () => setScreen('firstAid') },
+            { icon: '🛡', label: 'Lone Worker Monitoring', description: 'Live view of workers using the lone worker check-in timer', onPress: () => setScreen('loneWorker') },
             { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
           ],
         },
         {
           title: 'Team',
           items: [
+            { icon: '👷', label: 'Site Roster', description: 'Live headcount — who is on site now', onPress: () => setScreen('roster') },
             { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts and profiles for all site personnel', onPress: () => setScreen('workerContacts') },
             { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
             { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for a locked out worker', onPress: () => setScreen('reset') },
+          ],
+        },
+        {
+          title: 'Site Operations',
+          items: [
+            { icon: '🔧', label: 'Equipment Registry', description: 'Manage site equipment list and status', onPress: () => setScreen('equipment') },
+            { icon: '⛏', label: 'Drill Operations', description: 'Active and completed drill sign-offs', onPress: () => setScreen('drills') },
+            { icon: '💥', label: 'Blast Management', description: 'Schedule and notify blast operations', onPress: () => setScreen('blast') },
           ],
         },
         {

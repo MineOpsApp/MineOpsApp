@@ -15,17 +15,11 @@ import { MoreScreen } from '../components/MoreScreen';
 import { AppHeader } from '../components/AppHeader';
 import { useTheme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
-import { SupervisorRosterScreen } from '../screens/supervisor/SupervisorRosterScreen';
-import { SupervisorBlastScreen } from '../screens/supervisor/SupervisorBlastScreen';
-import { SupervisorEquipmentRegistryScreen } from '../screens/supervisor/SupervisorEquipmentRegistryScreen';
-import { SupervisorDrillScreen } from '../screens/supervisor/SupervisorDrillScreen';
 import { SupervisorGuestScreen } from '../screens/supervisor/SupervisorGuestScreen';
 import { SupervisorIncidentScreen } from '../screens/supervisor/SupervisorIncidentScreen';
 import { SupervisorResetPasswordScreen } from '../screens/supervisor/SupervisorResetPasswordScreen';
 import { SupervisorPendingApprovalsScreen } from '../screens/supervisor/SupervisorPendingApprovalsScreen';
 import { SupervisorWorkerContactsScreen } from '../screens/supervisor/SupervisorWorkerContactsScreen';
-import { SupervisorSafetyChecklistScreen } from '../screens/supervisor/SupervisorSafetyChecklistScreen';
-import { SupervisorFirstAidKitScreen } from '../screens/supervisor/SupervisorFirstAidKitScreen';
 import { SupervisorMineralInventoryScreen } from '../screens/supervisor/SupervisorMineralInventoryScreen';
 import { SupervisorCertificationsScreen } from '../screens/supervisor/SupervisorCertificationsScreen';
 import { WorkerProfileViewScreen } from '../screens/supervisor/WorkerProfileViewScreen';
@@ -61,7 +55,7 @@ export type SupervisorTabParamList = {
 const Tab = createBottomTabNavigator<SupervisorTabParamList>();
 
 
-type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'drills' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'roster' | 'blast' | 'reset' | 'incidents' | 'equipment' | 'approvals' | 'workerContacts' | 'checklist' | 'firstAid' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'multiSite' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription' | 'staffAccounts';
+type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'reset' | 'incidents' | 'approvals' | 'workerContacts' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'multiSite' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription' | 'staffAccounts';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -99,13 +93,9 @@ function SupervisorMoreStack({
 
   if (screen === 'shifts') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorShiftScreen session={session} /></SwipeBackView>;
   if (screen === 'audit') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorAuditScreen session={session} /></SwipeBackView>;
-  if (screen === 'drills') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorDrillScreen session={session} /></SwipeBackView>;
   if (screen === 'guests') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorGuestScreen session={session} /></SwipeBackView>;
-  if (screen === 'roster') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorRosterScreen session={session} /></SwipeBackView>;
-  if (screen === 'blast') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorBlastScreen session={session} /></SwipeBackView>;
   if (screen === 'incidents') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorIncidentScreen session={session} /></SwipeBackView>;
   if (screen === 'reset') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorResetPasswordScreen session={session} /></SwipeBackView>;
-  if (screen === 'equipment') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorEquipmentRegistryScreen session={session} /></SwipeBackView>;
   if (screen === 'approvals') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorPendingApprovalsScreen session={session} /></SwipeBackView>;
   if (screen === 'workerContacts') return (
     <SwipeBackView onBack={() => setScreen('menu')}>
@@ -116,8 +106,6 @@ function SupervisorMoreStack({
       />
     </SwipeBackView>
   );
-  if (screen === 'checklist') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorSafetyChecklistScreen session={session} /></SwipeBackView>;
-  if (screen === 'firstAid') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorFirstAidKitScreen session={session} /></SwipeBackView>;
   if (screen === 'mineralInventory') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorMineralInventoryScreen session={session} /></SwipeBackView>;
   if (screen === 'certifications') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorCertificationsScreen session={session} /></SwipeBackView>;
   if (screen === 'workerProfile') return (
@@ -170,7 +158,6 @@ function SupervisorMoreStack({
         {
           title: 'People',
           items: [
-            { icon: '👷', label: 'Site Roster', description: 'Live headcount — who is on site now', onPress: () => setScreen('roster') },
             { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts for all site personnel', onPress: () => setScreen('workerContacts') },
             { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
           ],
@@ -179,9 +166,7 @@ function SupervisorMoreStack({
           title: 'Safety & Compliance',
           items: [
             { icon: '🚑', label: 'Incident Reports', description: 'View and manage site incident reports', onPress: () => setScreen('incidents') },
-            { icon: '✅', label: 'Safety Checklists', description: "Today's shift checklist — who has and hasn't submitted", onPress: () => setScreen('checklist') },
             { icon: '🧠', label: 'Safety Intelligence', description: 'Hotspots, trending hazard types, and recommendations from the last 30 days', onPress: () => setScreen('safetyIntelligence') },
-            { icon: '🩺', label: 'First Aid Kits', description: 'Per-zone kit inventory and weekly check status', onPress: () => setScreen('firstAid') },
             { icon: '🎓', label: 'Certifications', description: 'Track worker certifications, expiry dates, and renewal history', onPress: () => setScreen('certifications') },
             { icon: '🔍', label: 'Audit Log', description: 'Full tamper-proof activity trail', onPress: () => setScreen('audit') },
           ],
@@ -190,9 +175,6 @@ function SupervisorMoreStack({
           title: 'Site Operations',
           items: [
             { icon: '📋', label: 'Shift Logs', description: 'View all site shift production logs', onPress: () => setScreen('shifts') },
-            { icon: '🔧', label: 'Equipment Registry', description: 'Manage site equipment list and status', onPress: () => setScreen('equipment') },
-            { icon: '⛏', label: 'Drill Operations', description: 'Active and completed drill sign-offs', onPress: () => setScreen('drills') },
-            { icon: '💥', label: 'Blast Management', description: 'Schedule and notify blast operations', onPress: () => setScreen('blast') },
             { icon: '⛏', label: 'Mineral Inventory', description: 'Live stock totals and transaction history from approved shift logs', onPress: () => setScreen('mineralInventory') },
             { icon: '🗺', label: 'Site Map', description: 'Upload the site floor plan for the interactive zone map', onPress: () => setScreen('siteMap') },
             { icon: '📢', label: 'Announcements', description: 'Broadcast a quick update to all workers on site', onPress: () => setScreen('announcements') },
