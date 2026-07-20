@@ -79,46 +79,42 @@ function SafetyMoreStack({
     </Pressable>
   );
 
-  if (screen === 'incidents') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorIncidentScreen session={session} /></SwipeBackView>;
-  if (screen === 'safetyIntelligence') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SafetyIntelligenceScreen session={session} /></SwipeBackView>;
-  if (screen === 'audit') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SafetyAuditScreen session={session} /></SwipeBackView>;
-  if (screen === 'reset') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorResetPasswordScreen session={session} /></SwipeBackView>;
-  if (screen === 'workerContacts') return (
-    <SwipeBackView onBack={() => setScreen('menu')}>
-      {backBtn}
-      <SupervisorWorkerContactsScreen
-        session={session}
-        onViewProfile={(email) => { setViewingWorkerEmail(email); setScreen('workerProfile'); }}
-      />
-    </SwipeBackView>
-  );
-  if (screen === 'workerProfile') return (
-    <SwipeBackView onBack={() => setScreen('workerContacts')}>
-      <Pressable
-        onPress={() => setScreen('workerContacts')}
-        style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
-      >
-        <Ionicons name="chevron-back" size={16} color={theme.accent} />
-        <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Contacts</Text>
-      </Pressable>
-      <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
-    </SwipeBackView>
-  );
-  if (screen === 'messages') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorMessagesScreen session={session} /></SwipeBackView>;
-  if (screen === 'community') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></SwipeBackView>;
-  if (screen === 'search') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SearchScreen session={session} /></SwipeBackView>;
-  if (screen === 'illegalReport') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<IllegalMineReportScreen /></SwipeBackView>;
-  if (screen === 'roster') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorRosterScreen session={session} /></SwipeBackView>;
-  if (screen === 'blast') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorBlastScreen session={session} /></SwipeBackView>;
-  if (screen === 'equipment') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorEquipmentRegistryScreen session={session} /></SwipeBackView>;
-  if (screen === 'drills') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorDrillScreen session={session} /></SwipeBackView>;
-  if (screen === 'checklist') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorSafetyChecklistScreen session={session} /></SwipeBackView>;
-  if (screen === 'firstAid') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorFirstAidKitScreen session={session} /></SwipeBackView>;
-  if (screen === 'loneWorker') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SafetyLoneWorkerScreen session={session} /></SwipeBackView>;
+  const onSwipeBack = screen === 'workerProfile' ? () => setScreen('workerContacts') : () => setScreen('menu');
+  const activeBackBtn = screen === 'workerProfile' ? (
+    <Pressable
+      onPress={() => setScreen('workerContacts')}
+      style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
+    >
+      <Ionicons name="chevron-back" size={16} color={theme.accent} />
+      <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Contacts</Text>
+    </Pressable>
+  ) : backBtn;
+
+  const subScreen =
+    screen === 'incidents' ? <SupervisorIncidentScreen session={session} /> :
+    screen === 'safetyIntelligence' ? <SafetyIntelligenceScreen session={session} /> :
+    screen === 'audit' ? <SafetyAuditScreen session={session} /> :
+    screen === 'reset' ? <SupervisorResetPasswordScreen session={session} /> :
+    screen === 'workerContacts' ? <SupervisorWorkerContactsScreen session={session} onViewProfile={(email) => { setViewingWorkerEmail(email); setScreen('workerProfile'); }} /> :
+    screen === 'workerProfile' ? <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} /> :
+    screen === 'messages' ? <SupervisorMessagesScreen session={session} /> :
+    screen === 'community' ? <CommunityScreen isSupervisor={false} userEmail={session.user.email} /> :
+    screen === 'search' ? <SearchScreen session={session} /> :
+    screen === 'illegalReport' ? <IllegalMineReportScreen /> :
+    screen === 'roster' ? <SupervisorRosterScreen session={session} /> :
+    screen === 'blast' ? <SupervisorBlastScreen session={session} /> :
+    screen === 'equipment' ? <SupervisorEquipmentRegistryScreen session={session} /> :
+    screen === 'drills' ? <SupervisorDrillScreen session={session} /> :
+    screen === 'checklist' ? <SupervisorSafetyChecklistScreen session={session} /> :
+    screen === 'firstAid' ? <SupervisorFirstAidKitScreen session={session} /> :
+    screen === 'loneWorker' ? <SafetyLoneWorkerScreen session={session} /> :
+    null;
 
   return (
-    <MoreScreen
-      sections={[
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <View style={{ flex: 1, display: screen === 'menu' ? 'flex' : 'none' }}>
+        <MoreScreen
+          sections={[
         {
           title: 'Safety Ops',
           items: [
@@ -155,7 +151,19 @@ function SafetyMoreStack({
           ],
         },
       ]}
-    />
+        />
+      </View>
+      {subScreen !== null && (
+        <View style={{ flex: 1 }}>
+          <SwipeBackView onBack={onSwipeBack}>
+            <View style={{ flex: 1, backgroundColor: theme.bg }}>
+              {activeBackBtn}
+              {subScreen}
+            </View>
+          </SwipeBackView>
+        </View>
+      )}
+    </View>
   );
 }
 

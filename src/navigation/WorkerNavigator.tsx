@@ -73,21 +73,25 @@ function WorkerMoreStack({
     </Pressable>
   );
 
-  if (screen === 'shift') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerShiftScreen session={session} /></SwipeBackView>;
-  if (screen === 'handover') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerHandoverScreen session={session} /></SwipeBackView>;
-  if (screen === 'drill') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerDrillScreen session={session} /></SwipeBackView>;
-  if (screen === 'attendance') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerAttendanceScreen session={session} /></SwipeBackView>;
-  if (screen === 'incident') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerIncidentScreen session={session} /></SwipeBackView>;
-  if (screen === 'checklist') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerSafetyChecklistScreen session={session} /></SwipeBackView>;
-  if (screen === 'messages') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerMessagesScreen session={session} /></SwipeBackView>;
-  if (screen === 'loneWorker') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<WorkerLoneWorkerScreen /></SwipeBackView>;
-  if (screen === 'community') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<CommunityScreen isSupervisor={false} userEmail={session.user.email} /></SwipeBackView>;
-  if (screen === 'search') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SearchScreen session={session} /></SwipeBackView>;
-  if (screen === 'illegalReport') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<IllegalMineReportScreen /></SwipeBackView>;
+  const subScreen =
+    screen === 'shift' ? <WorkerShiftScreen session={session} /> :
+    screen === 'handover' ? <WorkerHandoverScreen session={session} /> :
+    screen === 'drill' ? <WorkerDrillScreen session={session} /> :
+    screen === 'attendance' ? <WorkerAttendanceScreen session={session} /> :
+    screen === 'incident' ? <WorkerIncidentScreen session={session} /> :
+    screen === 'checklist' ? <WorkerSafetyChecklistScreen session={session} /> :
+    screen === 'messages' ? <WorkerMessagesScreen session={session} /> :
+    screen === 'loneWorker' ? <WorkerLoneWorkerScreen /> :
+    screen === 'community' ? <CommunityScreen isSupervisor={false} userEmail={session.user.email} /> :
+    screen === 'search' ? <SearchScreen session={session} /> :
+    screen === 'illegalReport' ? <IllegalMineReportScreen /> :
+    null;
 
   return (
-    <MoreScreen
-      sections={[
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <View style={{ flex: 1, display: screen === 'menu' ? 'flex' : 'none' }}>
+        <MoreScreen
+          sections={[
         {
           title: 'Work & Shifts',
           items: [
@@ -114,7 +118,19 @@ function WorkerMoreStack({
           ],
         },
       ]}
-    />
+        />
+      </View>
+      {subScreen !== null && (
+        <View style={{ flex: 1 }}>
+          <SwipeBackView onBack={() => setScreen('menu')}>
+            <View style={{ flex: 1, backgroundColor: theme.bg }}>
+              {backBtn}
+              {subScreen}
+            </View>
+          </SwipeBackView>
+        </View>
+      )}
+    </View>
   );
 }
 

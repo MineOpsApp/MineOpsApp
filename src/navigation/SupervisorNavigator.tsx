@@ -91,58 +91,54 @@ function SupervisorMoreStack({
     </Pressable>
   );
 
-  if (screen === 'shifts') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorShiftScreen session={session} /></SwipeBackView>;
-  if (screen === 'audit') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorAuditScreen session={session} /></SwipeBackView>;
-  if (screen === 'guests') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorGuestScreen session={session} /></SwipeBackView>;
-  if (screen === 'incidents') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorIncidentScreen session={session} /></SwipeBackView>;
-  if (screen === 'reset') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorResetPasswordScreen session={session} /></SwipeBackView>;
-  if (screen === 'approvals') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorPendingApprovalsScreen session={session} /></SwipeBackView>;
-  if (screen === 'workerContacts') return (
-    <SwipeBackView onBack={() => setScreen('menu')}>
-      {backBtn}
-      <SupervisorWorkerContactsScreen
-        session={session}
-        onViewProfile={(email) => { setViewingWorkerEmail(email); setScreen('workerProfile'); }}
-      />
-    </SwipeBackView>
-  );
-  if (screen === 'mineralInventory') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorMineralInventoryScreen session={session} /></SwipeBackView>;
-  if (screen === 'certifications') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorCertificationsScreen session={session} /></SwipeBackView>;
-  if (screen === 'workerProfile') return (
-    <SwipeBackView onBack={() => setScreen('workerContacts')}>
-      <Pressable
-        onPress={() => setScreen('workerContacts')}
-        style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
-      >
-        <Ionicons name="chevron-back" size={16} color={theme.accent} />
-        <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Contacts</Text>
-      </Pressable>
-      <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} />
-    </SwipeBackView>
-  );
-  if (screen === 'messages') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorMessagesScreen session={session} /></SwipeBackView>;
-  if (screen === 'announcements') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorAnnouncementsScreen session={session} /></SwipeBackView>;
-  if (screen === 'payRuns') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorPayRunsScreen session={session} /></SwipeBackView>;
-  if (screen === 'guestCodes') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorGuestCodesScreen session={session} /></SwipeBackView>;
-  if (screen === 'siteMap') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorSiteMapScreen session={session} /></SwipeBackView>;
-  if (screen === 'insurance') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorInsuranceSettingsScreen session={session} /></SwipeBackView>;
-  if (screen === 'safetyIntelligence') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SafetyIntelligenceScreen session={session} /></SwipeBackView>;
-  if (screen === 'listings') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorListingsScreen session={session} /></SwipeBackView>;
-  if (screen === 'offers') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorOffersScreen session={session} /></SwipeBackView>;
-  if (screen === 'transactions') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorTransactionsScreen session={session} /></SwipeBackView>;
-  if (screen === 'community') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<CommunityScreen isSupervisor userEmail={session.user.email} /></SwipeBackView>;
-  if (screen === 'search') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SearchScreen session={session} /></SwipeBackView>;
-  if (screen === 'siteAccess') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorSiteAccessScreen session={session} /></SwipeBackView>;
-  if (screen === 'multiSite') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorMultiSiteScreen session={session} /></SwipeBackView>;
-  if (screen === 'permitStatus') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorPermitStatusScreen session={session} /></SwipeBackView>;
-  if (screen === 'bulkPurchase') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorBulkPurchaseScreen session={session} /></SwipeBackView>;
-  if (screen === 'illegalReport') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<IllegalMineReportScreen /></SwipeBackView>;
-  if (screen === 'subscription') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorSubscriptionScreen session={session} /></SwipeBackView>;
-  if (screen === 'staffAccounts') return <SwipeBackView onBack={() => setScreen('menu')}>{backBtn}<SupervisorStaffScreen session={session} /></SwipeBackView>;
+  const onSwipeBack = screen === 'workerProfile' ? () => setScreen('workerContacts') : () => setScreen('menu');
+  const activeBackBtn = screen === 'workerProfile' ? (
+    <Pressable
+      onPress={() => setScreen('workerContacts')}
+      style={{ alignItems: 'center', alignSelf: 'flex-start', backgroundColor: `${theme.accent}14`, borderRadius: 20, flexDirection: 'row', gap: 4, margin: 16, marginBottom: 0, paddingHorizontal: 12, paddingVertical: 6 }}
+    >
+      <Ionicons name="chevron-back" size={16} color={theme.accent} />
+      <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>Contacts</Text>
+    </Pressable>
+  ) : backBtn;
+
+  const subScreen =
+    screen === 'shifts' ? <SupervisorShiftScreen session={session} /> :
+    screen === 'audit' ? <SupervisorAuditScreen session={session} /> :
+    screen === 'guests' ? <SupervisorGuestScreen session={session} /> :
+    screen === 'incidents' ? <SupervisorIncidentScreen session={session} /> :
+    screen === 'reset' ? <SupervisorResetPasswordScreen session={session} /> :
+    screen === 'approvals' ? <SupervisorPendingApprovalsScreen session={session} /> :
+    screen === 'workerContacts' ? <SupervisorWorkerContactsScreen session={session} onViewProfile={(email) => { setViewingWorkerEmail(email); setScreen('workerProfile'); }} /> :
+    screen === 'mineralInventory' ? <SupervisorMineralInventoryScreen session={session} /> :
+    screen === 'certifications' ? <SupervisorCertificationsScreen session={session} /> :
+    screen === 'workerProfile' ? <WorkerProfileViewScreen email={viewingWorkerEmail} session={session} /> :
+    screen === 'messages' ? <SupervisorMessagesScreen session={session} /> :
+    screen === 'announcements' ? <SupervisorAnnouncementsScreen session={session} /> :
+    screen === 'payRuns' ? <SupervisorPayRunsScreen session={session} /> :
+    screen === 'guestCodes' ? <SupervisorGuestCodesScreen session={session} /> :
+    screen === 'siteMap' ? <SupervisorSiteMapScreen session={session} /> :
+    screen === 'insurance' ? <SupervisorInsuranceSettingsScreen session={session} /> :
+    screen === 'safetyIntelligence' ? <SafetyIntelligenceScreen session={session} /> :
+    screen === 'listings' ? <SupervisorListingsScreen session={session} /> :
+    screen === 'offers' ? <SupervisorOffersScreen session={session} /> :
+    screen === 'transactions' ? <SupervisorTransactionsScreen session={session} /> :
+    screen === 'community' ? <CommunityScreen isSupervisor userEmail={session.user.email} /> :
+    screen === 'search' ? <SearchScreen session={session} /> :
+    screen === 'siteAccess' ? <SupervisorSiteAccessScreen session={session} /> :
+    screen === 'multiSite' ? <SupervisorMultiSiteScreen session={session} /> :
+    screen === 'permitStatus' ? <SupervisorPermitStatusScreen session={session} /> :
+    screen === 'bulkPurchase' ? <SupervisorBulkPurchaseScreen session={session} /> :
+    screen === 'illegalReport' ? <IllegalMineReportScreen /> :
+    screen === 'subscription' ? <SupervisorSubscriptionScreen session={session} /> :
+    screen === 'staffAccounts' ? <SupervisorStaffScreen session={session} /> :
+    null;
 
   return (
-    <MoreScreen
-      sections={[
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <View style={{ flex: 1, display: screen === 'menu' ? 'flex' : 'none' }}>
+        <MoreScreen
+          sections={[
         {
           title: 'Approvals & Access',
           items: [
@@ -211,7 +207,19 @@ function SupervisorMoreStack({
           ],
         },
       ]}
-    />
+        />
+      </View>
+      {subScreen !== null && (
+        <View style={{ flex: 1 }}>
+          <SwipeBackView onBack={onSwipeBack}>
+            <View style={{ flex: 1, backgroundColor: theme.bg }}>
+              {activeBackBtn}
+              {subScreen}
+            </View>
+          </SwipeBackView>
+        </View>
+      )}
+    </View>
   );
 }
 
