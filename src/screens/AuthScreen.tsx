@@ -256,7 +256,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
 
             {/* Header */}
             <View style={styles.header}>
-              <Image source={require('../../assets/icon.png')} style={styles.logoImage} resizeMode="contain" />
+              <Image source={require('../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
               <Text style={styles.brand}>MineOps</Text>
               <Text style={styles.tagline}>Mining operations & safety platform</Text>
             </View>
@@ -593,8 +593,8 @@ function makeStyles(theme: Theme, mode: string) {
     flex: { flex: 1 },
     container: { flexGrow: 1, padding: spacing.xxl, paddingBottom: 40 },
 
-    header: { alignItems: 'center', marginBottom: spacing.xxxl, marginTop: 56 },
-    logoImage: { height: 112, marginBottom: -8, width: 112 },
+    header: { alignItems: 'center', marginBottom: spacing.xxxl, marginTop: 48 },
+    logoImage: { height: 90, marginBottom: spacing.md, width: 124 },
     brand: { ...typography.display, color: '#ffffff', marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
     tagline: { ...typography.body, color: 'rgba(255,255,255,0.70)', textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
 

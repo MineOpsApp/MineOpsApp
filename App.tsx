@@ -92,7 +92,7 @@ export default function App() {
           style={StyleSheet.absoluteFill}
         />
         <StatusBar style="light" />
-        <Image source={require('./assets/icon.png')} style={styles.splashLogo} resizeMode="contain" />
+        <Image source={require('./assets/logo.png')} style={styles.splashLogo} resizeMode="contain" />
         <ActivityIndicator color="#e0a83a" size="small" style={{ marginTop: 32, zIndex: 1 }} />
       </ImageBackground>
     );
@@ -114,5 +114,5 @@ export default function App() {
 
 const styles = StyleSheet.create({
   splash: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  splashLogo: { height: 130, width: 130, zIndex: 1 },
+  splashLogo: { height: 95, width: 130, zIndex: 1 },
 });
