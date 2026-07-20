@@ -256,9 +256,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
 
             {/* Header */}
             <View style={styles.header}>
-              <View style={styles.logoMark}>
-                <MaterialCommunityIcons name="pickaxe" size={32} color="#ffffff" />
-              </View>
+              <Image source={require('../../assets/icon.png')} style={styles.logoImage} resizeMode="contain" />
               <Text style={styles.brand}>MineOps</Text>
               <Text style={styles.tagline}>Mining operations & safety platform</Text>
             </View>
@@ -596,7 +594,7 @@ function makeStyles(theme: Theme, mode: string) {
     container: { flexGrow: 1, padding: spacing.xxl, paddingBottom: 40 },
 
     header: { alignItems: 'center', marginBottom: spacing.xxxl, marginTop: spacing.lg },
-    logoMark: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 20, height: 64, justifyContent: 'center', marginBottom: spacing.md, width: 64 },
+    logoImage: { height: 90, marginBottom: spacing.md, width: 90 },
     brand: { ...typography.display, color: '#ffffff', marginBottom: 4, textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
     tagline: { ...typography.body, color: 'rgba(255,255,255,0.70)', textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
 
