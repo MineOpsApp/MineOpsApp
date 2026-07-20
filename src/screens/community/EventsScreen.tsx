@@ -19,7 +19,7 @@ import {
   parseApiError,
   type CommunityEvent,
 } from '../../services/api';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 const EVENT_TYPES = ['General', 'Training', 'Safety Drill', 'Community Meeting', 'Trade Fair'];
@@ -27,7 +27,8 @@ const EVENT_TYPES = ['General', 'Training', 'Safety Drill', 'Community Meeting',
 export default function EventsScreen({ canCreate = false }: { canCreate?: boolean }) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +83,7 @@ export default function EventsScreen({ canCreate = false }: { canCreate?: boolea
   }
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#f59e0b" /></View>;
+    return <View style={styles.center}><ActivityIndicator size="large" color={theme.accent} /></View>;
   }
 
   return (
@@ -147,35 +148,42 @@ export default function EventsScreen({ canCreate = false }: { canCreate?: boolea
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bg },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
-    createBtn: { margin: 12, backgroundColor: theme.accent, borderRadius: 8, padding: 12, alignItems: 'center' },
+    center: { flex: 1, alignItems: 'center', backgroundColor: theme.bg, justifyContent: 'center' },
+    createBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, margin: spacing.md, padding: spacing.md },
     createBtnText: { color: '#0f172a', fontWeight: '700' },
-    error: { color: theme.danger, margin: 12, textAlign: 'center' },
-    empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },
-    card: { backgroundColor: theme.bgCard, margin: 8, marginHorizontal: 12, borderRadius: 10, padding: 14 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '700', flex: 1 },
-    typeBadge: { backgroundColor: '#3b82f6', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+    error: { color: theme.danger, margin: spacing.md, textAlign: 'center' },
+    empty: { color: theme.textMuted, marginTop: 40, textAlign: 'center' },
+    card: { backgroundColor: theme.bgCard, borderRadius: 10, margin: spacing.sm, marginHorizontal: spacing.md, padding: 14, ...cardShadow },
+    cardHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    cardTitle: { color: theme.text, flex: 1, fontSize: 15, fontWeight: '700' },
+    typeBadge: { backgroundColor: '#3b82f6', borderRadius: 10, paddingHorizontal: spacing.sm, paddingVertical: 2 },
     typeBadgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
     dateText: { color: theme.accent, fontSize: 13, marginBottom: 4 },
     desc: { color: theme.textSub, fontSize: 13 },
     byText: { color: theme.textMuted, fontSize: 12, marginTop: 4 },
-    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
-    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
-    modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
-    input: { backgroundColor: theme.bg, borderRadius: 8, padding: 12, color: theme.text, marginBottom: 10 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl },
+    modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: spacing.md },
+    input: { backgroundColor: theme.bg, borderRadius: 8, color: theme.text, marginBottom: 10, padding: spacing.md },
     label: { color: theme.textSub, fontSize: 13, marginBottom: 6 },
     typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
     typeChip: { backgroundColor: theme.bgInput, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5 },
     typeChipActive: { backgroundColor: theme.accent },
     typeChipText: { color: theme.textSub, fontSize: 12 },
     typeChipTextActive: { color: '#0f172a', fontWeight: '700' },
-    modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
+    modalActions: { alignItems: 'center', flexDirection: 'row', gap: spacing.lg, justifyContent: 'flex-end' },
     cancelText: { color: theme.textSub, fontWeight: '600' },
-    submitBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+    submitBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: spacing.xl, paddingVertical: 10 },
     submitBtnText: { color: '#0f172a', fontWeight: '700' },
   });
 }

@@ -24,7 +24,9 @@ import {
 import type { WorkerMessage } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 import { formatAgo } from '../../utils/time';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -32,7 +34,8 @@ type Props = { session: AuthSession };
 export function SupervisorMessagesScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [tab, setTab] = useState<'inbox' | 'compose'>('inbox');
 
@@ -171,7 +174,7 @@ export function SupervisorMessagesScreen({ session }: Props) {
             <ActivityIndicator color={theme.accent} style={{ marginTop: 24 }} />
           ) : messages.length === 0 ? (
             <View style={styles.emptyCard}>
-              <Text style={styles.emptyIcon}>💬</Text>
+              <Ionicons name="chatbubble-outline" size={32} color={theme.textMuted} />
               <Text style={styles.emptyTitle}>No messages yet</Text>
               <Text style={styles.emptySub}>Workers on your site can send you messages here</Text>
             </View>
@@ -295,7 +298,7 @@ export function SupervisorMessagesScreen({ session }: Props) {
                 <ActivityIndicator color={theme.accent} style={{ marginTop: 20 }} />
               ) : workers.length === 0 ? (
                 <View style={styles.emptyCard}>
-                  <Text style={styles.emptyIcon}>👷</Text>
+                  <Ionicons name="person-outline" size={32} color={theme.textMuted} />
                   <Text style={styles.emptyTitle}>No workers at your site</Text>
                   <Text style={styles.emptySub}>Approved workers will appear here</Text>
                 </View>
@@ -332,7 +335,10 @@ export function SupervisorMessagesScreen({ session }: Props) {
             </>
           ) : composeSent ? (
             <View style={styles.sentCard}>
-              <Text style={styles.sentTitle}>✓ Message Sent</Text>
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 8, justifyContent: 'center' }}>
+                <Ionicons name="checkmark-circle" size={20} color={theme.success} />
+                <Text style={styles.sentTitle}>Message Sent</Text>
+              </View>
               <Text style={styles.sentSub}>Your message was delivered to {selectedWorker.fullName}.</Text>
               <Pressable onPress={() => { setComposeSent(false); setSelectedWorker(null); }} style={styles.anotherBtn}>
                 <Text style={styles.anotherBtnText}>Send Another</Text>
@@ -379,27 +385,34 @@ export function SupervisorMessagesScreen({ session }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { padding: 16, paddingBottom: 40 },
+    container: { padding: spacing.lg, paddingBottom: 40 },
 
-    pageHeader: { marginBottom: 12 },
-    pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    pageHeader: { marginBottom: spacing.md },
+    pageTitleRow: { alignItems: 'center', flexDirection: 'row', gap: 10 },
     pageTitle: { color: theme.text, fontSize: 20, fontWeight: '800' },
-    unreadBadge: { backgroundColor: theme.accentLight, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+    unreadBadge: { backgroundColor: theme.accentLight, borderRadius: 10, paddingHorizontal: spacing.sm, paddingVertical: 2 },
     unreadBadgeText: { color: theme.accent, fontSize: 12, fontWeight: '700' },
 
     tabRow: {
-      flexDirection: 'row',
-      gap: 6,
-      marginBottom: 16,
       backgroundColor: theme.bgCard,
+      borderColor: theme.border,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: theme.border,
+      flexDirection: 'row',
+      gap: 6,
+      marginBottom: spacing.lg,
       padding: 4,
     },
-    tab: { flex: 1, paddingVertical: 8, borderRadius: 7, alignItems: 'center' },
+    tab: { alignItems: 'center', borderRadius: 7, flex: 1, paddingVertical: spacing.sm },
     tabActive: { backgroundColor: theme.accent },
     tabText: { color: theme.textMuted, fontSize: 13, fontWeight: '700' },
     tabTextActive: { color: '#fff' },
@@ -407,23 +420,24 @@ function makeStyles(theme: Theme) {
     emptyCard: {
       alignItems: 'center',
       backgroundColor: theme.bgCard,
+      borderColor: theme.border,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: theme.border,
+      gap: spacing.sm,
       padding: 32,
-      gap: 8,
+      ...cardShadow,
     },
-    emptyIcon: { fontSize: 32 },
     emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '700' },
     emptySub: { color: theme.textSub, fontSize: 13, textAlign: 'center' },
 
     msgCard: {
       backgroundColor: theme.bgCard,
+      borderColor: theme.border,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: theme.border,
       marginBottom: 10,
       overflow: 'hidden',
+      ...cardShadow,
     },
     msgCardUnread: { borderColor: theme.accent },
 

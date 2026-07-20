@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { GuestHomeScreen } from '../screens/guest/GuestHomeScreen';
@@ -18,15 +19,15 @@ export type GuestTabParamList = {
 
 const Tab = createBottomTabNavigator<GuestTabParamList>();
 
-const TAB_ICONS: Record<string, string> = {
-  Home: '⌂',
-  Notices: '📢',
+const TAB_ICON_NAMES: Record<string, { outline: string; solid: string }> = {
+  Home: { outline: 'home-outline', solid: 'home' },
+  Notices: { outline: 'megaphone-outline', solid: 'megaphone' },
 };
 
 const SUB_ROLES: { id: GuestSubRole; label: string; description: string; icon: string; color: string }[] = [
-  { id: 'visitor', label: 'Visitor', description: 'General site visit or contractor access', icon: '👤', color: '#1f6f5b' },
-  { id: 'inspector', label: 'Regulatory Inspector', description: 'Official government or regulatory inspection', icon: '🔍', color: '#1d5f99' },
-  { id: 'investor', label: 'Investor', description: 'Business review or due diligence visit', icon: '📊', color: '#a15c00' },
+  { id: 'visitor', label: 'Visitor', description: 'General site visit or contractor access', icon: 'person-outline', color: '#1f6f5b' },
+  { id: 'inspector', label: 'Regulatory Inspector', description: 'Official government or regulatory inspection', icon: 'search-outline', color: '#1d5f99' },
+  { id: 'investor', label: 'Investor', description: 'Business review or due diligence visit', icon: 'bar-chart-outline', color: '#a15c00' },
 ];
 
 type GuestNavigatorProps = {
@@ -56,12 +57,18 @@ export function GuestNavigator({ session, onLogout }: GuestNavigatorProps) {
                 onPress={() => isRegistered ? setSubRole(sr.id) : null}
                 style={[styles.subRoleCard, !isRegistered && { opacity: 0.35 }]}
               >
-                <Text style={styles.subRoleIcon}>{sr.icon}</Text>
+                <View style={styles.subRoleIconWrap}>
+                  <Ionicons name={sr.icon as any} size={22} color={sr.color} />
+                </View>
                 <View style={styles.subRoleRight}>
                   <Text style={[styles.subRoleLabel, { color: sr.color }]}>{sr.label}</Text>
                   <Text style={styles.subRoleDesc}>{isRegistered ? sr.description : 'Not your registered type'}</Text>
                 </View>
-                <Text style={styles.subRoleArrow}>{isRegistered ? '›' : '🔒'}</Text>
+                <Ionicons
+                  name={isRegistered ? 'chevron-forward' : 'lock-closed-outline'}
+                  size={18}
+                  color="rgba(255,255,255,0.3)"
+                />
               </Pressable>
             );
           })}
@@ -80,7 +87,10 @@ export function GuestNavigator({ session, onLogout }: GuestNavigatorProps) {
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <AppHeader session={session} onLogout={onLogout} />
       <View style={[styles.subRoleBanner, { backgroundColor: activeSub.color }]}>
-        <Text style={styles.subRoleBannerText}>{activeSub.icon} {activeSub.label}</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+          <Ionicons name={activeSub.icon as any} size={14} color="#fff" />
+          <Text style={styles.subRoleBannerText}>{activeSub.label}</Text>
+        </View>
       </View>
       <Tab.Navigator
         screenOptions={({ route }) => ({
@@ -91,8 +101,12 @@ export function GuestNavigator({ session, onLogout }: GuestNavigatorProps) {
           tabBarLabel: ({ color }) => (
             <Text style={{ color, fontSize: 10, fontWeight: '800' }}>{route.name}</Text>
           ),
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 18 }}>{TAB_ICONS[route.name]}</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={(focused ? TAB_ICON_NAMES[route.name].solid : TAB_ICON_NAMES[route.name].outline) as any}
+              size={22}
+              color={color}
+            />
           ),
         })}
       >
@@ -111,11 +125,10 @@ const styles = StyleSheet.create({
   gateSubtitle: { color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: '600' },
   gateCards: { marginBottom: 24 },
   subRoleCard: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, flexDirection: 'row', marginBottom: 10, padding: 16 },
-  subRoleIcon: { fontSize: 26, marginRight: 14 },
+  subRoleIconWrap: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, height: 40, justifyContent: 'center', marginRight: 14, width: 40 },
   subRoleRight: { flex: 1 },
   subRoleLabel: { fontSize: 15, fontWeight: '900', marginBottom: 3 },
   subRoleDesc: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600' },
-  subRoleArrow: { color: 'rgba(255,255,255,0.3)', fontSize: 24 },
   logoutLink: { alignItems: 'center', paddingVertical: 12 },
   logoutLinkText: { color: 'rgba(255,255,255,0.4)', fontSize: 14, fontWeight: '700' },
   subRoleBanner: { alignItems: 'center', paddingVertical: 8 },

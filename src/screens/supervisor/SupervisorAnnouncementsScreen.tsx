@@ -13,11 +13,13 @@ import {
   View,
 } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
+
 import { getSiteAnnouncements, parseApiError, postAnnouncement } from '../../services/api';
 import type { ShiftAnnouncement } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
 import { formatAgo } from '../../utils/time';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -25,7 +27,8 @@ type Props = { session: AuthSession };
 export function SupervisorAnnouncementsScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [announcements, setAnnouncements] = useState<ShiftAnnouncement[]>([]);
   const [text, setText] = useState('');
@@ -107,8 +110,12 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
             >
               {sending
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={styles.sendBtnText}>📢 Broadcast</Text>
-              }
+                : (
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                  <Ionicons name="megaphone-outline" size={16} color="#fff" />
+                  <Text style={styles.sendBtnText}>Broadcast</Text>
+                </View>
+              )}
             </Pressable>
           </View>
         </View>
@@ -122,7 +129,7 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
           <ActivityIndicator color={theme.accent} style={{ marginTop: 24 }} />
         ) : announcements.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyIcon}>📢</Text>
+            <Ionicons name="megaphone-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
             <Text style={styles.emptyTitle}>No announcements yet</Text>
             <Text style={styles.emptySub}>Post one above to broadcast to all workers</Text>
           </View>
@@ -132,7 +139,7 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
             {announcements.map((a) => (
               <View key={a.id} style={styles.announcementCard}>
                 <View style={styles.announcementTop}>
-                  <Text style={styles.announcementIcon}>📢</Text>
+                  <Ionicons name="megaphone-outline" size={16} color={theme.accent} />
                   <View style={styles.announcementMeta}>
                     <Text style={styles.announcementBy}>{a.createdByName}</Text>
                     <Text style={styles.announcementTime}>{formatAgo(a.createdAt)}</Text>
@@ -148,21 +155,29 @@ export function SupervisorAnnouncementsScreen({ session }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 16, paddingBottom: 40 },
+    container: { backgroundColor: theme.bg, padding: spacing.lg, paddingBottom: 40 },
 
-    pageHeader: { marginBottom: 16 },
+    pageHeader: { marginBottom: spacing.lg },
     pageTitle: { color: theme.text, fontSize: 20, fontWeight: '800' },
-    pageSub: { color: theme.textSub, fontSize: 13, marginTop: 2, lineHeight: 18 },
+    pageSub: { color: theme.textSub, fontSize: 13, lineHeight: 18, marginTop: 2 },
 
     composeCard: {
       backgroundColor: theme.bgCard,
+      borderColor: theme.border,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: theme.border,
-      padding: 12,
       marginBottom: 10,
+      padding: spacing.md,
+      ...cardShadow,
     },
     composeInput: {
       color: theme.text,
@@ -171,54 +186,54 @@ function makeStyles(theme: Theme) {
       textAlignVertical: 'top',
     },
     composeFooter: {
-      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: 8,
-      paddingTop: 8,
-      borderTopWidth: 1,
       borderTopColor: theme.bgInput,
+      borderTopWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: spacing.sm,
+      paddingTop: spacing.sm,
     },
     charCount: { color: theme.textSub, fontSize: 12 },
     charCountWarn: { color: theme.amber },
     sendBtn: {
+      alignItems: 'center',
       backgroundColor: theme.accent,
       borderRadius: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
     },
     sendBtnDisabled: { opacity: 0.4 },
     sendBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 
-    infoRow: { marginBottom: 20 },
+    infoRow: { marginBottom: spacing.xl },
     infoText: { color: theme.textMuted, fontSize: 12, lineHeight: 17 },
 
     emptyCard: {
       alignItems: 'center',
       backgroundColor: theme.bgCard,
+      borderColor: theme.border,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: theme.border,
+      gap: spacing.sm,
       padding: 32,
-      gap: 8,
+      ...cardShadow,
     },
-    emptyIcon: { fontSize: 32 },
     emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '700' },
     emptySub: { color: theme.textSub, fontSize: 13, textAlign: 'center' },
 
-    historyLabel: { color: theme.textSub, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 },
+    historyLabel: { color: theme.textSub, fontSize: 12, fontWeight: '700', letterSpacing: 0.5, marginBottom: 10, textTransform: 'uppercase' },
 
     announcementCard: {
       backgroundColor: theme.bgCard,
+      borderColor: theme.border,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: theme.border,
-      padding: 12,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
+      padding: spacing.md,
+      ...cardShadow,
     },
-    announcementTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-    announcementIcon: { fontSize: 16 },
+    announcementTop: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
     announcementMeta: {},
     announcementBy: { color: theme.text, fontSize: 13, fontWeight: '700' },
     announcementTime: { color: theme.textSub, fontSize: 12 },

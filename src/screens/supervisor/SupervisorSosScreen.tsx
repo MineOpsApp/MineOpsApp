@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { getSosAlerts, getWorkerEmergencyContacts } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
 import type { SosAlert } from '../../types/sos';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -13,7 +14,8 @@ type Props = { session: AuthSession };
 export function SupervisorSosScreen({ session: _ }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [alerts, setAlerts] = useState<SosAlert[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,14 +55,15 @@ export function SupervisorSosScreen({ session: _ }: Props) {
         <Text style={styles.pageTitle}>SOS Alerts</Text>
         {active.length > 0 && (
           <View style={styles.activeBadge}>
-            <Text style={styles.activeBadgeText}>🚨 {active.length} active</Text>
+            <Ionicons name="alert-circle" size={12} color="#ffffff" />
+            <Text style={styles.activeBadgeText}>{active.length} active</Text>
           </View>
         )}
       </View>
 
       {active.length === 0 ? (
         <View style={styles.clearCard}>
-          <Text style={styles.clearIcon}>✓</Text>
+          <Ionicons name="checkmark-circle" size={24} color={theme.success} />
           <View>
             <Text style={styles.clearTitle}>No active SOS alerts</Text>
             <Text style={styles.clearSub}>Pull down to refresh</Text>
@@ -79,7 +82,7 @@ export function SupervisorSosScreen({ session: _ }: Props) {
             <Pressable onPress={() => toggleContacts(a)} style={styles.alertPressable}>
               <View style={styles.alertTop}>
                 <View style={styles.alertIconWrap}>
-                  <Text style={styles.alertIcon}>🚨</Text>
+                  <Ionicons name="alert-circle" size={18} color={theme.danger} />
                 </View>
                 <View style={styles.alertBody}>
                   <Text style={styles.alertName}>{a.actorName ?? 'Unknown worker'}</Text>
@@ -90,7 +93,7 @@ export function SupervisorSosScreen({ session: _ }: Props) {
                   <View style={[styles.statusPill, isDone ? styles.statusPillDone : styles.statusPillActive]}>
                     <Text style={styles.statusPillText}>{a.status}</Text>
                   </View>
-                  <Text style={[styles.chevron, isExpanded && styles.chevronOpen]}>›</Text>
+                  <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
                 </View>
               </View>
               <Text style={styles.alertMeta}>
@@ -101,7 +104,10 @@ export function SupervisorSosScreen({ session: _ }: Props) {
 
             {isExpanded && a.actorEmail ? (
               <View style={styles.contactsPanel}>
-                <Text style={styles.contactsPanelTitle}>📞 Emergency Contacts</Text>
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 10 }}>
+                  <Ionicons name="call-outline" size={13} color={theme.danger} />
+                  <Text style={styles.contactsPanelTitle}>Emergency Contacts</Text>
+                </View>
                 {isLoading ? (
                   <ActivityIndicator size="small" color={theme.danger} style={{ marginVertical: 8 }} />
                 ) : !contacts || contacts.length === 0 ? (
@@ -120,7 +126,10 @@ export function SupervisorSosScreen({ session: _ }: Props) {
                         onPress={() => Linking.openURL(`tel:${c.phone.replace(/[\s\-().]/g, '')}`)}
                         style={styles.callBtn}
                       >
-                        <Text style={styles.callBtnText}>📞 {c.phone}</Text>
+                        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 5 }}>
+                          <Ionicons name="call" size={12} color={theme.success} />
+                          <Text style={styles.callBtnText}>{c.phone}</Text>
+                        </View>
                       </Pressable>
                     </View>
                   ))
@@ -140,40 +149,43 @@ export function SupervisorSosScreen({ session: _ }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 20 },
-    pageTitle: { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
-    activeBadge: { backgroundColor: theme.danger, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: spacing.xl },
+    pageTitle: { ...typography.h1, color: theme.text, flex: 1 },
+    activeBadge: { alignItems: 'center', backgroundColor: theme.danger, borderRadius: 12, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 4 },
     activeBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 16, padding: 16 },
-    clearIcon: { color: theme.success, fontSize: 24 },
+    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: spacing.lg, padding: spacing.lg, ...cardShadow },
     clearTitle: { color: theme.success, fontSize: 14, fontWeight: '900' },
     clearSub: { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 2 },
-    alertCard: { backgroundColor: theme.bgCard, borderColor: theme.dangerLight, borderLeftColor: theme.danger, borderLeftWidth: 4, borderRadius: 12, borderWidth: 1, marginBottom: 10, overflow: 'hidden' },
+    alertCard: { backgroundColor: theme.bgCard, borderColor: theme.dangerLight, borderLeftColor: theme.danger, borderLeftWidth: 4, borderRadius: 12, borderWidth: 1, marginBottom: 10, overflow: 'hidden', ...cardShadow },
     alertCardDone: { borderColor: theme.border, borderLeftColor: theme.textMuted, opacity: 0.7 },
     alertPressable: { padding: 14 },
-    alertTop: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 8 },
+    alertTop: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: spacing.sm },
     alertIconWrap: { alignItems: 'center', backgroundColor: theme.dangerLight, borderRadius: 20, height: 36, justifyContent: 'center', marginRight: 10, width: 36 },
-    alertIcon: { fontSize: 18 },
     alertBody: { flex: 1 },
     alertName: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
     alertSite: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 2 },
     alertMessage: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
     alertRight: { alignItems: 'flex-end', gap: 4 },
-    statusPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+    statusPill: { borderRadius: 8, paddingHorizontal: spacing.sm, paddingVertical: 4 },
     statusPillActive: { backgroundColor: theme.dangerLight },
     statusPillDone: { backgroundColor: theme.bgInput },
     statusPillText: { color: theme.textSub, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
-    chevron: { color: theme.textMuted, fontSize: 20, transform: [{ rotate: '0deg' }] },
-    chevronOpen: { transform: [{ rotate: '90deg' }] },
-    alertMeta: { color: theme.textMuted, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+    alertMeta: { ...typography.label, color: theme.textMuted },
     contactsPanel: { backgroundColor: theme.dangerLight, borderTopColor: theme.danger, borderTopWidth: 1, padding: 14 },
-    contactsPanelTitle: { color: theme.danger, fontSize: 12, fontWeight: '900', marginBottom: 10, textTransform: 'uppercase' },
+    contactsPanelTitle: { color: theme.danger, fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
     noContactsText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
-    contactRow: { alignItems: 'center', flexDirection: 'row', gap: 10, marginBottom: 8 },
-    contactTypePill: { backgroundColor: theme.danger, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    contactRow: { alignItems: 'center', flexDirection: 'row', gap: 10, marginBottom: spacing.sm },
+    contactTypePill: { backgroundColor: theme.danger, borderRadius: 6, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     contactTypePillDone: { backgroundColor: theme.textMuted },
     contactTypeText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
     contactInfo: { flex: 1 },
@@ -181,7 +193,7 @@ function makeStyles(theme: Theme) {
     contactMeta: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginTop: 1 },
     callBtn: { backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
     callBtnText: { color: theme.success, fontSize: 12, fontWeight: '800' },
-    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 20 },
-    emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: spacing.xl },
+    emptyText: { ...typography.body, color: theme.textMuted, textAlign: 'center' },
   });
 }

@@ -4,7 +4,9 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, Scrol
 import { ActionButton } from '../../components/ActionButton';
 import { getSiteEquipment, addEquipment, updateEquipmentRegistryStatus } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Equipment = {
@@ -32,7 +34,8 @@ const STATUS_COLORS: Record<string, string> = {
 export function SupervisorEquipmentRegistryScreen({ session: _ }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,7 +87,14 @@ export function SupervisorEquipmentRegistryScreen({ session: _ }: Props) {
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Equipment Registry</Text>
         <Pressable onPress={() => setShowForm(!showForm)} style={styles.addBtn}>
-          <Text style={styles.addBtnText}>{showForm ? '✕ Cancel' : '+ Add'}</Text>
+          {showForm ? (
+            <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+              <Ionicons name="close" size={14} color="#fff" />
+              <Text style={styles.addBtnText}>Cancel</Text>
+            </View>
+          ) : (
+            <Text style={styles.addBtnText}>+ Add</Text>
+          )}
         </Pressable>
       </View>
 
@@ -131,7 +141,7 @@ export function SupervisorEquipmentRegistryScreen({ session: _ }: Props) {
       {/* Equipment list */}
       {equipment.length === 0 && !showForm ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🔧</Text>
+          <Ionicons name="construct-outline" size={36} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No equipment registered</Text>
           <Text style={styles.emptySub}>Tap + Add to register site equipment</Text>
         </View>
@@ -168,41 +178,47 @@ export function SupervisorEquipmentRegistryScreen({ session: _ }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: spacing.lg },
     pageTitle: { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
-    addBtn: { backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+    addBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 14, paddingVertical: spacing.sm },
     addBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },
-    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: spacing.lg, paddingVertical: 14, ...cardShadow },
     stripItem: { alignItems: 'center', flex: 1 },
     stripValue: { color: theme.text, fontSize: 22, fontWeight: '900' },
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg, ...cardShadow },
     cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
-    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, marginTop: 4, textTransform: 'uppercase' },
-    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 44, paddingHorizontal: 12 },
-    textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 70, padding: 12 },
-    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: spacing.sm, marginTop: 4, textTransform: 'uppercase' },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: spacing.md, minHeight: 44, paddingHorizontal: spacing.md },
+    textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: spacing.md, minHeight: 70, padding: spacing.md },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: spacing.md },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
     pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
-    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
-    emptyIcon: { fontSize: 36, marginBottom: 10 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40, ...cardShadow },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-    equipCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
-    equipHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+    equipCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14, ...cardShadow },
+    equipHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm },
     equipLeft: { flex: 1 },
     equipCode: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 2 },
     equipName: { color: theme.textSub, fontSize: 13, fontWeight: '700', marginBottom: 2 },
     equipType: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
     statusBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
     statusText: { fontSize: 12, fontWeight: '900' },
-    equipNotes: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 8 },
+    equipNotes: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: spacing.sm },
     statusRow: { flexDirection: 'row', gap: 6 },
     statusBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 7 },
     statusBtnText: { color: theme.textMuted, fontSize: 10, fontWeight: '800' },

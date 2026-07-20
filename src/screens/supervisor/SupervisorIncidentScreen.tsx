@@ -3,7 +3,9 @@ import { getSiteIncidents, updateIncidentStatus, exportIncidentsCsv } from '../.
 import { exportAndShareCsv } from '../../utils/exportCsv';
 import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Incident = {
@@ -55,11 +57,11 @@ const SEVERITY_COLORS: Record<string, string> = {
   Critical: '#b42318',
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  'Injury': '🤕',
-  'Near Miss': '⚠️',
-  'Equipment Damage': '🔧',
-  'Environmental': '🌿',
+const CATEGORY_ICON_NAMES: Record<string, string> = {
+  'Injury': 'bandage-outline',
+  'Near Miss': 'warning-outline',
+  'Equipment Damage': 'construct-outline',
+  'Environmental': 'leaf-outline',
 };
 
 const STATUSES = ['Open', 'Under Investigation', 'Closed'];
@@ -73,8 +75,9 @@ function IncidentPhoto({ photoData }: { photoData: string }) {
       {expanded ? (
         <Image source={{ uri: `data:image/jpeg;base64,${photoData}` }} style={{ borderRadius: 8, height: 180, width: '100%' }} resizeMode="cover" />
       ) : (
-        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
-          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+        <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', paddingVertical: 10 }}>
+          <Ionicons name="camera-outline" size={14} color={theme.textSub} />
+          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>Tap to view photo</Text>
         </View>
       )}
     </Pressable>
@@ -84,7 +87,8 @@ function IncidentPhoto({ photoData }: { photoData: string }) {
 export function SupervisorIncidentScreen({ session: _ }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -143,7 +147,14 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
       <View style={{ alignItems: 'center', flexDirection: 'row', marginBottom: 2 }}>
         <Text style={[styles.pageTitle, { flex: 1 }]}>Incident Reports</Text>
         <Pressable style={styles.exportBtn} onPress={handleExport} disabled={exporting}>
-          <Text style={styles.exportBtnText}>{exporting ? '…' : '↓ CSV'}</Text>
+          {exporting ? (
+            <Text style={styles.exportBtnText}>…</Text>
+          ) : (
+            <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+              <Ionicons name="download-outline" size={13} color="#fff" />
+              <Text style={styles.exportBtnText}>CSV</Text>
+            </View>
+          )}
         </Pressable>
       </View>
       <Text style={styles.pageSub}>Pull to refresh</Text>
@@ -201,7 +212,7 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
           </View>
         ) : (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyIcon}>✓</Text>
+            <Ionicons name="checkmark-circle" size={28} color={theme.accent} style={{ marginBottom: 8 }} />
             <Text style={styles.emptyTitle}>No incidents reported</Text>
             <Text style={styles.emptySub}>Site is clear</Text>
           </View>
@@ -220,7 +231,10 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
         <Pressable key={inc.id} onPress={() => setExpanded(expanded === inc.id ? null : inc.id)} style={styles.incidentCard}>
           <View style={styles.incidentHeader}>
             <View style={styles.incidentLeft}>
-              <Text style={styles.incidentCategory}>{CATEGORY_ICONS[inc.category]} {inc.category}</Text>
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 2 }}>
+                <Ionicons name={(CATEGORY_ICON_NAMES[inc.category] ?? 'alert-circle-outline') as any} size={14} color={theme.textSub} />
+                <Text style={styles.incidentCategory}>{inc.category}</Text>
+              </View>
               <Text style={styles.incidentMeta}>{inc.zone} · {inc.reportedByName}</Text>
               <Text style={styles.incidentTime}>{formatDate(inc.reportedAt)}</Text>
             </View>
@@ -236,11 +250,31 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
             <View style={styles.expandedBody}>
               <Text style={styles.descriptionText}>{inc.description}</Text>
               {inc.photoData ? <IncidentPhoto photoData={inc.photoData} /> : null}
-              {inc.involvedPersons ? <Text style={styles.detailText}>👥 {inc.involvedPersons}</Text> : null}
-              {inc.immediateAction ? <Text style={styles.detailText}>⚡ {inc.immediateAction}</Text> : null}
+              {inc.involvedPersons ? (
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
+                  <Ionicons name="people-outline" size={13} color={theme.textSub} />
+                  <Text style={styles.detailText}>{inc.involvedPersons}</Text>
+                </View>
+              ) : null}
+              {inc.immediateAction ? (
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
+                  <Ionicons name="flash-outline" size={13} color={theme.textSub} />
+                  <Text style={styles.detailText}>{inc.immediateAction}</Text>
+                </View>
+              ) : null}
               <View style={styles.medicalRow}>
-                {inc.firstAidGiven ? <Text style={styles.medicalTag}>🩹 First Aid Given</Text> : null}
-                {inc.hospitalRequired ? <Text style={[styles.medicalTag, { color: theme.danger }]}>🏥 Hospital Required</Text> : null}
+                {inc.firstAidGiven ? (
+                  <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                    <Ionicons name="medkit-outline" size={13} color={theme.accent} />
+                    <Text style={styles.medicalTag}>First Aid Given</Text>
+                  </View>
+                ) : null}
+                {inc.hospitalRequired ? (
+                  <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                    <Ionicons name="business-outline" size={13} color={theme.danger} />
+                    <Text style={[styles.medicalTag, { color: theme.danger }]}>Hospital Required</Text>
+                  </View>
+                ) : null}
               </View>
 
               <TextInput
@@ -275,50 +309,56 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
     pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
-    exportBtn: { backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    exportBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 6 },
     exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-    pageSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
-    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
+    pageSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: spacing.lg },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: spacing.lg, paddingVertical: 14, ...cardShadow },
     stripItem: { alignItems: 'center', flex: 1 },
     stripValue: { color: theme.text, fontSize: 22, fontWeight: '900' },
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
     filterLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-    chip: { borderColor: theme.border, borderRadius: 20, borderWidth: 1.5, backgroundColor: theme.bgCard, paddingHorizontal: 14, paddingVertical: 6 },
+    chip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 20, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 6 },
     chipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     chipText: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
     chipTextActive: { color: '#ffffff' },
-    resultCount: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 8 },
-    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
-    emptyIcon: { color: theme.accent, fontSize: 28, marginBottom: 8 },
+    resultCount: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: spacing.sm },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32, ...cardShadow },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
     emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
-    errorBanner: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginBottom: 12, padding: 14 },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginBottom: spacing.md, padding: 14 },
     errorBannerText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
-    incidentCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 8, padding: 14 },
+    incidentCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.sm, padding: 14, ...cardShadow },
     incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
     incidentLeft: { flex: 1 },
-    incidentCategory: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 2 },
+    incidentCategory: { color: theme.text, fontSize: 14, fontWeight: '900' },
     incidentMeta: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 2 },
     incidentTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
     incidentRight: { alignItems: 'flex-end', gap: 6 },
-    severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
+    severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     severityText: { fontSize: 11, fontWeight: '900' },
     expandHint: { color: theme.textMuted, fontSize: 12 },
-    expandedBody: { borderTopColor: theme.bgInput, borderTopWidth: 1, marginTop: 12, paddingTop: 12 },
-    descriptionText: { color: theme.text, fontSize: 13, fontWeight: '600', marginBottom: 8 },
-    detailText: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 4 },
-    medicalRow: { flexDirection: 'row', gap: 10, marginBottom: 12, marginTop: 4 },
+    expandedBody: { borderTopColor: theme.bgInput, borderTopWidth: 1, marginTop: spacing.md, paddingTop: spacing.md },
+    descriptionText: { color: theme.text, fontSize: 13, fontWeight: '600', marginBottom: spacing.sm },
+    detailText: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
+    medicalRow: { flexDirection: 'row', gap: 10, marginBottom: spacing.md, marginTop: 4 },
     medicalTag: { color: theme.accent, fontSize: 12, fontWeight: '700' },
-    statusLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    statusLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: spacing.sm, textTransform: 'uppercase' },
     statusRow: { flexDirection: 'row', gap: 6 },
-    statusBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 8 },
+    statusBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: spacing.sm },
     statusBtnActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     statusBtnText: { color: theme.textMuted, fontSize: 11, fontWeight: '800' },
     statusBtnTextActive: { color: '#ffffff' },

@@ -4,7 +4,8 @@ import { SwipeBackView } from '../../components/SwipeBackView';
 
 import { createOffer, type MineralListing } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = {
@@ -16,7 +17,8 @@ type Props = {
 export function BuyerListingDetailScreen({ session, listing, onBack }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [offerPrice, setOfferPrice] = useState('');
   const [offerQty, setOfferQty] = useState('');
@@ -63,7 +65,7 @@ export function BuyerListingDetailScreen({ session, listing, onBack }: Props) {
         {listing.photoData ? (
           <Image source={{ uri: listing.photoData }} style={styles.photo} />
         ) : (
-          <View style={styles.photoPlaceholder}><Text style={{ fontSize: 48 }}>⛏</Text></View>
+          <View style={styles.photoPlaceholder}><Ionicons name="hammer-outline" size={48} color={theme.textMuted} /></View>
         )}
 
         <View style={styles.card}>
@@ -82,7 +84,7 @@ export function BuyerListingDetailScreen({ session, listing, onBack }: Props) {
 
         {submitted ? (
           <View style={styles.successCard}>
-            <Text style={styles.successIcon}>✓</Text>
+            <Ionicons name="checkmark-circle" size={48} color={theme.accent} style={{ marginBottom: 12 }} />
             <Text style={styles.successTitle}>Offer submitted</Text>
             <Text style={styles.successSub}>The site supervisor will review your offer. Track it under Offers.</Text>
             <Pressable onPress={onBack} style={styles.backListingBtn}>
@@ -91,7 +93,7 @@ export function BuyerListingDetailScreen({ session, listing, onBack }: Props) {
           </View>
         ) : isGoldListing && !hasGoldbodLicense ? (
           <View style={styles.blockedCard}>
-            <Text style={styles.blockedIcon}>🪪</Text>
+            <Ionicons name="card-outline" size={48} color={theme.amber} style={{ marginBottom: 12 }} />
             <Text style={styles.blockedTitle}>GoldBod License Required</Text>
             <Text style={styles.blockedBody}>
               Since 1 May 2025, a valid GoldBod license number is required to place offers on gold listings in Ghana. Add your license number in your profile to proceed.
@@ -143,37 +145,42 @@ export function BuyerListingDetailScreen({ session, listing, onBack }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
-    backBtn: { marginBottom: 16 },
+    container: { padding: spacing.xl, paddingBottom: 40, backgroundColor: theme.bg },
+    backBtn: { marginBottom: spacing.lg },
     backText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
-    photo: { borderRadius: 12, height: 200, marginBottom: 16, width: '100%' },
-    photoPlaceholder: { alignItems: 'center', backgroundColor: theme.border, borderRadius: 12, height: 160, justifyContent: 'center', marginBottom: 16 },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-    mineral: { color: theme.text, fontSize: 20, fontWeight: '900', marginBottom: 4 },
+    photo: { borderRadius: 12, height: 200, marginBottom: spacing.lg, width: '100%' },
+    photoPlaceholder: { alignItems: 'center', backgroundColor: theme.border, borderRadius: 12, height: 160, justifyContent: 'center', marginBottom: spacing.lg },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg, ...cardShadow },
+    mineral: { ...typography.h2, color: theme.text, marginBottom: 4 },
     site: { color: theme.accent, fontSize: 13, fontWeight: '700', marginBottom: 14 },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
     gridItem: { minWidth: '45%' },
     gridLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
     gridValue: { color: theme.text, fontSize: 14, fontWeight: '800' },
-    offerCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 16 },
-    offerTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 16 },
+    offerCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: spacing.lg, ...cardShadow },
+    offerTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: spacing.lg },
     fieldLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
-    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 15, marginBottom: 14, paddingHorizontal: 12, paddingVertical: 10 },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 15, marginBottom: 14, paddingHorizontal: spacing.md, paddingVertical: 10 },
     inputMulti: { height: 80, textAlignVertical: 'top' },
     submitBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, marginTop: 4, paddingVertical: 14 },
     submitBtnDisabled: { opacity: 0.6 },
     submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
-    successCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
-    successIcon: { color: theme.accent, fontSize: 36, fontWeight: '900', marginBottom: 12 },
-    successTitle: { color: theme.text, fontSize: 18, fontWeight: '900', marginBottom: 8 },
-    successSub: { color: theme.textSub, fontSize: 13, fontWeight: '600', lineHeight: 20, marginBottom: 20, textAlign: 'center' },
-    backListingBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, paddingHorizontal: 28, paddingVertical: 12 },
+    successCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32, ...cardShadow },
+    successTitle: { color: theme.text, fontSize: 18, fontWeight: '900', marginBottom: spacing.sm },
+    successSub: { color: theme.textSub, fontSize: 13, fontWeight: '600', lineHeight: 20, marginBottom: spacing.xl, textAlign: 'center' },
+    backListingBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, paddingHorizontal: 28, paddingVertical: spacing.md },
     backListingBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
-    blockedCard: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 12, borderWidth: 1, padding: 28 },
-    blockedIcon: { fontSize: 36, marginBottom: 12 },
-    blockedTitle: { color: theme.amber, fontSize: 16, fontWeight: '900', marginBottom: 8 },
+    blockedCard: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 12, borderWidth: 1, padding: 28, ...cardShadow },
+    blockedTitle: { color: theme.amber, fontSize: 16, fontWeight: '900', marginBottom: spacing.sm },
     blockedBody: { color: theme.amber, fontSize: 13, fontWeight: '600', lineHeight: 20, textAlign: 'center' },
   });
 }

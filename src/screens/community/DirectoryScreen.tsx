@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { getMines, getVerifiedBuyers, type MineProfile, type BuyerProfile } from '../../services/api';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Tab = 'mines' | 'buyers';
@@ -18,7 +18,8 @@ type Tab = 'mines' | 'buyers';
 export default function DirectoryScreen() {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [tab, setTab] = useState<Tab>('mines');
   const [mines, setMines] = useState<MineProfile[]>([]);
@@ -63,7 +64,7 @@ export default function DirectoryScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#f59e0b" />
+        <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
   }
@@ -149,27 +150,34 @@ export default function DirectoryScreen() {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bg },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
-    tabs: { flexDirection: 'row', backgroundColor: theme.bgCard },
-    tab: { flex: 1, padding: 14, alignItems: 'center' },
-    activeTab: { borderBottomWidth: 2, borderBottomColor: theme.accent },
+    center: { flex: 1, alignItems: 'center', backgroundColor: theme.bg, justifyContent: 'center' },
+    tabs: { backgroundColor: theme.bgCard, flexDirection: 'row' },
+    tab: { alignItems: 'center', flex: 1, padding: 14 },
+    activeTab: { borderBottomColor: theme.accent, borderBottomWidth: 2 },
     tabText: { color: theme.textSub, fontWeight: '600' },
     activeTabText: { color: theme.accent },
-    search: { margin: 12, backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: theme.text, fontSize: 14 },
-    error: { color: theme.danger, margin: 12, textAlign: 'center' },
-    empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },
-    card: { backgroundColor: theme.bgCard, margin: 8, marginHorizontal: 12, borderRadius: 10, padding: 14 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-    cardTitle: { color: theme.text, fontSize: 16, fontWeight: '700', flex: 1 },
+    search: { backgroundColor: theme.bgInput, borderRadius: 8, color: theme.text, fontSize: 14, margin: spacing.md, paddingHorizontal: spacing.md, paddingVertical: 10 },
+    error: { color: theme.danger, margin: spacing.md, textAlign: 'center' },
+    empty: { color: theme.textMuted, marginTop: 40, textAlign: 'center' },
+    card: { backgroundColor: theme.bgCard, borderRadius: 10, margin: spacing.sm, marginHorizontal: spacing.md, padding: 14, ...cardShadow },
+    cardHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    cardTitle: { color: theme.text, flex: 1, fontSize: 16, fontWeight: '700' },
     cardMeta: { color: theme.textSub, fontSize: 13, marginTop: 2 },
     cardDesc: { color: theme.textSub, fontSize: 13, marginTop: 6 },
     cardContact: { color: '#60a5fa', fontSize: 12, marginTop: 4 },
-    scoreBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
+    scoreBadge: { borderRadius: 12, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     scoreText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-    verifiedBadge: { marginTop: 6, alignSelf: 'flex-start', backgroundColor: '#22c55e', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+    verifiedBadge: { alignSelf: 'flex-start', backgroundColor: '#22c55e', borderRadius: 10, marginTop: 6, paddingHorizontal: spacing.sm, paddingVertical: 2 },
     verifiedText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   });
 }

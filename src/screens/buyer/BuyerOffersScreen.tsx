@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import { getMyOffers, withdrawOffer, type MarketplaceOffer } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { useTheme, typography, spacing, type Theme } from '../../theme/theme';
@@ -27,7 +28,8 @@ const STATUS_LABELS: Record<string, string> = {
 export function BuyerOffersScreen({ session: _ }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [offers, setOffers] = useState<MarketplaceOffer[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,7 +88,7 @@ export function BuyerOffersScreen({ session: _ }: Props) {
 
       {offers.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🤝</Text>
+          <Ionicons name="people-outline" size={32} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No offers yet</Text>
           <Text style={styles.emptySub}>Browse listings and submit an offer to get started</Text>
         </View>
@@ -142,29 +144,35 @@ export function BuyerOffersScreen({ session: _ }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    container: { padding: spacing.xl, paddingBottom: 40, backgroundColor: theme.bg },
     title: { ...typography.h1, color: theme.text, marginBottom: spacing.xl },
-    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
-    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
-    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: spacing.lg },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40, ...cardShadow },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
-    cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 12 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.md, padding: 14, ...cardShadow },
+    cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: spacing.md },
     listingRef: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 4 },
-    counterBadge: { backgroundColor: theme.infoLight, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, alignSelf: 'flex-start' },
+    counterBadge: { alignSelf: 'flex-start', backgroundColor: theme.infoLight, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
     counterBadgeText: { color: theme.info, fontSize: 10, fontWeight: '800' },
-    statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+    statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: spacing.sm, paddingVertical: 4 },
     statusText: { fontSize: 11, fontWeight: '800' },
-    row: { flexDirection: 'row', gap: 16, marginBottom: 8 },
+    row: { flexDirection: 'row', gap: spacing.lg, marginBottom: spacing.sm },
     col: { flex: 1 },
     label: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
     value: { color: theme.text, fontSize: 14, fontWeight: '800' },
     message: { color: theme.textSub, fontSize: 12, fontStyle: 'italic', marginBottom: 6 },
     date: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 2 },
-    withdrawBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginTop: 10, paddingVertical: 8 },
+    withdrawBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginTop: 10, paddingVertical: spacing.sm },
     withdrawBtnText: { color: theme.danger, fontSize: 13, fontWeight: '800' },
     btnDisabled: { opacity: 0.5 },
   });

@@ -25,8 +25,9 @@ import {
 } from '../../services/api';
 import type { DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = { session: AuthSession };
 type ScreenMode = 'list' | 'map' | 'trace';
@@ -44,7 +45,8 @@ const RISK_DOT_COLOR: Record<string, string> = {
 export function SafetyDangerZonesScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [screenMode, setScreenMode] = useState<ScreenMode>('list');
   const [zones, setZones]         = useState<DangerZone[]>([]);
@@ -230,7 +232,8 @@ export function SafetyDangerZonesScreen({ session }: Props) {
         {active.length > 0 && <View style={styles.activeBadge}><Text style={styles.activeBadgeText}>{active.length} active</Text></View>}
         {mapData && (
           <TouchableOpacity style={styles.mapTabBtn} onPress={() => setScreenMode('map')}>
-            <Text style={styles.mapTabBtnText}>🗺 Map</Text>
+            <Ionicons name="map-outline" size={14} color="#fff" />
+            <Text style={styles.mapTabBtnText}>Map</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -240,7 +243,10 @@ export function SafetyDangerZonesScreen({ session }: Props) {
       )}
 
       <View style={styles.createCard}>
-        <Text style={styles.createTitle}>⚠️ Create Danger Zone</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
+          <Ionicons name="warning" size={15} color={theme.danger} />
+          <Text style={styles.createTitle}>Create Danger Zone</Text>
+        </View>
         <Text style={styles.createSub}>Mark an area as restricted for all site users</Text>
         <ActionButton label="Create Zone B — Blasting Area (High Risk)" onPress={create} tone="danger" />
       </View>
@@ -259,9 +265,13 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                     <Text style={styles.riskPillText}>{z.riskLevel}</Text>
                   </View>
                 </View>
-                <Text style={[styles.zoneMeta, { color: cfg.color }]}>⚠ Active · {z.site}</Text>
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4, marginBottom: 8 }}>
+                  <Ionicons name="warning" size={12} color={cfg.color} />
+                  <Text style={[styles.zoneMeta, { color: cfg.color }]}>Active · {z.site}</Text>
+                </View>
                 <TouchableOpacity style={styles.traceBtn} onPress={() => startTrace(z)}>
-                  <Text style={styles.traceBtnText}>{hasPolygon ? '✏ Edit on Map' : '📍 Trace on Map'}</Text>
+                  <Ionicons name={hasPolygon ? 'pencil-outline' : 'location-outline'} size={12} color={theme.text} />
+                  <Text style={styles.traceBtnText}>{hasPolygon ? 'Edit on Map' : 'Trace on Map'}</Text>
                 </TouchableOpacity>
               </View>
             );
@@ -269,7 +279,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
         </>
       ) : (
         <View style={styles.clearCard}>
-          <Text style={styles.clearIcon}>✓</Text>
+          <Ionicons name="checkmark-circle" size={22} color={theme.success} />
           <View>
             <Text style={styles.clearTitle}>No active danger zones</Text>
             <Text style={styles.clearSub}>All areas are accessible</Text>
@@ -292,42 +302,48 @@ export function SafetyDangerZonesScreen({ session }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    backBtn:     { marginBottom: 12 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    backBtn:     { marginBottom: spacing.md },
     backBtnText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
-    pageHeader:   { alignItems: 'center', flexDirection: 'row', marginBottom: 16, gap: 8 },
-    pageTitle:    { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
+    pageHeader:   { alignItems: 'center', flexDirection: 'row', marginBottom: spacing.lg, gap: spacing.sm },
+    pageTitle:    { ...typography.h1, color: theme.text, flex: 1 },
     activeBadge:  { backgroundColor: theme.amber, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
     activeBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-    mapTabBtn:    { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+    mapTabBtn:    { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 5 },
     mapTabBtnText:{ color: '#fff', fontSize: 12, fontWeight: '800' },
-    createCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 20, padding: 16 },
-    createTitle:{ color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
+    createCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.xl, padding: spacing.lg, ...cardShadow },
+    createTitle:{ ...typography.bodyBold, color: theme.text },
     createSub:  { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 14 },
-    sectionLabel: { color: theme.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 10 },
-    zoneCard: { borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
+    sectionLabel: { ...typography.label, color: theme.textMuted, marginBottom: 10 },
+    zoneCard: { borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14, ...cardShadow },
     zoneTop:  { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-    zoneName: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '900', marginRight: 8 },
+    zoneName: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '900', marginRight: spacing.sm },
     riskPill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
     riskPillText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
-    zoneMeta: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
-    traceBtn:     { alignSelf: 'flex-start', backgroundColor: theme.bgInput, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 },
+    zoneMeta: { fontSize: 12, fontWeight: '700' },
+    traceBtn:     { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: theme.bgInput, borderRadius: 6, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 5 },
     traceBtnText: { color: theme.text, fontSize: 12, fontWeight: '800' },
-    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: 16 },
-    clearIcon: { color: theme.success, fontSize: 22 },
+    clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: spacing.lg, ...cardShadow },
     clearTitle:{ color: theme.success, fontSize: 14, fontWeight: '900' },
     clearSub:  { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 2 },
-    clearedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 8, opacity: 0.6, padding: 12 },
+    clearedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.sm, opacity: 0.6, padding: 12 },
     clearedName: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
     clearedMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
-    traceSub:      { color: theme.textSub, fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: 16 },
+    traceSub:      { color: theme.textSub, fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: spacing.lg },
     imageWrapper:  { borderRadius: 12, overflow: 'hidden', backgroundColor: '#000', marginBottom: 12 },
     traceImage:    { width: '100%', aspectRatio: 16 / 9 },
-    vertexCount:   { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 8 },
-    errorText:     { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: 8 },
-    traceActions:  { flexDirection: 'row', gap: 8, marginTop: 4 },
+    vertexCount:   { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: spacing.sm },
+    errorText:     { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: spacing.sm },
+    traceActions:  { flexDirection: 'row', gap: spacing.sm, marginTop: 4 },
     primaryBtn:    { backgroundColor: theme.accent, borderRadius: 10, padding: 13, alignItems: 'center', flex: 1 },
     primaryBtnText:{ color: '#fff', fontSize: 14, fontWeight: '900' },
     secondaryBtn:  { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 13, alignItems: 'center', flex: 1 },

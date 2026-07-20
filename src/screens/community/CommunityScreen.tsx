@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 import DirectoryScreen from './DirectoryScreen';
 import ForumScreen from './ForumScreen';
@@ -25,7 +25,8 @@ export default function CommunityScreen({
 }) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [tab, setTab] = useState<CommunityTab>('directory');
 
@@ -59,14 +60,14 @@ export default function CommunityScreen({
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, _isDark: boolean) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bg },
-    header: { backgroundColor: theme.bg, padding: 16, paddingTop: 48 },
+    header: { backgroundColor: theme.bg, padding: spacing.lg, paddingTop: 48 },
     headerTitle: { color: theme.text, fontSize: 22, fontWeight: '700' },
-    tabBar: { backgroundColor: theme.bg, borderBottomWidth: 1, borderBottomColor: theme.border, maxHeight: 48 },
-    tabItem: { paddingHorizontal: 18, paddingVertical: 12 },
-    tabItemActive: { borderBottomWidth: 2, borderBottomColor: theme.accent },
+    tabBar: { backgroundColor: theme.bg, borderBottomColor: theme.border, borderBottomWidth: 1, maxHeight: 48 },
+    tabItem: { paddingHorizontal: 18, paddingVertical: spacing.md },
+    tabItemActive: { borderBottomColor: theme.accent, borderBottomWidth: 2 },
     tabLabel: { color: theme.textSub, fontWeight: '600', fontSize: 14 },
     tabLabelActive: { color: theme.accent },
   });

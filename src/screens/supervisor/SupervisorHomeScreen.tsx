@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { SosButton } from '../../components/SosButton';
 import { BlastAlert } from '../../components/BlastAlert';
@@ -8,7 +9,7 @@ import { getSupervisorDashboard, getDangerZones, type SupervisorDashboard } from
 import { formatAgo } from '../../utils/time';
 import type { DangerZone } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession; onGoToSearch?: () => void };
@@ -17,7 +18,8 @@ type Dashboard = SupervisorDashboard;
 export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,15 +82,16 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
 
         {onGoToSearch ? (
           <Pressable onPress={onGoToSearch} style={styles.searchPill}>
-            <Text style={styles.searchPillIcon}>🔍</Text>
+            <Ionicons name="search-outline" size={15} color={theme.textMuted} />
             <Text style={styles.searchPillText}>Search workers, hazards, incidents...</Text>
-            <Text style={styles.searchPillArrow}>›</Text>
+            <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
           </Pressable>
         ) : null}
 
         {error && (
           <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>⚠ Cannot reach server — pull to retry</Text>
+            <Ionicons name="warning" size={14} color={theme.danger} />
+            <Text style={styles.errorText}>Cannot reach server — pull to retry</Text>
           </View>
         )}
 
@@ -135,12 +138,15 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
             {(dash.certExpired > 0 || dash.certExpiringSoon > 0) && (
               <View style={[styles.alertBanner,
                 dash.certExpired > 0 ? styles.alertBannerRed : styles.alertBannerYellow]}>
-                <Text style={styles.alertBannerText}>
-                  🎓 {dash.certExpired > 0
-                    ? `${dash.certExpired} certification${dash.certExpired !== 1 ? 's' : ''} expired`
-                    : `${dash.certExpiringSoon} certification${dash.certExpiringSoon !== 1 ? 's' : ''} expiring within 30 days`}
-                  {' · More → Certifications'}
-                </Text>
+                <View style={styles.alertBannerRow}>
+                  <Ionicons name="ribbon-outline" size={13} color={dash.certExpired > 0 ? theme.danger : theme.amber} />
+                  <Text style={[styles.alertBannerText, dash.certExpired > 0 && { color: theme.danger }]}>
+                    {dash.certExpired > 0
+                      ? `${dash.certExpired} certification${dash.certExpired !== 1 ? 's' : ''} expired`
+                      : `${dash.certExpiringSoon} certification${dash.certExpiringSoon !== 1 ? 's' : ''} expiring within 30 days`}
+                    {' · More → Certifications'}
+                  </Text>
+                </View>
               </View>
             )}
 
@@ -148,7 +154,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
             <View style={styles.cardGrid}>
               {dash.pendingShiftLogs > 0 && (
                 <View style={[styles.actionCard, styles.actionCardYellow]}>
-                  <Text style={styles.actionCardIcon}>📋</Text>
+                  <Ionicons name="clipboard-outline" size={22} color={theme.amber} style={{ marginBottom: 4 }} />
                   <Text style={styles.actionCardValue}>{dash.pendingShiftLogs}</Text>
                   <Text style={styles.actionCardLabel}>Shift logs awaiting your approval</Text>
                   <Text style={styles.actionCardHint}>More → Shift Logs</Text>
@@ -156,7 +162,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
               )}
               {dash.unreadMessages > 0 && (
                 <View style={[styles.actionCard, styles.actionCardGreen]}>
-                  <Text style={styles.actionCardIcon}>💬</Text>
+                  <Ionicons name="chatbubble-ellipses-outline" size={22} color={theme.success} style={{ marginBottom: 4 }} />
                   <Text style={styles.actionCardValue}>{dash.unreadMessages}</Text>
                   <Text style={styles.actionCardLabel}>Unread message{dash.unreadMessages !== 1 ? 's' : ''} from workers</Text>
                   <Text style={styles.actionCardHint}>More → Worker Messages</Text>
@@ -164,7 +170,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
               )}
               {dash.hazardCount > 0 && (
                 <View style={[styles.actionCard, styles.actionCardRed]}>
-                  <Text style={styles.actionCardIcon}>⚠</Text>
+                  <Ionicons name="warning" size={22} color={theme.danger} style={{ marginBottom: 4 }} />
                   <Text style={styles.actionCardValue}>{dash.hazardCount}</Text>
                   <Text style={styles.actionCardLabel}>Active hazard{dash.hazardCount !== 1 ? 's' : ''} on site</Text>
                   <Text style={styles.actionCardHint}>Hazards tab</Text>
@@ -172,7 +178,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
               )}
               {dash.pendingBuyerVerifications > 0 && (
                 <View style={[styles.actionCard, styles.actionCardYellow]}>
-                  <Text style={styles.actionCardIcon}>👤</Text>
+                  <Ionicons name="person-outline" size={22} color={theme.amber} style={{ marginBottom: 4 }} />
                   <Text style={styles.actionCardValue}>{dash.pendingBuyerVerifications}</Text>
                   <Text style={styles.actionCardLabel}>Pending buyer verification{dash.pendingBuyerVerifications !== 1 ? 's' : ''}</Text>
                   <Text style={styles.actionCardHint}>More → Pending Approvals</Text>
@@ -180,7 +186,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
               )}
               {dash.pendingMarketplaceOffers > 0 && (
                 <View style={[styles.actionCard, styles.actionCardGreen]}>
-                  <Text style={styles.actionCardIcon}>📦</Text>
+                  <Ionicons name="pricetag-outline" size={22} color={theme.success} style={{ marginBottom: 4 }} />
                   <Text style={styles.actionCardValue}>{dash.pendingMarketplaceOffers}</Text>
                   <Text style={styles.actionCardLabel}>Offer{dash.pendingMarketplaceOffers !== 1 ? 's' : ''} awaiting response</Text>
                   <Text style={styles.actionCardHint}>Marketplace → Offers</Text>
@@ -188,7 +194,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
               )}
               {dash.openDisputes > 0 && (
                 <View style={[styles.actionCard, styles.actionCardRed]}>
-                  <Text style={styles.actionCardIcon}>⚑</Text>
+                  <Ionicons name="flag-outline" size={22} color={theme.danger} style={{ marginBottom: 4 }} />
                   <Text style={styles.actionCardValue}>{dash.openDisputes}</Text>
                   <Text style={styles.actionCardLabel}>Open dispute{dash.openDisputes !== 1 ? 's' : ''} on site transactions</Text>
                   <Text style={styles.actionCardHint}>Community → Transactions</Text>
@@ -204,7 +210,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
                   const overdue = new Date(w.deadline).getTime() < Date.now();
                   return (
                     <View key={w.id} style={[styles.loneWorkerCard, overdue && styles.loneWorkerCardRed]}>
-                      <Text style={styles.loneWorkerIcon}>{overdue ? '⚠' : '🛡'}</Text>
+                      <Ionicons name={overdue ? 'warning' : 'shield-checkmark-outline'} size={18} color={overdue ? theme.danger : theme.success} />
                       <View style={styles.loneWorkerBody}>
                         <Text style={styles.loneWorkerName}>{w.workerName}</Text>
                         <Text style={styles.loneWorkerMeta}>
@@ -227,7 +233,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
                 <Text style={styles.sectionTitle}>Recent Announcements</Text>
                 {dash.announcements.map((a) => (
                   <View key={a.id} style={styles.announcementCard}>
-                    <Text style={styles.announcementIcon}>📢</Text>
+                    <Ionicons name="megaphone-outline" size={15} color={theme.amber} style={{ marginTop: 1 }} />
                     <View style={styles.announcementBody}>
                       <Text style={styles.announcementContent}>{a.content}</Text>
                       <Text style={styles.announcementMeta}>{a.createdByName} · {formatAgo(a.createdAt)}</Text>
@@ -270,7 +276,7 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
             {/* All clear state */}
             {dash.pendingShiftLogs === 0 && dash.unreadMessages === 0 && dash.hazardCount === 0 && (
               <View style={styles.allClearCard}>
-                <Text style={styles.allClearIcon}>✓</Text>
+                <Ionicons name="checkmark-circle" size={24} color={theme.success} />
                 <View>
                   <Text style={styles.allClearTitle}>All clear</Text>
                   <Text style={styles.allClearSub}>No pending actions · {dash.workersOnSite} worker{dash.workersOnSite !== 1 ? 's' : ''} on site</Text>
@@ -285,78 +291,80 @@ export function SupervisorHomeScreen({ session, onGoToSearch }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: theme.bg },
     container: { paddingBottom: 110 },
 
-    hero: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
+    hero: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingVertical: 14 },
     greeting: { fontFamily: 'DancingScript_400Regular', fontSize: 28, color: 'rgba(255,255,255,0.85)' },
     greetingName: { fontFamily: 'DancingScript_700Bold', fontSize: 28, color: '#ffffff' },
     site: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: '600', marginTop: 2 },
-    heroBadges: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+    heroBadges: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
     scoreBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
     scoreBadgeGreen: { backgroundColor: 'rgba(74,222,128,0.18)' },
     scoreBadgeAmber: { backgroundColor: 'rgba(251,191,36,0.22)' },
     scoreBadgeRed: { backgroundColor: 'rgba(248,113,113,0.22)' },
     scoreText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-    liveBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
+    liveBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: spacing.md, paddingVertical: 6 },
     liveDot: { backgroundColor: theme.success, borderRadius: 4, height: 7, width: 7 },
     liveText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
-    searchPill: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: 16, marginBottom: 0, paddingHorizontal: 14, paddingVertical: 12 },
-    searchPillIcon: { fontSize: 15 },
+    searchPill: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, margin: spacing.lg, marginBottom: 0, paddingHorizontal: 14, paddingVertical: 12, ...cardShadow },
     searchPillText: { color: theme.textMuted, flex: 1, fontSize: 13, fontWeight: '600' },
-    searchPillArrow: { color: theme.textMuted, fontSize: 18 },
-    errorBanner: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, margin: 16, padding: 12 },
-    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    errorBanner: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', margin: spacing.lg, padding: 12 },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '700' },
 
     strip: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, flexDirection: 'row', paddingVertical: 14 },
     stripItem: { alignItems: 'center', flex: 1 },
     stripValue: { color: theme.text, fontSize: 20, fontWeight: '900' },
-    stripLabel: { color: theme.textMuted, fontSize: 9, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
+    stripLabel: { ...typography.label, color: theme.textMuted, marginTop: 2 },
     stripDivider: { backgroundColor: theme.border, width: 1 },
 
-    alertBanner: { borderRadius: 8, borderWidth: 1, margin: 16, marginBottom: 0, padding: 12 },
+    alertBanner: { borderRadius: 8, borderWidth: 1, margin: spacing.lg, marginBottom: 0, padding: 12 },
     alertBannerRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
     alertBannerYellow: { backgroundColor: theme.amberLight, borderColor: theme.amber },
-    alertBannerText: { color: theme.amber, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+    alertBannerRow: { alignItems: 'center', flexDirection: 'row', gap: 6, justifyContent: 'center' },
+    alertBannerText: { color: theme.amber, fontSize: 12, fontWeight: '700', textAlign: 'center', flex: 1 },
 
-    cardGrid: { gap: 10, padding: 16 },
-    actionCard: { borderRadius: 12, borderWidth: 1, padding: 16 },
+    cardGrid: { gap: 10, padding: spacing.lg },
+    actionCard: { borderRadius: 12, borderWidth: 1, padding: spacing.lg, ...cardShadow },
     actionCardYellow: { backgroundColor: theme.amberLight, borderColor: theme.amber },
     actionCardGreen: { backgroundColor: theme.successLight, borderColor: theme.success },
     actionCardRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
-    actionCardIcon: { fontSize: 22, marginBottom: 4 },
     actionCardValue: { color: theme.text, fontSize: 28, fontWeight: '900', marginBottom: 2 },
     actionCardLabel: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
     actionCardHint: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
 
-    section: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
-    sectionTitle: { color: theme.text, fontSize: 14, fontWeight: '900', letterSpacing: -0.2, marginBottom: 10 },
+    section: { paddingHorizontal: spacing.lg, paddingTop: 4, paddingBottom: spacing.sm },
+    sectionTitle: { ...typography.h3, color: theme.text, letterSpacing: -0.2, marginBottom: 10 },
 
-    loneWorkerCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
+    loneWorkerCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: spacing.sm, padding: 12, ...cardShadow },
     loneWorkerCardRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
-    loneWorkerIcon: { fontSize: 18 },
     loneWorkerBody: { flex: 1 },
     loneWorkerName: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
     loneWorkerMeta: { color: theme.textSub, fontSize: 11, fontWeight: '600' },
     loneWorkerAlert: { color: theme.danger, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
 
-    announcementCard: { alignItems: 'flex-start', backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: 8, padding: 12 },
-    announcementIcon: { fontSize: 15, marginTop: 1 },
+    announcementCard: { alignItems: 'flex-start', backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 10, marginBottom: spacing.sm, padding: 12, ...cardShadow },
     announcementBody: { flex: 1 },
     announcementContent: { color: theme.text, fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: 3 },
     announcementMeta: { color: theme.amber, fontSize: 11, fontWeight: '600' },
 
-    summaryCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1 },
-    summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-    summaryDivider: { backgroundColor: theme.bg, height: 1, marginHorizontal: 16 },
+    summaryCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, ...cardShadow },
+    summaryRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: 12 },
+    summaryDivider: { backgroundColor: theme.bg, height: 1, marginHorizontal: spacing.lg },
     summaryLabel: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
     summaryValue: { color: theme.text, fontSize: 15, fontWeight: '900' },
 
-    allClearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, margin: 16, padding: 16 },
-    allClearIcon: { color: theme.success, fontSize: 24 },
+    allClearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, margin: spacing.lg, padding: spacing.lg, ...cardShadow },
     allClearTitle: { color: theme.success, fontSize: 15, fontWeight: '900' },
     allClearSub: { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 2 },
   });

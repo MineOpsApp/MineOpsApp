@@ -4,7 +4,9 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { ActionButton } from '../../components/ActionButton';
 import { scheduleBlast, getAllBlasts, cancelBlast, executeBlast, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type BlastSchedule = {
@@ -26,7 +28,8 @@ const ADVANCE_MINUTES = [15, 30, 60, 120, 240];
 export function SupervisorBlastScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [blasts, setBlasts] = useState<BlastSchedule[]>([]);
   const [zone, setZone] = useState('Zone A');
@@ -106,7 +109,10 @@ export function SupervisorBlastScreen({ session }: Props) {
 
       {/* Schedule form */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>💥 Schedule Blast</Text>
+        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+          <Ionicons name="flame-outline" size={16} color={theme.danger} />
+          <Text style={styles.cardTitle}>Schedule Blast</Text>
+        </View>
 
         <Text style={styles.fieldLabel}>Zone</Text>
         <View style={styles.pillRow}>
@@ -145,7 +151,10 @@ export function SupervisorBlastScreen({ session }: Props) {
             <View key={blast.id} style={styles.blastCard}>
               <View style={styles.blastHeader}>
                 <View>
-                  <Text style={styles.blastZone}>💥 {blast.zone}</Text>
+                  <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 2 }}>
+                    <Ionicons name="flame-outline" size={15} color={theme.danger} />
+                    <Text style={styles.blastZone}>{blast.zone}</Text>
+                  </View>
                   <Text style={styles.blastTime}>{formatTime(blast.blastTime)}</Text>
                 </View>
                 <View style={styles.countdownBadge}>
@@ -156,10 +165,16 @@ export function SupervisorBlastScreen({ session }: Props) {
               {blast.notes ? <Text style={styles.blastNotes}>{blast.notes}</Text> : null}
               <View style={styles.blastActions}>
                 <Pressable onPress={() => handleExecute(blast)} style={styles.executeBtn}>
-                  <Text style={styles.executeBtnText}>✓ Mark Executed</Text>
+                  <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                    <Ionicons name="checkmark" size={14} color="#ffffff" />
+                    <Text style={styles.executeBtnText}>Mark Executed</Text>
+                  </View>
                 </Pressable>
                 <Pressable onPress={() => handleCancel(blast)} style={styles.cancelBtn}>
-                  <Text style={styles.cancelBtnText}>✕ Cancel</Text>
+                  <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                    <Ionicons name="close" size={14} color={theme.danger} />
+                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                  </View>
                 </Pressable>
               </View>
             </View>
@@ -195,43 +210,50 @@ export function SupervisorBlastScreen({ session }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
-    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 14 },
-    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: spacing.lg },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg, ...cardShadow },
+    cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900' },
+    fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: spacing.sm, textTransform: 'uppercase' },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
-    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
     pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
-    warningBox: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 },
+    warningBox: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: spacing.md },
     warningText: { color: theme.danger, fontSize: 12, fontWeight: '700' },
     sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 10 },
-    blastCard: { backgroundColor: theme.bgCard, borderColor: theme.danger, borderLeftColor: theme.danger, borderLeftWidth: 4, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14 },
+    blastCard: { backgroundColor: theme.bgCard, borderColor: theme.danger, borderLeftColor: theme.danger, borderLeftWidth: 4, borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14, ...cardShadow },
     blastHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-    blastZone: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
+    blastZone: { color: theme.text, fontSize: 15, fontWeight: '900' },
     blastTime: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
     countdownBadge: { backgroundColor: theme.danger, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
     countdownText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
     blastMeta: { color: theme.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 },
-    blastNotes: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 8 },
-    blastActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
-    executeBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, paddingVertical: 8 },
+    blastNotes: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: spacing.sm },
+    blastActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+    executeBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, justifyContent: 'center', paddingVertical: spacing.sm },
     executeBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
-    cancelBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 8 },
+    cancelBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 8, borderWidth: 1, flex: 1, justifyContent: 'center', paddingVertical: spacing.sm },
     cancelBtnText: { color: theme.danger, fontSize: 12, fontWeight: '800' },
-    historyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: 12 },
+    historyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, padding: spacing.md, ...cardShadow },
     historyLeft: {},
     historyZone: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
     historyTime: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
-    statusPill: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+    statusPill: { borderRadius: 8, paddingHorizontal: spacing.sm, paddingVertical: 4 },
     statusExecuted: { backgroundColor: theme.accentLight },
     statusCancelled: { backgroundColor: theme.bgInput },
     statusPillText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
-    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 20 },
+    emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: spacing.xl, ...cardShadow },
     emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
   });
 }

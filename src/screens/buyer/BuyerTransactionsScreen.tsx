@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import { getMyTransactions, submitRating, raiseDispute, parseApiError, type MarketplaceTransaction } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { useTheme, typography, spacing, type Theme } from '../../theme/theme';
@@ -22,11 +23,11 @@ const BATCH_LABELS: Record<string, string> = {
   DELIVERED: 'Delivered',
 };
 
-const BATCH_ICONS: Record<string, string> = {
-  PREPARING: '📦',
-  DISPATCHED: '🚚',
-  IN_TRANSIT: '🛣',
-  DELIVERED: '✓',
+const BATCH_ICON_NAMES: Record<string, string> = {
+  PREPARING: 'cube-outline',
+  DISPATCHED: 'car-outline',
+  IN_TRANSIT: 'trail-sign-outline',
+  DELIVERED: 'checkmark-circle-outline',
 };
 
 function StarRow({ label, value, onChange, theme }: { label: string; value: number; onChange: (v: number) => void; theme: Theme }) {
@@ -47,7 +48,8 @@ function StarRow({ label, value, onChange, theme }: { label: string; value: numb
 export function BuyerTransactionsScreen({ session: _ }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [transactions, setTransactions] = useState<MarketplaceTransaction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -118,14 +120,14 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
 
       {transactions.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>📦</Text>
+          <Ionicons name="cube-outline" size={32} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No transactions yet</Text>
           <Text style={styles.emptySub}>Accepted offers appear here with dispatch tracking</Text>
         </View>
       ) : (
         transactions.map((tx) => {
           const color = BATCH_COLORS[tx.batchStatus] ?? theme.textMuted;
-          const icon = BATCH_ICONS[tx.batchStatus] ?? '📦';
+          const iconName = (BATCH_ICON_NAMES[tx.batchStatus] ?? 'cube-outline') as any;
           return (
             <View key={tx.id} style={styles.card}>
               <View style={styles.cardHeader}>
@@ -134,7 +136,8 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
                   <Text style={styles.site}>{tx.site}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: color + '20', borderColor: color }]}>
-                  <Text style={[styles.statusText, { color }]}>{icon} {BATCH_LABELS[tx.batchStatus] ?? tx.batchStatus}</Text>
+                  <Ionicons name={iconName} size={12} color={color} />
+                  <Text style={[styles.statusText, { color }]}>{BATCH_LABELS[tx.batchStatus] ?? tx.batchStatus}</Text>
                 </View>
               </View>
 
@@ -162,7 +165,10 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
                     <Text style={styles.rateBtnText}>★ Rate</Text>
                   </Pressable>
                   <Pressable style={styles.disputeBtn} onPress={() => setDisputeTx(tx)}>
-                    <Text style={styles.disputeBtnText}>⚑ Dispute</Text>
+                    <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                      <Ionicons name="flag-outline" size={13} color={theme.danger} />
+                      <Text style={styles.disputeBtnText}>Dispute</Text>
+                    </View>
                   </Pressable>
                 </View>
               ) : null}
@@ -222,22 +228,28 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
+    container: { padding: spacing.xl, paddingBottom: 40, backgroundColor: theme.bg },
     title: { ...typography.h1, color: theme.text, marginBottom: spacing.xl },
-    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
-    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
-    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: spacing.lg },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40, ...cardShadow },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
-    cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: 12 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.md, padding: 14, ...cardShadow },
+    cardHeader: { alignItems: 'flex-start', flexDirection: 'row', marginBottom: spacing.md },
     mineral: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 2 },
     site: { color: theme.accent, fontSize: 12, fontWeight: '700' },
-    statusBadge: { borderRadius: 6, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
+    statusBadge: { alignItems: 'center', borderRadius: 6, borderWidth: 1, flexDirection: 'row', gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 4 },
     statusText: { fontSize: 11, fontWeight: '800' },
-    row: { flexDirection: 'row', gap: 16, marginBottom: 10 },
+    row: { flexDirection: 'row', gap: spacing.lg, marginBottom: 10 },
     col: { flex: 1 },
     label: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
     value: { color: theme.text, fontSize: 14, fontWeight: '800' },
@@ -245,15 +257,15 @@ function makeStyles(theme: Theme) {
     txId: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
     date: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
     updated: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-    rateBtn: { flex: 1, backgroundColor: theme.accent, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
+    rateBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, paddingVertical: spacing.sm },
     rateBtnText: { color: '#0f172a', fontWeight: '800', fontSize: 13 },
-    disputeBtn: { flex: 1, backgroundColor: theme.dangerLight, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
+    disputeBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderRadius: 8, flex: 1, paddingVertical: spacing.sm },
     disputeBtnText: { color: theme.danger, fontWeight: '800', fontSize: 13 },
     modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl },
     modalTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 14 },
-    modalInput: { backgroundColor: theme.bg, borderRadius: 8, padding: 12, color: theme.text, marginBottom: 10, fontSize: 14 },
-    modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
+    modalInput: { backgroundColor: theme.bg, borderRadius: 8, color: theme.text, fontSize: 14, marginBottom: 10, padding: spacing.md },
+    modalActions: { alignItems: 'center', flexDirection: 'row', gap: spacing.lg, justifyContent: 'flex-end', marginTop: spacing.sm },
     cancelText: { color: theme.textMuted, fontWeight: '700' },
     submitBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 18, paddingVertical: 10 },
     submitBtnText: { color: '#fff', fontWeight: '800' },

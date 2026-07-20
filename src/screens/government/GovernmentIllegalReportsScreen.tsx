@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { getGovernmentIllegalMineReports, reviewIllegalMineReport, type IllegalMineReport, parseApiError } from '../../services/api';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 const STATUSES = ['UNDER_REVIEW', 'CONFIRMED', 'DISMISSED'];
@@ -16,7 +17,10 @@ function ReportPhoto({ photoData }: { photoData: string }) {
         <Image source={{ uri: `data:image/jpeg;base64,${photoData}` }} style={{ borderRadius: 8, height: 180, width: '100%' }} resizeMode="cover" />
       ) : (
         <View style={{ alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, paddingVertical: 10 }}>
-          <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>📷 Tap to view photo</Text>
+          <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+            <Ionicons name="camera-outline" size={14} color={theme.textSub} />
+            <Text style={{ color: theme.textSub, fontSize: 13, fontWeight: '700' }}>Tap to view photo</Text>
+          </View>
         </View>
       )}
     </Pressable>
@@ -26,7 +30,8 @@ function ReportPhoto({ photoData }: { photoData: string }) {
 export function GovernmentIllegalReportsScreen() {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [reports, setReports] = useState<IllegalMineReport[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,7 +85,10 @@ export function GovernmentIllegalReportsScreen() {
           {r.details ? <Text style={styles.details}>{r.details}</Text> : null}
           {r.photoData ? <ReportPhoto photoData={r.photoData} /> : null}
           {r.latitude != null && r.longitude != null ? (
-            <Text style={styles.coords}>📍 {r.latitude.toFixed(5)}, {r.longitude.toFixed(5)}</Text>
+            <View style={styles.coordsRow}>
+              <Ionicons name="location-outline" size={13} color={theme.textMuted} />
+              <Text style={styles.coords}>{r.latitude.toFixed(5)}, {r.longitude.toFixed(5)}</Text>
+            </View>
           ) : null}
           {r.reviewNotes ? <Text style={styles.reviewNotes}>Review: {r.reviewNotes}</Text> : null}
           {reviewingId === r.id ? (
@@ -117,28 +125,36 @@ export function GovernmentIllegalReportsScreen() {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
-    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
-    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 16 },
+    container: { padding: spacing.xl, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { ...typography.h2, color: theme.text, marginBottom: 2 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: spacing.lg },
     empty: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 40 },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 14 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.md, padding: 14, ...cardShadow },
     cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
     location: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 3 },
     meta: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
     status: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
     details: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginTop: 4 },
-    coords: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 6 },
+    coordsRow: { alignItems: 'center', flexDirection: 'row', gap: 4, marginTop: spacing.sm },
+    coords: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
     reviewNotes: { color: theme.accent, fontSize: 12, fontWeight: '700', marginTop: 6, fontStyle: 'italic' },
-    reviewPanel: { marginTop: 10, gap: 8 },
+    reviewPanel: { marginTop: 10, gap: spacing.sm },
     input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, padding: 10, minHeight: 60 },
-    statusRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    statusRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     statusBtn: { borderRadius: 6, borderWidth: 1.5, paddingHorizontal: 10, paddingVertical: 6 },
     statusBtnText: { fontSize: 11, fontWeight: '800' },
     cancelBtn: { alignSelf: 'flex-start' },
     cancelBtnText: { color: theme.textMuted, fontSize: 12, fontWeight: '700' },
-    reviewBtn: { alignSelf: 'flex-start', backgroundColor: theme.infoLight, borderColor: theme.info, borderRadius: 6, borderWidth: 1, marginTop: 8, paddingHorizontal: 12, paddingVertical: 6 },
+    reviewBtn: { alignSelf: 'flex-start', backgroundColor: theme.infoLight, borderColor: theme.info, borderRadius: 6, borderWidth: 1, marginTop: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: 6 },
     reviewBtnText: { color: theme.info, fontSize: 12, fontWeight: '800' },
   });
 }

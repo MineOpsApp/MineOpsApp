@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { getGovernmentPermits, type MiningPermitStatus } from '../../services/api';
 import { InputField } from '../../components/InputField';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 function Check({ done, theme }: { done: boolean | null; theme: Theme }) {
-  return <Text style={{ color: done ? theme.success : theme.danger, fontWeight: '900', fontSize: 14 }}>{done ? '✓' : '✗'}</Text>;
+  return <Ionicons name={done ? 'checkmark-circle' : 'close-circle'} size={16} color={done ? theme.success : theme.danger} />;
 }
 
 function ministerialColor(s: string | null) {
@@ -19,7 +20,8 @@ function ministerialColor(s: string | null) {
 export function GovernmentPermitsScreen() {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [permits, setPermits] = useState<MiningPermitStatus[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -75,15 +77,22 @@ export function GovernmentPermitsScreen() {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
-    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
-    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 12 },
+    container: { padding: spacing.xl, paddingBottom: 40, backgroundColor: theme.bg },
+    title: { ...typography.h2, color: theme.text, marginBottom: 2 },
+    sub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: spacing.md },
     empty: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 40 },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: 12, padding: 14 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.md, padding: 14, ...cardShadow },
     siteName: { color: theme.accent, fontSize: 14, fontWeight: '900', marginBottom: 10 },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: spacing.sm },
     gridItem: { flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: '45%' },
     gridLabel: { color: theme.textSub, fontSize: 12, fontWeight: '600', flex: 1 },
     ministerial: { fontSize: 12, fontWeight: '900' },

@@ -4,16 +4,18 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { ActionButton } from '../../components/ActionButton';
 import { createGuestAccount, renewGuestSession, getGuestList } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type GuestType = 'visitor' | 'inspector' | 'investor';
 type ActiveTab = 'create' | 'renew' | 'list';
 
 const GUEST_TYPES: { id: GuestType; label: string; icon: string; description: string; color: string }[] = [
-  { id: 'visitor', label: 'Visitor', icon: '👤', description: 'General site visit or contractor', color: '#1f6f5b' },
-  { id: 'inspector', label: 'Regulatory Inspector', icon: '🔍', description: 'Government or regulatory inspection', color: '#1d5f99' },
-  { id: 'investor', label: 'Investor', icon: '📊', description: 'Business review or due diligence', color: '#a15c00' },
+  { id: 'visitor', label: 'Visitor', icon: 'person-outline', description: 'General site visit or contractor', color: '#1f6f5b' },
+  { id: 'inspector', label: 'Regulatory Inspector', icon: 'search-outline', description: 'Government or regulatory inspection', color: '#1d5f99' },
+  { id: 'investor', label: 'Investor', icon: 'bar-chart-outline', description: 'Business review or due diligence', color: '#a15c00' },
 ];
 
 const SITES = ['Obuasi Mine', 'Tarkwa Mine', 'Bogoso Mine', 'Prestea Mine'];
@@ -29,7 +31,8 @@ type Props = { session: AuthSession };
 export function SupervisorGuestScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('create');
 
@@ -122,7 +125,10 @@ export function SupervisorGuestScreen({ session }: Props) {
         <>
           {createdAccount ? (
             <View style={styles.successCard}>
-              <Text style={styles.successTitle}>✓ Account Created</Text>
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 8, marginBottom: 4 }}>
+                <Ionicons name="checkmark-circle" size={20} color={theme.success} />
+                <Text style={styles.successTitle}>Account Created</Text>
+              </View>
               <Text style={styles.successSub}>Share these credentials with the guest</Text>
               <View style={styles.credentialRow}>
                 <Text style={styles.credentialLabel}>Name</Text>
@@ -160,13 +166,13 @@ export function SupervisorGuestScreen({ session }: Props) {
                 <Text style={styles.cardTitle}>Visit Type</Text>
                 {GUEST_TYPES.map((gt) => (
                   <Pressable key={gt.id} onPress={() => setGuestType(gt.id)} style={[styles.typeRow, guestType === gt.id && { borderColor: gt.color, backgroundColor: `${gt.color}11` }]}>
-                    <Text style={styles.typeIcon}>{gt.icon}</Text>
+                    <Ionicons name={gt.icon as any} size={22} color={gt.color} style={{ marginRight: 12 }} />
                     <View style={styles.typeBody}>
                       <Text style={[styles.typeLabel, guestType === gt.id && { color: gt.color }]}>{gt.label}</Text>
                       <Text style={styles.typeDesc}>{gt.description}</Text>
                     </View>
                     <View style={[styles.typeRadio, guestType === gt.id && { backgroundColor: gt.color, borderColor: gt.color }]}>
-                      {guestType === gt.id ? <Text style={styles.typeRadioCheck}>✓</Text> : null}
+                      {guestType === gt.id ? <Ionicons name="checkmark" size={12} color="#ffffff" /> : null}
                     </View>
                   </Pressable>
                 ))}
@@ -247,40 +253,45 @@ export function SupervisorGuestScreen({ session }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 16 },
-    tabRow: { backgroundColor: theme.bgInput, borderRadius: 10, flexDirection: 'row', marginBottom: 20, padding: 4 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: spacing.lg },
+    tabRow: { backgroundColor: theme.bgInput, borderRadius: 10, flexDirection: 'row', marginBottom: spacing.xl, padding: 4 },
     tab: { alignItems: 'center', borderRadius: 8, flex: 1, paddingVertical: 10 },
     tabActive: { backgroundColor: theme.bgCard },
     tabText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
     tabTextActive: { color: theme.text },
-    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg, ...cardShadow },
     cardTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     renewSub: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 14 },
     fieldLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, marginTop: 4, textTransform: 'uppercase' },
-    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 44, paddingHorizontal: 12 },
-    typeRow: { alignItems: 'center', borderColor: theme.border, borderRadius: 10, borderWidth: 1.5, flexDirection: 'row', marginBottom: 8, padding: 12 },
-    typeIcon: { fontSize: 22, marginRight: 12 },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: spacing.md, minHeight: 44, paddingHorizontal: spacing.md },
+    typeRow: { alignItems: 'center', borderColor: theme.border, borderRadius: 10, borderWidth: 1.5, flexDirection: 'row', marginBottom: spacing.sm, padding: spacing.md },
     typeBody: { flex: 1 },
     typeLabel: { color: theme.text, fontSize: 14, fontWeight: '800', marginBottom: 2 },
     typeDesc: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
     typeRadio: { alignItems: 'center', borderColor: theme.border, borderRadius: 12, borderWidth: 2, height: 24, justifyContent: 'center', width: 24 },
-    typeRadioCheck: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
     pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
-    durationRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+    durationRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: 14 },
     durationBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 10 },
     durationBtnActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     durationText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
     durationTextActive: { color: '#ffffff' },
-    successCard: { backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, padding: 20 },
-    successTitle: { color: theme.success, fontSize: 18, fontWeight: '900', marginBottom: 4 },
-    successSub: { color: theme.success, fontSize: 13, fontWeight: '600', marginBottom: 16 },
+    successCard: { backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, padding: spacing.xl, ...cardShadow },
+    successTitle: { color: theme.success, fontSize: 18, fontWeight: '900' },
+    successSub: { color: theme.success, fontSize: 13, fontWeight: '600', marginBottom: spacing.lg },
     credentialRow: { borderTopColor: theme.border, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
     credentialLabel: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
     credentialValue: { color: theme.text, fontSize: 13, fontWeight: '700' },
@@ -290,7 +301,7 @@ function makeStyles(theme: Theme) {
     guestName: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
     guestEmail: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 2 },
     guestRole: { color: theme.textSub, fontSize: 11, fontWeight: '700' },
-    guestExpiry: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
+    guestExpiry: { alignSelf: 'flex-start', borderRadius: 8, paddingHorizontal: spacing.sm, paddingVertical: 4 },
     guestActive: { backgroundColor: theme.accentLight },
     guestExpired: { backgroundColor: theme.dangerLight },
     guestExpiryText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },

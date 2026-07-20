@@ -24,7 +24,7 @@ import {
   type ForumReply,
 } from '../../services/api';
 import { parseApiError } from '../../services/api';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 const SUBFORUMS = ['general', 'safety', 'market', 'jobs', 'regulatory'];
@@ -32,7 +32,8 @@ const SUBFORUMS = ['general', 'safety', 'market', 'jobs', 'regulatory'];
 export default function ForumScreen() {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [subforum, setSubforum] = useState('general');
   const [posts, setPosts] = useState<ForumPost[]>([]);
@@ -113,7 +114,7 @@ export default function ForumScreen() {
   }
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#f59e0b" /></View>;
+    return <View style={styles.center}><ActivityIndicator size="large" color={theme.accent} /></View>;
   }
 
   if (selectedPost) {
@@ -129,7 +130,7 @@ export default function ForumScreen() {
           <Text style={styles.postBody}>{selectedPost.body}</Text>
           <Text style={styles.repliesHeader}>{selectedPost.replyCount} Replies</Text>
           {replyLoading ? (
-            <ActivityIndicator color="#f59e0b" />
+            <ActivityIndicator color={theme.accent} />
           ) : (
             replies.map(r => (
               <View key={r.id} style={styles.replyCard}>
@@ -234,44 +235,51 @@ export default function ForumScreen() {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bg },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
-    subforumBar: { backgroundColor: theme.bgCard, paddingVertical: 8, paddingHorizontal: 8, maxHeight: 56 },
-    subforumChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: theme.bgInput, marginRight: 8 },
+    center: { flex: 1, alignItems: 'center', backgroundColor: theme.bg, justifyContent: 'center' },
+    subforumBar: { backgroundColor: theme.bgCard, maxHeight: 56, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm },
+    subforumChip: { backgroundColor: theme.bgInput, borderRadius: 16, marginRight: spacing.sm, paddingHorizontal: 14, paddingVertical: 6 },
     subforumChipActive: { backgroundColor: theme.accent },
-    subforumText: { color: theme.textSub, fontWeight: '600', fontSize: 13 },
+    subforumText: { color: theme.textSub, fontSize: 13, fontWeight: '600' },
     subforumTextActive: { color: '#0f172a' },
-    newPostBtn: { margin: 12, backgroundColor: theme.accent, borderRadius: 8, padding: 12, alignItems: 'center' },
-    newPostBtnText: { color: '#0f172a', fontWeight: '700', fontSize: 14 },
-    error: { color: theme.danger, margin: 12, textAlign: 'center' },
-    empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },
-    postCard: { backgroundColor: theme.bgCard, margin: 8, marginHorizontal: 12, borderRadius: 10, padding: 14 },
+    newPostBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, margin: spacing.md, padding: spacing.md },
+    newPostBtnText: { color: '#0f172a', fontSize: 14, fontWeight: '700' },
+    error: { color: theme.danger, margin: spacing.md, textAlign: 'center' },
+    empty: { color: theme.textMuted, marginTop: 40, textAlign: 'center' },
+    postCard: { backgroundColor: theme.bgCard, borderRadius: 10, margin: spacing.sm, marginHorizontal: spacing.md, padding: 14, ...cardShadow },
     postCardTitle: { color: theme.text, fontSize: 15, fontWeight: '700' },
     postCardMeta: { color: theme.textSub, fontSize: 12, marginTop: 4 },
-    backBtn: { padding: 16, backgroundColor: theme.bgCard },
+    backBtn: { backgroundColor: theme.bgCard, padding: spacing.lg },
     backText: { color: theme.accent, fontWeight: '600' },
     postTitle: { color: theme.text, fontSize: 20, fontWeight: '700', marginBottom: 4 },
-    postMeta: { color: theme.textSub, fontSize: 13, marginBottom: 12 },
-    postBody: { color: theme.textSub, fontSize: 15, lineHeight: 22, marginBottom: 20 },
-    repliesHeader: { color: theme.accent, fontWeight: '700', fontSize: 14, marginBottom: 10 },
-    replyCard: { backgroundColor: theme.bgCard, borderRadius: 8, padding: 12, marginBottom: 8 },
-    replyAuthor: { color: theme.text, fontWeight: '600', fontSize: 13 },
+    postMeta: { color: theme.textSub, fontSize: 13, marginBottom: spacing.md },
+    postBody: { color: theme.textSub, fontSize: 15, lineHeight: 22, marginBottom: spacing.xl },
+    repliesHeader: { color: theme.accent, fontSize: 14, fontWeight: '700', marginBottom: 10 },
+    replyCard: { backgroundColor: theme.bgCard, borderRadius: 8, marginBottom: spacing.sm, padding: spacing.md, ...cardShadow },
+    replyAuthor: { color: theme.text, fontSize: 13, fontWeight: '600' },
     replyRole: { color: theme.textSub, fontWeight: '400' },
     replyBody: { color: theme.textSub, fontSize: 14, marginTop: 4 },
-    replyBox: { flexDirection: 'row', padding: 10, backgroundColor: theme.bgCard, alignItems: 'flex-end', gap: 8 },
-    replyInput: { flex: 1, backgroundColor: theme.bg, borderRadius: 8, padding: 10, color: theme.text, maxHeight: 100 },
+    replyBox: { alignItems: 'flex-end', backgroundColor: theme.bgCard, flexDirection: 'row', gap: spacing.sm, padding: 10 },
+    replyInput: { backgroundColor: theme.bg, borderRadius: 8, color: theme.text, flex: 1, maxHeight: 100, padding: 10 },
     sendBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10 },
     sendBtnDisabled: { opacity: 0.5 },
     sendBtnText: { color: '#0f172a', fontWeight: '700' },
-    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
-    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
-    modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
-    modalInput: { backgroundColor: theme.bg, borderRadius: 8, padding: 12, color: theme.text, marginBottom: 10 },
-    modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl },
+    modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: spacing.md },
+    modalInput: { backgroundColor: theme.bg, borderRadius: 8, color: theme.text, marginBottom: 10, padding: spacing.md },
+    modalActions: { alignItems: 'center', flexDirection: 'row', gap: spacing.lg, justifyContent: 'flex-end', marginTop: spacing.sm },
     cancelText: { color: theme.textSub, fontWeight: '600' },
-    submitBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+    submitBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: spacing.xl, paddingVertical: 10 },
     submitBtnText: { color: '#0f172a', fontWeight: '700' },
   });
 }

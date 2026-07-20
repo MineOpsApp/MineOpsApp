@@ -19,7 +19,9 @@ import {
 } from '../../services/api';
 import type { FirstAidKit, FirstAidKitPayload } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -27,11 +29,11 @@ type Props = { session: AuthSession };
 type ItemKey = 'hasBandages' | 'hasGloves' | 'hasAntiseptic' | 'hasOxygen' | 'hasStretcher';
 
 const KIT_ITEMS: { key: ItemKey; label: string; icon: string }[] = [
-  { key: 'hasBandages',   label: 'Bandages & Dressings', icon: '🩹' },
-  { key: 'hasGloves',     label: 'Medical Gloves',        icon: '🧤' },
-  { key: 'hasAntiseptic', label: 'Antiseptic Solution',   icon: '🧴' },
-  { key: 'hasOxygen',     label: 'Oxygen Cylinder',       icon: '⚗️' },
-  { key: 'hasStretcher',  label: 'Stretcher',             icon: '🛏️' },
+  { key: 'hasBandages',   label: 'Bandages & Dressings', icon: 'bandage-outline' },
+  { key: 'hasGloves',     label: 'Medical Gloves',        icon: 'hand-left-outline' },
+  { key: 'hasAntiseptic', label: 'Antiseptic Solution',   icon: 'flask-outline' },
+  { key: 'hasOxygen',     label: 'Oxygen Cylinder',       icon: 'fitness-outline' },
+  { key: 'hasStretcher',  label: 'Stretcher',             icon: 'bed-outline' },
 ];
 
 const EMPTY_FORM: FirstAidKitPayload = {
@@ -62,7 +64,8 @@ function daysSince(dt: string | null): number | null {
 export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [kits, setKits] = useState<FirstAidKit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,9 +221,12 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
               style={styles.checkRow}
             >
               <View style={[styles.checkbox, form[item.key] && styles.checkboxDone]}>
-                {form[item.key] && <Text style={styles.checkmark}>✓</Text>}
+                {form[item.key] && <Ionicons name="checkmark" size={13} color="#ffffff" />}
               </View>
-              <Text style={styles.checkLabel}>{item.icon} {item.label}</Text>
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                <Ionicons name={item.icon as any} size={16} color={theme.textSub} />
+                <Text style={styles.checkLabel}>{item.label}</Text>
+              </View>
             </Pressable>
           ))}
 
@@ -254,7 +260,7 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
 
       {kits.length === 0 && editingId === null ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🩺</Text>
+          <Ionicons name="medkit-outline" size={36} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No kits registered</Text>
           <Text style={styles.emptySub}>Tap "Add Kit" to register a first aid kit for a zone</Text>
         </View>
@@ -269,7 +275,10 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
           <View key={kit.id} style={[styles.kitCard, isOverdue && styles.kitCardOverdue]}>
             <View style={styles.kitHeader}>
               <View>
-                <Text style={styles.kitZone}>📍 {kit.zone}</Text>
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 3 }}>
+                <Ionicons name="location-outline" size={14} color={theme.textSub} />
+                <Text style={styles.kitZone}>{kit.zone}</Text>
+              </View>
                 <Text style={styles.kitLocation}>{kit.location}</Text>
               </View>
               <View style={styles.kitHeaderRight}>
@@ -284,27 +293,46 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
                 const has = kit[item.key as keyof FirstAidKit] as boolean;
                 return (
                   <View key={item.key} style={[styles.itemPill, has ? styles.itemPillOk : styles.itemPillMissing]}>
-                    <Text style={[styles.itemPillText, has ? styles.itemPillTextOk : styles.itemPillTextMissing]}>
-                      {has ? '✓' : '✗'} {item.label}
-                    </Text>
+                    <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                      <Ionicons
+                        name={has ? 'checkmark-circle' : 'close-circle'}
+                        size={11}
+                        color={has ? theme.success : theme.danger}
+                      />
+                      <Text style={[styles.itemPillText, has ? styles.itemPillTextOk : styles.itemPillTextMissing]}>
+                        {item.label}
+                      </Text>
+                    </View>
                   </View>
                 );
               })}
             </View>
 
-            {kit.notes ? <Text style={styles.kitNotes}>📝 {kit.notes}</Text> : null}
+            {kit.notes ? (
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 10 }}>
+                <Ionicons name="pencil-outline" size={12} color={theme.textSub} />
+                <Text style={styles.kitNotes}>{kit.notes}</Text>
+              </View>
+            ) : null}
 
             <View style={styles.kitFooter}>
               <View style={[styles.checkedBadge, isOverdue && styles.checkedBadgeOverdue]}>
-                <Text style={[styles.checkedBadgeText, isOverdue && styles.checkedBadgeTextOverdue]}>
-                  {days === null
-                    ? '⚠ Never checked'
-                    : days === 0
-                    ? '✓ Checked today'
-                    : isOverdue
-                    ? `⚠ Last checked ${days}d ago`
-                    : `✓ Checked ${days}d ago`}
-                </Text>
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                  <Ionicons
+                    name={isOverdue || days === null ? 'warning-outline' : 'checkmark-circle'}
+                    size={11}
+                    color={isOverdue || days === null ? theme.amber : theme.success}
+                  />
+                  <Text style={[styles.checkedBadgeText, isOverdue && styles.checkedBadgeTextOverdue]}>
+                    {days === null
+                      ? 'Never checked'
+                      : days === 0
+                      ? 'Checked today'
+                      : isOverdue
+                      ? `Last checked ${days}d ago`
+                      : `Checked ${days}d ago`}
+                  </Text>
+                </View>
               </View>
               {kit.lastCheckedBy ? (
                 <Text style={styles.checkedBy}>by {kit.lastCheckedBy}</Text>
@@ -316,7 +344,7 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
                       <Text style={styles.editBtnText}>Update</Text>
                     </Pressable>
                     <Pressable onPress={() => handleDelete(kit)} style={styles.deleteBtn}>
-                      <Text style={styles.deleteBtnText}>✕</Text>
+                      <Ionicons name="close" size={14} color={theme.danger} />
                     </Pressable>
                   </>
                 )}
@@ -329,71 +357,75 @@ export function SupervisorFirstAidKitScreen({ session: _ }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    centered: { alignItems: 'center', flex: 1, justifyContent: 'center', backgroundColor: theme.bg },
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageHeader: { marginBottom: 16 },
+    centered: { alignItems: 'center', backgroundColor: theme.bg, flex: 1, justifyContent: 'center' },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageHeader: { marginBottom: spacing.lg },
     pageTitleRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
     pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900' },
     addBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7 },
     addBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
     pageSub: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
-    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: spacing.lg, paddingVertical: 14, ...cardShadow },
     stripItem: { alignItems: 'center', flex: 1 },
     stripValue: { color: theme.text, fontSize: 24, fontWeight: '900' },
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
-    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
-    emptyIcon: { fontSize: 36, marginBottom: 10 },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40, ...cardShadow },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 16 },
+    formCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.lg, ...cardShadow },
     formTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
-    formLabel: { color: theme.text, fontSize: 11, fontWeight: '800', marginBottom: 6, marginTop: 12, textTransform: 'uppercase' },
-    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 10 },
+    formLabel: { color: theme.text, fontSize: 11, fontWeight: '800', marginBottom: 6, marginTop: spacing.md, textTransform: 'uppercase' },
+    input: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '600', paddingHorizontal: spacing.md, paddingVertical: 10 },
     inputDisabled: { color: theme.textMuted },
     inputMulti: { minHeight: 70, textAlignVertical: 'top' },
-    checkRow: { alignItems: 'center', flexDirection: 'row', gap: 12, paddingVertical: 8 },
+    checkRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.sm },
     checkbox: { alignItems: 'center', borderColor: theme.border, borderRadius: 5, borderWidth: 2, height: 24, justifyContent: 'center', width: 24 },
     checkboxDone: { backgroundColor: theme.accent, borderColor: theme.accent },
-    checkmark: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
     checkLabel: { color: theme.text, fontSize: 14, fontWeight: '600' },
     errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginTop: 10 },
-    formActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
-    cancelBtn: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 8, flex: 1, paddingVertical: 12 },
+    formActions: { flexDirection: 'row', gap: 10, marginTop: spacing.lg },
+    cancelBtn: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 8, flex: 1, paddingVertical: spacing.md },
     cancelBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
-    saveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 2, paddingVertical: 12 },
+    saveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 2, paddingVertical: spacing.md },
     saveBtnDisabled: { opacity: 0.6 },
     saveBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-    kitCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },
+    kitCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.md, padding: 14, ...cardShadow },
     kitCardOverdue: { borderColor: theme.amber },
-    kitHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-    kitZone: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 3 },
+    kitHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
+    kitZone: { color: theme.text, fontSize: 15, fontWeight: '900' },
     kitLocation: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
     kitHeaderRight: { alignItems: 'flex-end' },
-    stockBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    stockBadge: { borderRadius: 6, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     stockBadgeOk: { backgroundColor: theme.successLight },
     stockBadgeLow: { backgroundColor: theme.dangerLight },
-    stockBadgeText: { fontSize: 10, fontWeight: '900', color: theme.textSub },
+    stockBadgeText: { color: theme.textSub, fontSize: 10, fontWeight: '900' },
     itemsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-    itemPill: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+    itemPill: { borderRadius: 6, paddingHorizontal: spacing.sm, paddingVertical: 4 },
     itemPillOk: { backgroundColor: theme.successLight },
     itemPillMissing: { backgroundColor: theme.dangerLight },
     itemPillText: { fontSize: 11, fontWeight: '800' },
     itemPillTextOk: { color: theme.success },
     itemPillTextMissing: { color: theme.danger },
-    kitNotes: { color: theme.textSub, fontSize: 12, fontWeight: '600', marginBottom: 10 },
-    kitFooter: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-    checkedBadge: { backgroundColor: theme.successLight, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+    kitNotes: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
+    kitFooter: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+    checkedBadge: { backgroundColor: theme.successLight, borderRadius: 6, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     checkedBadgeOverdue: { backgroundColor: theme.amberLight },
     checkedBadgeText: { color: theme.success, fontSize: 11, fontWeight: '800' },
     checkedBadgeTextOverdue: { color: theme.amber },
     checkedBy: { color: theme.textMuted, flex: 1, fontSize: 11, fontWeight: '600' },
-    kitActions: { flexDirection: 'row', gap: 8, marginLeft: 'auto' },
-    editBtn: { backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 5 },
+    kitActions: { flexDirection: 'row', gap: spacing.sm, marginLeft: 'auto' },
+    editBtn: { backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: spacing.md, paddingVertical: 5 },
     editBtnText: { color: theme.accent, fontSize: 12, fontWeight: '800' },
     deleteBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderRadius: 8, height: 30, justifyContent: 'center', width: 30 },
-    deleteBtnText: { color: theme.danger, fontSize: 12, fontWeight: '900' },
   });
 }

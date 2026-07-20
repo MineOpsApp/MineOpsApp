@@ -7,7 +7,9 @@ import { getSiteHazardReports, reviewHazardReport, closeHazardReport, exportHaza
 import { exportAndShareCsv } from '../../utils/exportCsv';
 import type { HazardReport } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { Ionicons } from '@expo/vector-icons';
+
+import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -41,7 +43,8 @@ function applyFilters(hazards: HazardReport[], status: StatusFilter, severity: S
 export function SupervisorHazardsScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme);
+  const isDark = mode === 'dark';
+  const styles = makeStyles(theme, isDark);
 
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [actionTaken, setActionTaken] = useState('Area isolated and assigned for follow-up');
@@ -119,7 +122,14 @@ export function SupervisorHazardsScreen({ session }: Props) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {open.length > 0 && <View style={styles.urgentBadge}><Text style={styles.urgentBadgeText}>{open.length} open</Text></View>}
           <Pressable style={styles.exportBtn} onPress={handleExport} disabled={exporting}>
-            <Text style={styles.exportBtnText}>{exporting ? '…' : '↓ CSV'}</Text>
+            {exporting ? (
+              <Text style={styles.exportBtnText}>…</Text>
+            ) : (
+              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                <Ionicons name="download-outline" size={13} color="#fff" />
+                <Text style={styles.exportBtnText}>CSV</Text>
+              </View>
+            )}
           </Pressable>
         </View>
       </View>
@@ -179,7 +189,7 @@ export function SupervisorHazardsScreen({ session }: Props) {
         <View style={styles.emptyCard}><Text style={styles.emptyText}>Loading reports...</Text></View>
       ) : hazards.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>✓</Text>
+          <Ionicons name="checkmark-circle" size={28} color={theme.accent} style={{ marginBottom: 8 }} />
           <Text style={styles.emptyTitle}>No hazard reports</Text>
           <Text style={styles.emptySub}>All clear on site</Text>
         </View>
@@ -206,35 +216,41 @@ export function SupervisorHazardsScreen({ session }: Props) {
   );
 }
 
-function makeStyles(theme: Theme) {
+function makeStyles(theme: Theme, isDark: boolean) {
+  const cardShadow = {
+    shadowColor: '#000' as const,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDark ? 0.3 : 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  };
   return StyleSheet.create({
-    container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 40 },
-    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 16 },
+    container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
+    pageHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: spacing.lg },
     pageTitle: { color: theme.text, flex: 1, fontSize: 22, fontWeight: '900' },
-    exportBtn: { backgroundColor: theme.bgHero, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+    exportBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 6 },
     exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
     urgentBadge: { backgroundColor: theme.danger, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
     urgentBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingVertical: 14 },
+    strip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: spacing.lg, paddingVertical: 14, ...cardShadow },
     stripItem: { alignItems: 'center', flex: 1 },
     stripValue: { color: theme.text, fontSize: 20, fontWeight: '900' },
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
     filterLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' },
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-    chip: { borderColor: theme.border, borderRadius: 20, borderWidth: 1.5, backgroundColor: theme.bgCard, paddingHorizontal: 14, paddingVertical: 6 },
+    chip: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 20, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 6 },
     chipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     chipText: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
     chipTextActive: { color: '#ffffff' },
-    resultCount: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: 8 },
-    actionCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 16, padding: 14 },
-    actionLabel: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 8 },
-    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32 },
-    emptyIcon: { color: theme.accent, fontSize: 28, marginBottom: 8 },
+    resultCount: { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginBottom: spacing.sm },
+    actionCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, padding: 14, ...cardShadow },
+    actionLabel: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: spacing.sm },
+    emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 32, ...cardShadow },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
     emptyText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
-    loadMoreBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginTop: 8, paddingVertical: 12 },
+    loadMoreBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginTop: spacing.sm, paddingVertical: spacing.md },
     loadMoreText: { color: theme.accent, fontSize: 14, fontWeight: '800' },
   });
 }
