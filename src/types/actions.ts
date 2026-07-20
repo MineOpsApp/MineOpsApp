@@ -80,6 +80,9 @@ export type DangerZone = {
   status: string;
   createdAt: string;
   polygonPoints?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  radiusMeters?: number | null;
 };
 
 export type VisitorInduction = {

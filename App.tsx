@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Image, ImageBackground, View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import Mapbox from '@rnmapbox/maps';
+
+Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? '');
 import { useFonts, DancingScript_400Regular, DancingScript_700Bold } from '@expo-google-fonts/dancing-script';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

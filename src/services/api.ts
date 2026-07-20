@@ -406,6 +406,14 @@ export function registerUser(payload: AuthPayload) {
   return postPublic<any>('/auth/register', { ...payload, ...getDeviceInfo() });
 }
 
+export function forgotPassword(email: string) {
+  return postPublic<{ success: boolean; message: string }>('/auth/forgot-password', { email });
+}
+
+export function resetPasswordWithOtp(email: string, otp: string, newPassword: string) {
+  return postPublic<{ success: boolean }>('/auth/reset-password', { email, otp, newPassword });
+}
+
 export async function loginUser(payload: AuthPayload): Promise<AuthSession> {
   setAuthToken(null);
   const session = await postPublic<AuthSession>('/auth/login', { ...payload, ...getDeviceInfo() });
@@ -582,6 +590,9 @@ export function createDangerZone(zone: {
   site: string;
   zoneName: string;
   riskLevel: string;
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
 }) {
   return post<DangerZone>('/danger-zones', zone);
 }

@@ -14,6 +14,7 @@ import { getSiteMap, uploadSiteMap, parseApiError, type SiteMapData } from '../.
 import type { AuthSession } from '../../types/auth';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
+import { LiveSiteMapView } from '../../components/LiveSiteMapView';
 
 type Props = { session: AuthSession };
 
@@ -22,6 +23,7 @@ export function SupervisorSiteMapScreen({ session }: Props) {
   const theme = useTheme(mode);
   const s = makeStyles(theme);
 
+  const [activeTab, setActiveTab] = useState<'uploaded' | 'live'>('uploaded');
   const [current, setCurrent] = useState<SiteMapData | null>(null);
   const [loading, setLoading]   = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -69,47 +71,74 @@ export function SupervisorSiteMapScreen({ session }: Props) {
     }
   }
 
-  if (loading) {
-    return <View style={s.centered}><ActivityIndicator color={theme.accent} size="large" /></View>;
-  }
-
   return (
-    <ScrollView contentContainerStyle={s.container}>
-      <Text style={s.pageTitle}>Site Map</Text>
-      <Text style={s.pageSub}>Upload a floor plan or aerial image. Safety officers can then trace danger zone boundaries onto it.</Text>
-
-      {current ? (
-        <View style={s.card}>
-          <Text style={s.cardLabel}>Current map</Text>
-          <Text style={s.cardValue}>Uploaded by {current.uploadedBy}</Text>
-          <Text style={s.cardValue}>{new Date(current.uploadedAt).toLocaleString()}</Text>
-        </View>
-      ) : (
-        <View style={s.emptyCard}>
-          <Text style={s.emptyIcon}>🗺</Text>
-          <Text style={s.emptyText}>No map uploaded yet</Text>
-          <Text style={s.emptySub}>Upload a site plan so danger zones can be traced visually.</Text>
-        </View>
-      )}
-
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-
-      <TouchableOpacity style={s.primaryBtn} onPress={pickAndUpload} disabled={uploading}>
-        <Text style={s.primaryBtnText}>
-          {uploading ? 'Uploading…' : current ? 'Replace Map Image' : 'Upload Map Image'}
-        </Text>
-      </TouchableOpacity>
-
-      <View style={s.hintCard}>
-        <Text style={s.hintText}>💡 After uploading, go to Danger Zones (Safety Officer screen) to trace zone boundaries on the map.</Text>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      {/* Tab toggle */}
+      <View style={s.tabs}>
+        <TouchableOpacity
+          style={[s.tab, activeTab === 'uploaded' && s.tabActive]}
+          onPress={() => setActiveTab('uploaded')}
+        >
+          <Text style={[s.tabText, activeTab === 'uploaded' && s.tabTextActive]}>Uploaded Map</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.tab, activeTab === 'live' && s.tabActive]}
+          onPress={() => setActiveTab('live')}
+        >
+          <Text style={[s.tabText, activeTab === 'live' && s.tabTextActive]}>Live GPS Map</Text>
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+
+      {activeTab === 'uploaded' ? (
+        loading ? (
+          <View style={s.centered}><ActivityIndicator color={theme.accent} size="large" /></View>
+        ) : (
+          <ScrollView contentContainerStyle={s.container}>
+            <Text style={s.pageTitle}>Site Map</Text>
+            <Text style={s.pageSub}>Upload a floor plan or aerial image. Safety officers can then trace danger zone boundaries onto it.</Text>
+
+            {current ? (
+              <View style={s.card}>
+                <Text style={s.cardLabel}>Current map</Text>
+                <Text style={s.cardValue}>Uploaded by {current.uploadedBy}</Text>
+                <Text style={s.cardValue}>{new Date(current.uploadedAt).toLocaleString()}</Text>
+              </View>
+            ) : (
+              <View style={s.emptyCard}>
+                <Text style={s.emptyIcon}>🗺</Text>
+                <Text style={s.emptyText}>No map uploaded yet</Text>
+                <Text style={s.emptySub}>Upload a site plan so danger zones can be traced visually.</Text>
+              </View>
+            )}
+
+            {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+            <TouchableOpacity style={s.primaryBtn} onPress={pickAndUpload} disabled={uploading}>
+              <Text style={s.primaryBtnText}>
+                {uploading ? 'Uploading…' : current ? 'Replace Map Image' : 'Upload Map Image'}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={s.hintCard}>
+              <Text style={s.hintText}>💡 After uploading, go to Danger Zones (Safety Officer screen) to trace zone boundaries on the map.</Text>
+            </View>
+          </ScrollView>
+        )
+      ) : (
+        <LiveSiteMapView session={session} />
+      )}
+    </View>
   );
 }
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     centered:  { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
+    tabs:      { flexDirection: 'row', backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1 },
+    tab:       { flex: 1, alignItems: 'center', paddingVertical: 12 },
+    tabActive: { borderBottomColor: theme.accent, borderBottomWidth: 2.5 },
+    tabText:       { color: theme.textSub, fontSize: 13, fontWeight: '800' },
+    tabTextActive: { color: theme.accent },
     container: { backgroundColor: theme.bg, padding: 20, paddingBottom: 48 },
     pageTitle: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
     pageSub:   { color: theme.textSub, fontSize: 13, fontWeight: '600', marginBottom: 20, lineHeight: 19 },
