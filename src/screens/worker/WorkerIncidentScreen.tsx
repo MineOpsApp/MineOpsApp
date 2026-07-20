@@ -2,7 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import NetInfo from '@react-native-community/netinfo';
 import { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
@@ -83,10 +83,11 @@ export function WorkerIncidentScreen({ session }: Props) {
   const [hospitalRequired, setHospitalRequired] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getMyIncidents().then(setIncidents).catch(() => {});
-  }, []);
+  function load() { getMyIncidents().then(setIncidents).catch(() => {}); }
+  useEffect(() => { load(); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function takePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -160,7 +161,7 @@ export function WorkerIncidentScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.pageTitle}>Report Incident</Text>
 
       <View style={styles.card}>

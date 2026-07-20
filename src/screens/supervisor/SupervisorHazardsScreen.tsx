@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
@@ -46,6 +46,7 @@ export function SupervisorHazardsScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [actionTaken, setActionTaken] = useState('Area isolated and assigned for follow-up');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -65,20 +66,26 @@ export function SupervisorHazardsScreen({ session }: Props) {
     }
   }
 
-  useEffect(() => {
-    getSiteHazardReports(0).then((data) => {
+  async function loadPage0() {
+    return getSiteHazardReports(0).then((data) => {
       setHazards(data.content ?? []);
+      setPage(0);
       setHasMore(data.totalPages ? 0 < data.totalPages - 1 : false);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+    });
+  }
+  useEffect(() => { setLoading(true); loadPage0().finally(() => setLoading(false)); }, []);
+  async function refresh() { setRefreshing(true); await loadPage0().catch(() => {}); setRefreshing(false); }
 
   async function loadMore() {
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
       const data = await getSiteHazardReports(nextPage);
-      setHazards((c) => [...c, ...(data.content ?? [])]);
+      setHazards((c) => {
+        const existingIds = new Set(c.map(h => h.id));
+        const fresh = (data.content ?? []).filter(h => !existingIds.has(h.id));
+        return [...c, ...fresh];
+      });
       setPage(nextPage);
       setHasMore(nextPage < data.totalPages - 1);
     } catch {} finally { setLoadingMore(false); }
@@ -106,7 +113,7 @@ export function SupervisorHazardsScreen({ session }: Props) {
   const isFiltered = statusFilter !== 'all' || severityFilter !== 'all';
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Hazard Reports</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

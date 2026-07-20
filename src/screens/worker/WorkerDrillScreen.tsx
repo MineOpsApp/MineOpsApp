@@ -1,10 +1,11 @@
 import NetInfo from '@react-native-community/netinfo';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { InputField } from '../../components/InputField';
-import { startDrillOperation, signOffDrillStep, getMyDrillOperations } from '../../services/api';
+import { startDrillOperation, signOffDrillStep, getMyDrillOperations, getAllBlasts, getWorkerProfile } from '../../services/api';
+import type { WorkerProfile } from '../../types/actions';
 import { enqueue } from '../../utils/offlineQueue';
 import type { AuthSession } from '../../types/auth';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -31,7 +32,7 @@ type StepStatus = 'done' | 'active' | 'locked';
 type Props = { session: AuthSession };
 
 const DRILL_TYPES = ['Rotary', 'Percussion', 'Diamond Core', 'DTH', 'Auger'];
-const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D'];
+const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Main Site', 'Processing Area'];
 
 type StepIcon =
   | { lib: 'ionicons'; name: ComponentProps<typeof Ionicons>['name'] }
@@ -70,23 +71,64 @@ function formatTime(dateStr: string): string {
   }
 }
 
+function formatDuration(startedAt: string, completedAt: string | null): string {
+  if (!completedAt) return formatTime(startedAt);
+  const ms = new Date(completedAt).getTime() - new Date(startedAt).getTime();
+  if (ms <= 0) return formatTime(startedAt);
+  const totalMins = Math.round(ms / 60000);
+  if (totalMins < 60) return `${totalMins} min`;
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
 export function WorkerDrillScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
   const styles = makeStyles(theme);
 
   const [drills, setDrills] = useState<DrillOp[]>([]);
+  const [scheduledBlasts, setScheduledBlasts] = useState<any[]>([]);
   const [zone, setZone] = useState('Zone A');
   const [drillType, setDrillType] = useState('Rotary');
-  const [equipmentCode, setEquipmentCode] = useState('EX-01');
+  const [equipmentCode, setEquipmentCode] = useState('');
   const [stepNotes, setStepNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [profile, setProfile] = useState<WorkerProfile | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  async function refresh() {
+    setRefreshing(true);
+    await Promise.all([
+      getMyDrillOperations().then(setDrills).catch(() => {}),
+      getAllBlasts().then((blasts) => setScheduledBlasts(blasts.filter((b: any) => b.status === 'SCHEDULED'))).catch(() => {}),
+      getWorkerProfile(session.user.email).then(setProfile).catch(() => {}),
+    ]);
+    setRefreshing(false);
+  }
 
   useEffect(() => {
     getMyDrillOperations().then(setDrills).catch(() => {});
+    getAllBlasts().then((blasts) => {
+      setScheduledBlasts(blasts.filter((b: any) => b.status === 'SCHEDULED'));
+    }).catch(() => {});
+    getWorkerProfile(session.user.email)
+      .then((p) => { setProfile(p); if (p.assignedEquipment.length > 0) setEquipmentCode(p.assignedEquipment[0].code); })
+      .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (scheduledBlasts.length === 0) return;
+    const id = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(id);
+  }, [scheduledBlasts.length]);
+
   async function startDrill() {
+    if (!equipmentCode.trim()) {
+      Alert.alert('Equipment code required', 'Enter the equipment code before starting a drill.');
+      return;
+    }
     setLoading(true);
     try {
       const op = await startDrillOperation({ zone, drillType, equipmentCode });
@@ -143,8 +185,29 @@ export function WorkerDrillScreen({ session }: Props) {
   const completedDrills = drills.filter((d) => d.status === 'COMPLETED');
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.pageTitle}>Drill Operations</Text>
+
+      {scheduledBlasts.length > 0 && (
+        <View style={styles.blastBanner}>
+          <View style={styles.blastBannerHeader}>
+            <MaterialCommunityIcons name="bomb" size={16} color={theme.danger} />
+            <Text style={styles.blastBannerTitle}>Scheduled Blasts</Text>
+          </View>
+          {scheduledBlasts.map((b: any) => {
+            const blastTime = new Date(b.blastTime);
+            const mins = Math.round((blastTime.getTime() - now) / 60000);
+            const countdown = mins <= 0 ? 'Imminent' : mins < 60 ? `in ${mins}m` : `in ${Math.floor(mins / 60)}h ${mins % 60}m`;
+            return (
+              <View key={b.id} style={styles.blastRow}>
+                <Text style={styles.blastZone}>{b.zone}</Text>
+                <Text style={styles.blastTime}>{blastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                <Text style={styles.blastCountdown}>{countdown}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
 
       <View style={styles.card}>
         <View style={{ alignItems: 'center', flexDirection: 'row', gap: spacing.sm, marginBottom: 14 }}>
@@ -170,7 +233,20 @@ export function WorkerDrillScreen({ session }: Props) {
           ))}
         </View>
 
-        <InputField label="Equipment Code" onChangeText={setEquipmentCode} value={equipmentCode} placeholder="e.g. EX-01" />
+        {(profile?.assignedEquipment?.length ?? 0) > 0 ? (
+          <>
+            <Text style={styles.fieldLabel}>Equipment</Text>
+            <View style={styles.pillRow}>
+              {profile!.assignedEquipment.map((e) => (
+                <Pressable key={e.code} onPress={() => setEquipmentCode(e.code)} style={[styles.pill, equipmentCode === e.code && styles.pillActive]}>
+                  <Text style={[styles.pillText, equipmentCode === e.code && styles.pillActiveText]}>{e.code}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : (
+          <InputField label="Equipment Code" onChangeText={setEquipmentCode} value={equipmentCode} placeholder="e.g. EX-01" />
+        )}
         <ActionButton label={loading ? 'Starting...' : 'Start Drill Operation'} onPress={startDrill} />
       </View>
 
@@ -244,7 +320,7 @@ export function WorkerDrillScreen({ session }: Props) {
                 </View>
                 <View>
                   <Text style={styles.drillType}>{drill.drillType} — {drill.zone}</Text>
-                  <Text style={styles.drillMeta}>{formatTime(drill.startedAt)}</Text>
+                  <Text style={styles.drillMeta}>{formatDuration(drill.startedAt, drill.completedAt)}</Text>
                 </View>
               </View>
             </View>
@@ -272,14 +348,21 @@ function makeStyles(theme: Theme) {
     fieldLabel: { ...typography.label, color: theme.textSub, marginBottom: spacing.sm },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
     pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
-    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    blastBanner: { backgroundColor: theme.dangerLight, borderColor: theme.danger, borderRadius: 10, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.md },
+    blastBannerHeader: { alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: spacing.sm },
+    blastBannerTitle: { color: theme.danger, fontSize: 13, fontWeight: '900' },
+    blastRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, marginBottom: 4 },
+    blastZone: { color: theme.text, flex: 1, fontSize: 13, fontWeight: '800' },
+    blastTime: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
+    blastCountdown: { color: theme.danger, fontSize: 12, fontWeight: '800' },
     pillText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
     sectionTitle: { ...typography.h3, color: theme.text, marginBottom: spacing.md },
     drillCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.lg, overflow: 'hidden' },
-    drillHeader: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
+    drillHeader: { alignItems: 'center', backgroundColor: theme.accent, flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
     drillType: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
-    drillMeta: { color: 'rgba(255,255,255,0.5)', ...typography.caption, marginTop: 2 },
+    drillMeta: { color: 'rgba(255,255,255,0.65)', ...typography.caption, marginTop: 2 },
     inProgressBadge: { backgroundColor: 'rgba(74,222,128,0.15)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
     inProgressText: { color: '#4ade80', fontSize: 11, fontWeight: '800' },
     drillStarted: { ...typography.label, color: theme.textMuted, paddingHorizontal: 14, paddingVertical: spacing.sm, textTransform: 'none' as const },
@@ -289,7 +372,7 @@ function makeStyles(theme: Theme) {
     stepLeft: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md },
     stepDot: { alignItems: 'center', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
     stepDotDone: { backgroundColor: theme.accent },
-    stepDotActive: { backgroundColor: theme.bgHero },
+    stepDotActive: { backgroundColor: theme.accent },
     stepDotLocked: { backgroundColor: theme.border },
     stepBody: { flex: 1 },
     stepLabel: { ...typography.bodyBold, color: theme.text, marginBottom: 2 },

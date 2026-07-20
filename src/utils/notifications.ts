@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import * as IntentLauncher from 'expo-intent-launcher';
@@ -17,6 +18,11 @@ Notifications.setNotificationHandler({
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) {
     console.log('Push notifications only work on physical devices');
+    return null;
+  }
+
+  if (Constants.executionEnvironment === 'storeClient' && Platform.OS === 'android') {
+    console.log('Remote push notifications not supported in Expo Go on Android');
     return null;
   }
 

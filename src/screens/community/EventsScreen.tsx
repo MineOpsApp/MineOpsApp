@@ -151,7 +151,7 @@ function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bg },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
-    createBtn: { margin: 12, backgroundColor: '#f59e0b', borderRadius: 8, padding: 12, alignItems: 'center' },
+    createBtn: { margin: 12, backgroundColor: theme.accent, borderRadius: 8, padding: 12, alignItems: 'center' },
     createBtnText: { color: '#0f172a', fontWeight: '700' },
     error: { color: theme.danger, margin: 12, textAlign: 'center' },
     empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },
@@ -160,7 +160,7 @@ function makeStyles(theme: Theme) {
     cardTitle: { color: theme.text, fontSize: 15, fontWeight: '700', flex: 1 },
     typeBadge: { backgroundColor: '#3b82f6', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
     typeBadgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
-    dateText: { color: '#f59e0b', fontSize: 13, marginBottom: 4 },
+    dateText: { color: theme.accent, fontSize: 13, marginBottom: 4 },
     desc: { color: theme.textSub, fontSize: 13 },
     byText: { color: theme.textMuted, fontSize: 12, marginTop: 4 },
     modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
@@ -170,12 +170,12 @@ function makeStyles(theme: Theme) {
     label: { color: theme.textSub, fontSize: 13, marginBottom: 6 },
     typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
     typeChip: { backgroundColor: theme.bgInput, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5 },
-    typeChipActive: { backgroundColor: '#f59e0b' },
+    typeChipActive: { backgroundColor: theme.accent },
     typeChipText: { color: theme.textSub, fontSize: 12 },
     typeChipTextActive: { color: '#0f172a', fontWeight: '700' },
     modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
     cancelText: { color: theme.textSub, fontWeight: '600' },
-    submitBtn: { backgroundColor: '#f59e0b', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+    submitBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
     submitBtnText: { color: '#0f172a', fontWeight: '700' },
   });
 }

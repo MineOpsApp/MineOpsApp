@@ -3,7 +3,7 @@ import { Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, 
 
 import { getMyTransactions, submitRating, raiseDispute, parseApiError, type MarketplaceTransaction } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, typography, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
@@ -36,7 +36,7 @@ function StarRow({ label, value, onChange, theme }: { label: string; value: numb
       <View style={{ flexDirection: 'row', gap: 6 }}>
         {[1, 2, 3, 4, 5].map(n => (
           <TouchableOpacity key={n} onPress={() => onChange(n)}>
-            <Text style={{ fontSize: 24, color: n <= value ? '#f59e0b' : theme.border }}>★</Text>
+            <Text style={{ fontSize: 24, color: n <= value ? theme.accent : theme.border }}>★</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -225,7 +225,7 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
-    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    title: { ...typography.h1, color: theme.text, marginBottom: spacing.xl },
     subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
     emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
     emptyIcon: { fontSize: 32, marginBottom: 10 },
@@ -245,7 +245,7 @@ function makeStyles(theme: Theme) {
     txId: { color: theme.textMuted, fontSize: 11, fontWeight: '700' },
     date: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
     updated: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 2 },
-    rateBtn: { flex: 1, backgroundColor: '#f59e0b', borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
+    rateBtn: { flex: 1, backgroundColor: theme.accent, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
     rateBtnText: { color: '#0f172a', fontWeight: '800', fontSize: 13 },
     disputeBtn: { flex: 1, backgroundColor: theme.dangerLight, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
     disputeBtnText: { color: theme.danger, fontWeight: '800', fontSize: 13 },

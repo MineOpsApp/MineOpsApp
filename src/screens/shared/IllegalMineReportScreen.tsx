@@ -2,11 +2,12 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import NetInfo from '@react-native-community/netinfo';
 import { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { submitIllegalMineReport, parseApiError } from '../../services/api';
 import { enqueue } from '../../utils/offlineQueue';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export function IllegalMineReportScreen() {
   const { mode } = useThemeMode();
@@ -69,7 +70,7 @@ export function IllegalMineReportScreen() {
   if (submitted) {
     return (
       <ScrollView contentContainerStyle={[styles.container, { alignItems: 'center', paddingTop: 60 }]}>
-        <Text style={{ fontSize: 48, marginBottom: 16 }}>✅</Text>
+        <Ionicons name="checkmark-circle" size={64} color={theme.success} style={{ marginBottom: 16 }} />
         <Text style={styles.successTitle}>Report submitted</Text>
         <Text style={styles.successSub}>Your tip has been received and will be reviewed by a GoldBod regulator. Thank you for helping keep Ghana's mining sector legal.</Text>
       </ScrollView>
@@ -113,7 +114,10 @@ export function IllegalMineReportScreen() {
         </>
       ) : (
         <Pressable onPress={takePhoto} style={styles.photoBtn}>
-          <Text style={styles.photoBtnText}>📷 Take Photo</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="camera" size={16} color={theme.textSub} />
+            <Text style={styles.photoBtnText}>Take Photo</Text>
+          </View>
         </Pressable>
       )}
 

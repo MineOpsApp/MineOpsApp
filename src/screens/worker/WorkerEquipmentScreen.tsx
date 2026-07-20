@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
@@ -51,11 +51,16 @@ export function WorkerEquipmentScreen({ session }: Props) {
   const [faultDescription, setFaultDescription] = useState('');
   const [maintenanceDetails, setMaintenanceDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getWorkerProfile(session.user.email).then(setProfile).catch(() => {});
-    getEquipmentShiftLogs().then((logs: ShiftLog[]) => setShiftLogs(logs)).catch(() => {});
-  }, []);
+  async function load() {
+    await Promise.all([
+      getWorkerProfile(session.user.email).then(setProfile).catch(() => {}),
+      getEquipmentShiftLogs().then((logs: ShiftLog[]) => setShiftLogs(logs)).catch(() => {}),
+    ]);
+  }
+  useEffect(() => { load(); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   const equipment = profile?.assignedEquipment[0];
   const currentStatus = equipment?.status ?? 'Unknown';
@@ -101,7 +106,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.pageTitle}>Equipment</Text>
 
       {equipment ? (

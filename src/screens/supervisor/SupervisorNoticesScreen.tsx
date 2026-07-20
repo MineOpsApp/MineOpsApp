@@ -7,6 +7,7 @@ import { getNotices, createNotice, createSupervisorMessage } from '../../service
 import { deleteNotice } from '../../services/api';
 import type { Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
@@ -135,13 +136,19 @@ export function SupervisorNoticesScreen({ session }: Props) {
                 ) : null}
               </View>
               <View style={[styles.ackBadge, ackCount > 0 ? styles.ackBadgeGreen : styles.ackBadgeGrey]}>
-                <Text style={[styles.ackBadgeText, ackCount > 0 ? styles.ackBadgeTextGreen : styles.ackBadgeTextGrey]}>{ackCount} ✓</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={[styles.ackBadgeText, ackCount > 0 ? styles.ackBadgeTextGreen : styles.ackBadgeTextGrey]}>{ackCount}</Text>
+                  <Ionicons name="checkmark-circle" size={12} color={ackCount > 0 ? styles.ackBadgeTextGreen.color : styles.ackBadgeTextGrey.color} />
+                </View>
               </View>
             </View>
             {ackCount > 0 ? (
               <View style={styles.ackList}>
                 {n.seenBy.slice(0, 3).map((s) => (
-                  <Text key={s.id} style={styles.ackName}>✓ {s.fullName}</Text>
+                  <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="checkmark-circle" size={12} color={styles.ackName.color} />
+                    <Text style={styles.ackName}>{s.fullName}</Text>
+                  </View>
                 ))}
                 {n.seenBy.length > 3 ? <Text style={styles.ackMore}>+{n.seenBy.length - 3} more</Text> : null}
               </View>

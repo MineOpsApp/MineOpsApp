@@ -251,7 +251,7 @@ export function SupervisorMineralInventoryScreen({ session }: Props) {
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.bg },
-    header: { backgroundColor: theme.bgCard, borderBottomColor: theme.border, borderBottomWidth: 1, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 },
+    header: { backgroundColor: theme.bg, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 },
     title: { color: theme.text, fontSize: 26, fontWeight: '800', marginBottom: 2 },
     subtitle: { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 12 },
     tabRow: { flexDirection: 'row', gap: 0 },

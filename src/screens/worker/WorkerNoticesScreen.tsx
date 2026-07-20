@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getNotices, markNoticeSeen } from '../../services/api';
 import type { Notice } from '../../types/actions';
@@ -18,10 +18,11 @@ export function WorkerNoticesScreen({ session }: Props) {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [acknowledging, setAcknowledging] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getNotices().then(setNotices).catch(() => setLoadError(true));
-  }, []);
+  function load() { getNotices().then(setNotices).catch(() => setLoadError(true)); }
+  useEffect(() => { load(); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function acknowledge(notice: Notice) {
     setAcknowledging(notice.id);
@@ -43,7 +44,7 @@ export function WorkerNoticesScreen({ session }: Props) {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
 
       <View style={styles.pageHeader}>
         <Text style={styles.pageTitle}>Notices</Text>

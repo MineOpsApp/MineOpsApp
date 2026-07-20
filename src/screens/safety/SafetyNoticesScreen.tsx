@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
@@ -20,10 +20,11 @@ export function SafetyNoticesScreen({ session }: Props) {
   const [title, setTitle] = useState('Safety Alert');
   const [message, setMessage] = useState('');
   const [posting, setPosting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getNotices().then(setNotices).catch(() => {});
-  }, []);
+  function load() { getNotices().then(setNotices).catch(() => {}); }
+  useEffect(() => { load(); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function post() {
     if (!title.trim()) { Alert.alert('Required', 'Enter a notice title.'); return; }
@@ -38,7 +39,7 @@ export function SafetyNoticesScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.title}>Notices</Text>
       <InputField label="Title" onChangeText={setTitle} value={title} />
       <InputField label="Message" multiline onChangeText={setMessage} value={message} placeholder="Enter notice details..." />

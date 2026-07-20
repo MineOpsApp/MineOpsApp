@@ -190,7 +190,7 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
         <Pressable
           onPress={handleSubmit}
           style={[styles.submitBtn, (!allChecked || submitting) && styles.submitBtnDisabled]}
-          disabled={!allChecked || submitting}
+          disabled={submitting}
         >
           <Text style={styles.submitBtnText}>
             {submitting ? 'Submitting…' : allChecked ? 'Submit Checklist' : `${ITEMS.length - checkedCount} items remaining`}

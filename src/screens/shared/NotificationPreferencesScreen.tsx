@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { getNotificationPreferences, updateNotificationPreferences, parseApiError } from '../../services/api';
@@ -6,12 +6,13 @@ import { openDndAccessSettings } from '../../utils/notifications';
 import type { NotificationPreferences } from '../../services/api';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
-const ALWAYS_ON: { icon: string; label: string; desc: string }[] = [
-  { icon: '🆘', label: 'SOS Alerts', desc: 'Sent to supervisors and safety officers when a worker triggers an SOS. Cannot be muted.' },
-  { icon: '🚨', label: 'Incident Alerts', desc: 'Serious and Critical incident reports. Cannot be muted.' },
-  { icon: '💥', label: 'Blast Warnings', desc: 'Scheduled and cancelled blasts — clearing the area is safety-critical. Cannot be muted.' },
-  { icon: '🚧', label: 'Danger Zone Alerts', desc: 'Active danger zones at your site. Cannot be muted.' },
+const ALWAYS_ON: { icon: ComponentProps<typeof Ionicons>['name']; label: string; desc: string }[] = [
+  { icon: 'alert-circle', label: 'SOS Alerts', desc: 'Sent to supervisors and safety officers when a worker triggers an SOS. Cannot be muted.' },
+  { icon: 'alert-circle-outline', label: 'Incident Alerts', desc: 'Serious and Critical incident reports. Cannot be muted.' },
+  { icon: 'flash', label: 'Blast Warnings', desc: 'Scheduled and cancelled blasts — clearing the area is safety-critical. Cannot be muted.' },
+  { icon: 'warning', label: 'Danger Zone Alerts', desc: 'Active danger zones at your site. Cannot be muted.' },
 ];
 
 export function NotificationPreferencesScreen() {
@@ -77,7 +78,7 @@ export function NotificationPreferencesScreen() {
       <View style={styles.list}>
         {ALWAYS_ON.map((item, idx) => (
           <View key={item.label} style={[styles.row, idx < ALWAYS_ON.length - 1 && styles.rowBorder]}>
-            <View style={styles.iconWrap}><Text style={styles.icon}>{item.icon}</Text></View>
+            <View style={styles.iconWrap}><Ionicons name={item.icon} size={20} color={theme.danger} /></View>
             <View style={styles.body}>
               <Text style={styles.label}>{item.label}</Text>
               <Text style={styles.desc}>{item.desc}</Text>

@@ -29,7 +29,7 @@ import { useThemeMode } from '../../theme/ThemeContext';
 
 type Props = { session: AuthSession };
 
-export function SupervisorMessagesScreen({ session: _ }: Props) {
+export function SupervisorMessagesScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
   const styles = makeStyles(theme);
@@ -239,7 +239,13 @@ export function SupervisorMessagesScreen({ session: _ }: Props) {
                         )
                       ) : msg.reply ? (
                         <View style={styles.repliedSection}>
-                          <Text style={styles.repliedLabel}>Your reply</Text>
+                          <Text style={styles.repliedLabel}>
+                            {msg.repliedByEmail === session.user.email
+                              ? 'Your reply'
+                              : msg.repliedByName
+                                ? `${msg.repliedByName} replied`
+                                : 'Staff replied'}
+                          </Text>
                           <Text style={styles.repliedText}>{msg.reply}</Text>
                           {msg.repliedAt && (
                             <Text style={styles.repliedTime}>{formatAgo(msg.repliedAt)}</Text>

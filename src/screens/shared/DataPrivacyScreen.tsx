@@ -5,6 +5,7 @@ import { deleteMyAccount, exportMyData, parseApiError } from '../../services/api
 import { exportAndShareJson } from '../../utils/exportCsv';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = { onAccountDeleted: () => void };
 
@@ -71,7 +72,10 @@ export function DataPrivacyScreen({ onAccountDeleted }: Props) {
       </View>
 
       <View style={[styles.card, styles.dangerCard]}>
-        <Text style={styles.dangerTitle}>⚠️ Delete Your Account</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <Ionicons name="warning" size={15} color={theme.danger} />
+          <Text style={[styles.dangerTitle, { marginBottom: 0 }]}>Delete Your Account</Text>
+        </View>
         <Text style={styles.cardDesc}>
           Permanently removes your profile, contact details, and login access. Safety and operational records tied to your past reports are retained for site compliance — see the Privacy Policy for details. This cannot be undone.
         </Text>

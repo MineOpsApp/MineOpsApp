@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { getMyShiftLogs, getSiteEquipment, parseApiError, submitShiftLog } from '../../services/api';
@@ -16,7 +16,7 @@ type Props = { session: AuthSession };
 const MINERALS = ['Gold', 'Silver', 'Copper', 'Cobalt', 'Lithium', 'Manganese', 'Bauxite'];
 const SHIFT_TYPES = ['Morning', 'Afternoon', 'Night'];
 const UNITS = ['kg', 'tonnes', 'oz', 'g', 'lb', 'carats'];
-const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D'];
+const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Main Site', 'Processing Area'];
 
 // Must match backend UNIT_LIMITS
 const UNIT_LIMITS: Record<string, number> = {
@@ -88,17 +88,19 @@ export function WorkerShiftScreen({ session: _ }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [equipmentList, setEquipmentList] = useState<any[]>([]);
   const [volumeTouched, setVolumeTouched] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getMyShiftLogs().then(setLogs).catch(() => {});
-    getSiteEquipment().then((list) => {
-      setEquipmentList(list);
-      if (list.length > 0) {
-        setEquipmentCode(list[0].code);
-        setEquipmentName(list[0].name);
-      }
-    }).catch(() => {});
-  }, []);
+  async function load() {
+    await Promise.all([
+      getMyShiftLogs().then(setLogs).catch(() => {}),
+      getSiteEquipment().then((list) => {
+        setEquipmentList(list);
+        if (list.length > 0) { setEquipmentCode(list[0].code); setEquipmentName(list[0].name); }
+      }).catch(() => {}),
+    ]);
+  }
+  useEffect(() => { load(); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   const volumeError = volumeTouched ? validateVolume(volume, unit) : null;
   const isVolumeValid = volume.trim() !== '' && validateVolume(volume, unit) === null;
@@ -149,7 +151,7 @@ export function WorkerShiftScreen({ session: _ }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.title}>Shift Production</Text>
 
       <Text style={styles.sectionTitle}>Log This Shift</Text>

@@ -19,17 +19,20 @@ import { useThemeMode } from '../../theme/ThemeContext';
 type Props = { session: AuthSession };
 type Severity = 'Low' | 'Medium' | 'High' | 'Critical';
 
-const SEVERITY_COLORS: Record<Severity, { bg: string; text: string }> = {
-  Low: { bg: '#122620', text: '#3fb950' },
-  Medium: { bg: '#2d2015', text: '#d29922' },
-  High: { bg: '#2d1117', text: '#f85149' },
-  Critical: { bg: '#3b0000', text: '#ffffff' },
-};
+function getSeverityColors(theme: Theme): Record<Severity, { bg: string; text: string }> {
+  return {
+    Low: { bg: theme.successLight, text: theme.success },
+    Medium: { bg: theme.amberLight, text: theme.amber },
+    High: { bg: theme.dangerLight, text: theme.danger },
+    Critical: { bg: theme.danger, text: '#ffffff' },
+  };
+}
 
 export function WorkerHazardsScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
   const styles = makeStyles(theme);
+  const severityColors = getSeverityColors(theme);
 
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [page, setPage] = useState(0);
@@ -87,7 +90,7 @@ export function WorkerHazardsScreen({ session }: Props) {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
           latitude = loc.coords.latitude;
           longitude = loc.coords.longitude;
         }
@@ -152,10 +155,10 @@ export function WorkerHazardsScreen({ session }: Props) {
               onPress={() => setSeverity(level)}
               style={[
                 styles.severityBtn,
-                severity === level && { backgroundColor: SEVERITY_COLORS[level].bg, borderColor: SEVERITY_COLORS[level].text },
+                severity === level && { backgroundColor: severityColors[level].bg, borderColor: severityColors[level].text },
               ]}
             >
-              <Text style={[styles.severityBtnText, severity === level && { color: SEVERITY_COLORS[level].text }]}>{level}</Text>
+              <Text style={[styles.severityBtnText, severity === level && { color: severityColors[level].text }]}>{level}</Text>
             </Pressable>
           ))}
         </View>

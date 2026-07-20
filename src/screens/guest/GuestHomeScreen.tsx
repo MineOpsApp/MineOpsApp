@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { SiteMapView } from '../../components/SiteMapView';
@@ -24,31 +24,25 @@ export function GuestHomeScreen({ session, subRole }: Props) {
   const [inventory, setInventory] = useState<MineralInventory[]>([]);
   const [inventoryShared, setInventoryShared] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      getNotices().catch(() => []),
-      getSiteHazardAlerts().catch(() => []),
-      getDangerZones().catch(() => []),
-    ]).then(([n, h, d]) => {
-      setNotices(n as Notice[]);
-      setHazards(h as HazardReport[]);
-      setDangerZones(d as DangerZone[]);
-    }).finally(() => setLoading(false));
-
+  async function load() {
+    const [n, h, d] = await Promise.all([
+      getNotices().catch(() => [] as Notice[]),
+      getSiteHazardAlerts().catch(() => [] as HazardReport[]),
+      getDangerZones().catch(() => [] as DangerZone[]),
+    ]);
+    setNotices(n as Notice[]);
+    setHazards(h as HazardReport[]);
+    setDangerZones(d as DangerZone[]);
     if (subRole === 'investor') {
       getPublicInventory()
         .then((data) => { setInventory(data); setInventoryShared(true); })
-        .catch((err: Error) => {
-          if (err.message?.startsWith('403')) {
-            setInventoryShared(false);
-          } else {
-            setInventoryShared(false);
-          }
-        });
+        .catch(() => setInventoryShared(false));
     }
-  }, []);
+  }
+  useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function completeInduction() {
     try {
@@ -65,7 +59,7 @@ export function GuestHomeScreen({ session, subRole }: Props) {
 
   if (subRole === 'visitor') {
     return (
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
         <Text style={styles.title}>Welcome</Text>
         <Text style={styles.subtitle}>{session.user.fullName} · Visitor</Text>
         <View style={styles.infoCard}>
@@ -90,7 +84,7 @@ export function GuestHomeScreen({ session, subRole }: Props) {
     const openHazards = hazards.filter((h) => h.status.toUpperCase() === 'OPEN');
     const activeZones = dangerZones.filter((z) => z.status !== 'Cleared');
     return (
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
         <Text style={styles.title}>Inspection</Text>
         <Text style={styles.subtitle}>{session.user.fullName} · Regulatory Inspector</Text>
         <ActionButton label="Log Inspector Induction" onPress={completeInduction} />

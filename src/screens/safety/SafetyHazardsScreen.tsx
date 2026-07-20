@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
@@ -19,10 +19,11 @@ export function SafetyHazardsScreen({ session }: Props) {
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [actionTaken, setActionTaken] = useState('Area secured and safety protocols applied');
   const [actioning, setActioning] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getHazardReports().then((p) => setHazards(p?.content ?? [])).catch(() => {});
-  }, []);
+  function load() { getHazardReports().then((p) => setHazards(p?.content ?? [])).catch(() => {}); }
+  useEffect(() => { load(); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function review(id: number) {
     if (actioning !== null) return;
@@ -45,7 +46,7 @@ export function SafetyHazardsScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.title}>Hazard Review</Text>
       <InputField label="Action taken" multiline onChangeText={setActionTaken} value={actionTaken} placeholder="Describe the action taken..." />
       {hazards.length === 0 ? (

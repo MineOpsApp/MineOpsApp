@@ -262,7 +262,7 @@ function StarRow({ label, value, onChange, theme }: {
       <View style={{ flexDirection: 'row', gap: 6 }}>
         {[1, 2, 3, 4, 5].map(n => (
           <TouchableOpacity key={n} onPress={() => onChange(n)}>
-            <Text style={{ fontSize: 24, color: n <= value ? '#f59e0b' : theme.border }}>★</Text>
+            <Text style={{ fontSize: 24, color: n <= value ? theme.accent : theme.border }}>★</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -299,7 +299,7 @@ function makeStyles(theme: Theme) {
     btnDisabled: { opacity: 0.5 },
     deliveredBadge: { alignItems: 'center', backgroundColor: theme.successLight, borderRadius: 8, paddingVertical: 8 },
     deliveredText: { color: theme.accent, fontSize: 13, fontWeight: '800' },
-    rateBtn: { flex: 1, backgroundColor: '#f59e0b', borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
+    rateBtn: { flex: 1, backgroundColor: theme.accent, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
     rateBtnText: { color: '#0f172a', fontWeight: '800', fontSize: 12 },
     disputeBtn: { flex: 1, backgroundColor: theme.dangerLight, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
     disputeBtnText: { color: theme.danger, fontWeight: '800', fontSize: 12 },

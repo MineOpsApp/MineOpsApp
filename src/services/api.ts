@@ -753,7 +753,7 @@ export function cancelBlast(id: number) {
 }
 
 export function executeBlast(id: number) {
-  return post<any>(`/blasts/${id}/execute`, {});
+  return patch<any>(`/blasts/${id}/execute`, {});
 }
 
 export function createIncident(payload: {

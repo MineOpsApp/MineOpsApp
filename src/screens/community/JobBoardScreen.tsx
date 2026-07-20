@@ -200,7 +200,7 @@ function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bg },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
-    createBtn: { margin: 12, backgroundColor: '#f59e0b', borderRadius: 8, padding: 12, alignItems: 'center' },
+    createBtn: { margin: 12, backgroundColor: theme.accent, borderRadius: 8, padding: 12, alignItems: 'center' },
     createBtnText: { color: '#0f172a', fontWeight: '700' },
     error: { color: theme.danger, margin: 12, textAlign: 'center' },
     empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },
@@ -223,7 +223,7 @@ function makeStyles(theme: Theme) {
     input: { backgroundColor: theme.bg, borderRadius: 8, padding: 12, color: theme.text, marginBottom: 10 },
     modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16 },
     cancelText: { color: theme.textSub, fontWeight: '600' },
-    submitBtn: { backgroundColor: '#f59e0b', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
+    submitBtn: { backgroundColor: theme.accent, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
     submitBtnText: { color: '#0f172a', fontWeight: '700' },
   });
 }

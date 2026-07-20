@@ -4,6 +4,7 @@ import {
   Alert,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -51,6 +52,7 @@ export function WorkerProfileScreen({ session: _ }: Props) {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showIdCard, setShowIdCard] = useState(false);
   const [editingBio, setEditingBio] = useState(false);
@@ -59,13 +61,14 @@ export function WorkerProfileScreen({ session: _ }: Props) {
   const [insurance, setInsurance] = useState<InsuranceStatus | null>(null);
   const [applyingInsurance, setApplyingInsurance] = useState(false);
 
-  useEffect(() => {
-    getMyProfile()
-      .then((p) => { setProfile(p); setBioText(p.bio ?? ''); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-    getInsuranceStatus().then(setInsurance).catch(() => {});
-  }, []);
+  async function load() {
+    await Promise.all([
+      getMyProfile().then((p) => { setProfile(p); setBioText(p.bio ?? ''); }).catch(() => {}),
+      getInsuranceStatus().then(setInsurance).catch(() => {}),
+    ]);
+  }
+  useEffect(() => { setLoading(true); load().finally(() => setLoading(false)); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function handleApplyInsurance() {
     setApplyingInsurance(true);
@@ -220,7 +223,7 @@ export function WorkerProfileScreen({ session: _ }: Props) {
 
   // ── Main profile view ─────────────────────────────────────────
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.pageTitle}>My Profile</Text>
 
       {/* Photo section */}

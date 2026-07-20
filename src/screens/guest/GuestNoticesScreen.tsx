@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { getNotices, markNoticeSeen } from '../../services/api';
@@ -16,10 +16,11 @@ export function GuestNoticesScreen({ session }: Props) {
   const styles = makeStyles(theme);
 
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    getNotices().then(setNotices).catch(() => {});
-  }, []);
+  function load() { getNotices().then(setNotices).catch(() => {}); }
+  useEffect(() => { load(); }, []);
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
   async function markSeen(notice: Notice) {
     try {
@@ -29,7 +30,7 @@ export function GuestNoticesScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.title}>Notices</Text>
       {notices.length === 0 ? (
         <View style={styles.card}><Text style={styles.meta}>No notices yet</Text></View>

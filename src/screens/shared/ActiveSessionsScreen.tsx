@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getMySessions, revokeSession, parseApiError } from '../../services/api';
 import type { ActiveSession } from '../../services/api';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 function formatRelative(iso: string): string {
   try {
@@ -21,10 +22,10 @@ function formatRelative(iso: string): string {
   } catch { return iso; }
 }
 
-function platformIcon(platform: string | null): string {
-  if (platform === 'iOS') return '📱';
-  if (platform === 'Android') return '🤖';
-  return '💻';
+function platformIcon(platform: string | null): ComponentProps<typeof Ionicons>['name'] {
+  if (platform === 'iOS') return 'phone-portrait-outline';
+  if (platform === 'Android') return 'logo-android';
+  return 'laptop-outline';
 }
 
 export function ActiveSessionsScreen() {
@@ -94,7 +95,7 @@ export function ActiveSessionsScreen() {
         <View style={styles.list}>
           {sessions.map((s, idx) => (
             <View key={s.id} style={[styles.row, idx < sessions.length - 1 && styles.rowBorder]}>
-              <View style={styles.iconWrap}><Text style={styles.icon}>{platformIcon(s.platform)}</Text></View>
+              <View style={styles.iconWrap}><Ionicons name={platformIcon(s.platform)} size={20} color={theme.textSub} /></View>
               <View style={styles.body}>
                 <Text style={styles.deviceName}>{s.deviceName}</Text>
                 <Text style={styles.lastUsed}>Last active {formatRelative(s.lastUsedAt)}</Text>

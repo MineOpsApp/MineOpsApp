@@ -3,7 +3,7 @@ import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInp
 
 import { getMarketplaceListings, type MineralListing } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
-import { useTheme, type Theme } from '../../theme/theme';
+import { useTheme, typography, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 import { BuyerListingDetailScreen } from './BuyerListingDetailScreen';
 
@@ -118,7 +118,7 @@ export function BuyerListingsScreen({ session }: Props) {
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
-    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 2 },
+    title: { ...typography.h1, color: theme.text, marginBottom: spacing.xl },
     subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
     search: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 16, paddingHorizontal: 14, paddingVertical: 10 },
     loading: { color: theme.textMuted, fontSize: 14, fontWeight: '600', textAlign: 'center', marginTop: 40 },

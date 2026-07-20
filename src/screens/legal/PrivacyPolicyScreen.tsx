@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
@@ -63,8 +64,9 @@ export function PrivacyPolicyScreen() {
       <Text style={styles.pageTitle}>Privacy Policy</Text>
       <Text style={styles.pageSub}>Effective date: July 2026</Text>
 
-      <View style={styles.draftBanner}>
-        <Text style={styles.draftText}>⚠️ This Privacy Policy is in draft form and subject to change before the App's official public release.</Text>
+      <View style={[styles.draftBanner, { flexDirection: 'row', alignItems: 'flex-start', gap: 8 }]}>
+        <Ionicons name="warning" size={13} color={theme.amber} style={{ marginTop: 2 }} />
+        <Text style={[styles.draftText, { flex: 1 }]}>This Privacy Policy is in draft form and subject to change before the App's official public release.</Text>
       </View>
 
       {SECTIONS.map((s) => (

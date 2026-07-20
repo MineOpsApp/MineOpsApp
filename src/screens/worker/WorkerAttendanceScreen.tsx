@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
 import { clockIn, clockOut, getMyAttendanceStatus, getMyAttendanceHistory } from '../../services/api';
@@ -118,7 +118,7 @@ export function WorkerAttendanceScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadStatus} />}>
       <Text style={styles.pageTitle}>Attendance</Text>
 
       <View style={[styles.statusCard, onSite ? styles.statusCardGreen : styles.statusCardGrey]}>

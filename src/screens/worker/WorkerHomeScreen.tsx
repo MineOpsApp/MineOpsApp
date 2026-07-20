@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BlastAlert } from '../../components/BlastAlert';
 import { SiteMapView } from '../../components/SiteMapView';
@@ -32,6 +32,7 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
   const [notices, setNotices] = useState<Notice[]>([]);
   const [announcements, setAnnouncements] = useState<ShiftAnnouncement[]>([]);
   const [loadingCore, setLoadingCore] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [hazardError, setHazardError] = useState(false);
   const [blastHistory, setBlastHistory] = useState<any[]>([]);
   const [hasContacts, setHasContacts] = useState(true);
@@ -42,32 +43,37 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
   const loneWorkerPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [mapZones, setMapZones] = useState<import('../../types/actions').DangerZone[]>([]);
 
+  async function loadCore() {
+    await Promise.all([
+      getSiteHazardAlerts().then(setHazards).catch(() => setHazardError(true)),
+      getNotices().then(setNotices).catch(() => {}),
+      getSiteAnnouncements().then(setAnnouncements).catch(() => {}),
+      getAllBlasts().then(setBlastHistory).catch(() => {}),
+      getDangerZones().then(setMapZones).catch(() => {}),
+      getMyEmergencyContacts().then((c) => setHasContacts(c.length > 0)).catch(() => {}),
+      getMyInventoryContributions().then(setContributions).catch(() => {}),
+      getMyCertifications().then((certs) => {
+        setExpiredCerts(certs.filter((c) => c.status === 'EXPIRED').length);
+        setExpiringCerts(certs.filter((c) => c.status === 'EXPIRING_SOON').length);
+      }).catch(() => {}),
+    ]);
+  }
   useEffect(() => {
-    let done = 0;
-    const finish = () => { if (++done === 3) setLoadingCore(false); };
-    getSiteHazardAlerts().then(setHazards).catch(() => setHazardError(true)).finally(finish);
-    getNotices().then(setNotices).catch(() => {}).finally(finish);
-    getSiteAnnouncements().then(setAnnouncements).catch(() => {}).finally(finish);
-    getAllBlasts().then(setBlastHistory).catch(() => {});
-    getDangerZones().then(setMapZones).catch(() => {});
-    getMyEmergencyContacts().then((c) => setHasContacts(c.length > 0)).catch(() => {});
-    getMyInventoryContributions().then(setContributions).catch(() => {});
-    getMyCertifications().then((certs) => {
-      setExpiredCerts(certs.filter((c) => c.status === 'EXPIRED').length);
-      setExpiringCerts(certs.filter((c) => c.status === 'EXPIRING_SOON').length);
-    }).catch(() => {});
+    setLoadingCore(true);
+    loadCore().finally(() => setLoadingCore(false));
     const pollLW = () => getLoneWorkerStatus().then(setLoneWorker).catch(() => {});
     pollLW();
     loneWorkerPollRef.current = setInterval(pollLW, 30000);
     return () => { if (loneWorkerPollRef.current) clearInterval(loneWorkerPollRef.current); };
   }, []);
+  async function refresh() { setRefreshing(true); await loadCore(); setRefreshing(false); }
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
 
         {/* Hero */}
         <View style={styles.hero}>

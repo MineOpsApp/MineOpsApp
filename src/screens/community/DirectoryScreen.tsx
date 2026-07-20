@@ -56,7 +56,7 @@ export default function DirectoryScreen() {
 
   function scoreColor(score: number) {
     if (score >= 80) return '#22c55e';
-    if (score >= 50) return '#f59e0b';
+    if (score >= 50) return theme.accent;
     return '#ef4444';
   }
 
@@ -155,9 +155,9 @@ function makeStyles(theme: Theme) {
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bg },
     tabs: { flexDirection: 'row', backgroundColor: theme.bgCard },
     tab: { flex: 1, padding: 14, alignItems: 'center' },
-    activeTab: { borderBottomWidth: 2, borderBottomColor: '#f59e0b' },
+    activeTab: { borderBottomWidth: 2, borderBottomColor: theme.accent },
     tabText: { color: theme.textSub, fontWeight: '600' },
-    activeTabText: { color: '#f59e0b' },
+    activeTabText: { color: theme.accent },
     search: { margin: 12, backgroundColor: theme.bgInput, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: theme.text, fontSize: 14 },
     error: { color: theme.danger, margin: 12, textAlign: 'center' },
     empty: { color: theme.textMuted, textAlign: 'center', marginTop: 40 },

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { search, type SearchResults } from '../services/api';
 import type { AuthSession } from '../types/auth';
-import { useTheme, type Theme } from '../theme/theme';
+import { useTheme, typography, spacing, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = { session: AuthSession };
 
@@ -61,12 +62,12 @@ export function SearchScreen({ session: _ }: Props) {
     results.hazards.length + results.incidents.length + results.workers.length +
     results.listings.length + results.forumPosts.length;
 
-  const sections: { key: string; label: string; icon: string; items: any[] }[] = [
-    { key: 'hazards', label: 'Hazards', icon: '⚠', items: results.hazards },
-    { key: 'incidents', label: 'Incidents', icon: '🚨', items: results.incidents },
-    { key: 'workers', label: 'Workers', icon: '👷', items: results.workers },
-    { key: 'listings', label: 'Mineral Listings', icon: '⛏', items: results.listings },
-    { key: 'forumPosts', label: 'Forum Posts', icon: '💬', items: results.forumPosts },
+  const sections: { key: string; label: string; icon: ComponentProps<typeof Ionicons>['name']; items: any[] }[] = [
+    { key: 'hazards', label: 'Hazards', icon: 'warning-outline', items: results.hazards },
+    { key: 'incidents', label: 'Incidents', icon: 'alert-circle-outline', items: results.incidents },
+    { key: 'workers', label: 'Workers', icon: 'people-outline', items: results.workers },
+    { key: 'listings', label: 'Mineral Listings', icon: 'diamond-outline', items: results.listings },
+    { key: 'forumPosts', label: 'Forum Posts', icon: 'chatbubble-outline', items: results.forumPosts },
   ].filter((s) => s.items.length > 0);
 
   return (
@@ -74,7 +75,7 @@ export function SearchScreen({ session: _ }: Props) {
       <Text style={styles.title}>Search</Text>
 
       <View style={styles.inputRow}>
-        <Text style={styles.inputIcon}>🔍</Text>
+        <Ionicons name="search-outline" size={16} color={theme.textMuted} style={{ marginRight: 8 }} />
         <TextInput
           style={styles.input}
           placeholder="Search hazards, workers, listings…"
@@ -87,7 +88,7 @@ export function SearchScreen({ session: _ }: Props) {
         />
         {query.length > 0 && (
           <Pressable onPress={() => setQuery('')} style={styles.clearBtn}>
-            <Text style={styles.clearText}>✕</Text>
+            <Ionicons name="close" size={16} color={theme.textMuted} />
           </Pressable>
         )}
       </View>
@@ -101,7 +102,7 @@ export function SearchScreen({ session: _ }: Props) {
 
       {!loading && searched && totalResults === 0 && (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🔎</Text>
+          <Ionicons name="search-outline" size={32} color={theme.textMuted} style={{ marginBottom: 8 }} />
           <Text style={styles.emptyTitle}>No results found</Text>
           <Text style={styles.emptySub}>Try different keywords</Text>
         </View>
@@ -114,7 +115,7 @@ export function SearchScreen({ session: _ }: Props) {
       {sections.map(({ key, label, icon, items }) => (
         <View key={key} style={styles.section}>
           <Pressable style={styles.sectionHeader} onPress={() => toggle(key)}>
-            <Text style={styles.sectionIcon}>{icon}</Text>
+            <Ionicons name={icon} size={16} color={theme.textSub} style={{ marginRight: 8 }} />
             <Text style={styles.sectionLabel}>{label}</Text>
             <Text style={styles.sectionCount}>{items.length}</Text>
             <Text style={styles.chevron}>{collapsed[key] ? '▶' : '▼'}</Text>
@@ -209,7 +210,7 @@ function Tag({ label, color }: { label: string; color: string }) {
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { padding: 20, paddingBottom: 40, backgroundColor: theme.bg },
-    title: { color: theme.text, fontSize: 22, fontWeight: '900', marginBottom: 14 },
+    title: { ...typography.h1, color: theme.text, marginBottom: spacing.xl },
     inputRow: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 16, paddingHorizontal: 12 },
     inputIcon: { fontSize: 16, marginRight: 8 },
     input: { color: theme.text, flex: 1, fontSize: 15, paddingVertical: 12 },

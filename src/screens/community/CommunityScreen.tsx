@@ -62,12 +62,12 @@ export default function CommunityScreen({
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.bg },
-    header: { backgroundColor: theme.bgCard, padding: 16, paddingTop: 48 },
+    header: { backgroundColor: theme.bg, padding: 16, paddingTop: 48 },
     headerTitle: { color: theme.text, fontSize: 22, fontWeight: '700' },
-    tabBar: { backgroundColor: theme.bgCard, borderBottomWidth: 1, borderBottomColor: theme.border, maxHeight: 48 },
+    tabBar: { backgroundColor: theme.bg, borderBottomWidth: 1, borderBottomColor: theme.border, maxHeight: 48 },
     tabItem: { paddingHorizontal: 18, paddingVertical: 12 },
-    tabItemActive: { borderBottomWidth: 2, borderBottomColor: '#f59e0b' },
+    tabItemActive: { borderBottomWidth: 2, borderBottomColor: theme.accent },
     tabLabel: { color: theme.textSub, fontWeight: '600', fontSize: 14 },
-    tabLabelActive: { color: '#f59e0b' },
+    tabLabelActive: { color: theme.accent },
   });
 }
