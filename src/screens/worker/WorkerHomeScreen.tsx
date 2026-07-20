@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BlastAlert } from '../../components/BlastAlert';
 import { SiteMapView } from '../../components/SiteMapView';
 import { SosButton } from '../../components/SosButton';
-import { getAllBlasts, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, getDangerZones, type LoneWorkerStatus } from '../../services/api';
+import { getAllBlasts, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, getDangerZones, getMyAttendanceStatus, clockIn, type LoneWorkerStatus } from '../../services/api';
 import type { InventoryTransaction } from '../../services/api';
 import type { HazardReport, Notice, ShiftAnnouncement } from '../../types/actions';
 import { formatAgo, formatDateTime } from '../../utils/time';
@@ -13,7 +13,10 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
-type Props = { session: AuthSession; onGoToLoneWorker?: () => void; onGoToSearch?: () => void };
+type Props = { session: AuthSession; onGoToLoneWorker?: () => void; onGoToSearch?: () => void; onGoToAttendance?: () => void; onGoToChecklist?: () => void };
+
+type AttendanceRecord = { id: number; zone: string; clockInAt: string };
+const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Main Site', 'Processing Area'];
 
 const SEVERITY_COLOR: Record<string, string> = {
   Critical: '#7f1d1d',
@@ -22,7 +25,7 @@ const SEVERITY_COLOR: Record<string, string> = {
   Low: '#1f6f5b',
 };
 
-export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Props) {
+export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch, onGoToAttendance, onGoToChecklist }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
   const isDark = mode === 'dark';
@@ -42,6 +45,10 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
   const [loneWorker, setLoneWorker] = useState<LoneWorkerStatus | null>(null);
   const loneWorkerPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [mapZones, setMapZones] = useState<import('../../types/actions').DangerZone[]>([]);
+  const [onSite, setOnSite] = useState(false);
+  const [activeRecord, setActiveRecord] = useState<AttendanceRecord | null>(null);
+  const [selectedZone, setSelectedZone] = useState('Main Site');
+  const [loadingClockIn, setLoadingClockIn] = useState(false);
 
   async function loadCore() {
     await Promise.all([
@@ -56,6 +63,7 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
         setExpiredCerts(certs.filter((c) => c.status === 'EXPIRED').length);
         setExpiringCerts(certs.filter((c) => c.status === 'EXPIRING_SOON').length);
       }).catch(() => {}),
+      getMyAttendanceStatus().then((s) => { setOnSite(s.onSite); setActiveRecord(s.onSite && s.record ? s.record : null); }).catch(() => {}),
     ]);
   }
   useEffect(() => {
@@ -67,6 +75,40 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
     return () => { if (loneWorkerPollRef.current) clearInterval(loneWorkerPollRef.current); };
   }, []);
   async function refresh() { setRefreshing(true); await loadCore(); setRefreshing(false); }
+
+  async function handleClockIn() {
+    setLoadingClockIn(true);
+    try {
+      const record = await clockIn(selectedZone);
+      setOnSite(true);
+      setActiveRecord(record);
+      Alert.alert(
+        'Signed In',
+        `You are now on site in ${selectedZone}.\n\nWould you like to complete your safety checklist now?`,
+        [
+          { text: 'Later', style: 'cancel' },
+          { text: 'Open Checklist', onPress: () => onGoToChecklist?.() },
+        ]
+      );
+    } catch (error: any) {
+      const msg = error?.message ?? '';
+      if (msg.includes('409')) {
+        Alert.alert('Already Signed In', 'You are already on site. Sign out first.');
+        setOnSite(true);
+      } else {
+        Alert.alert('Sign In Failed', 'Could not sign in. Please try again.');
+      }
+    } finally {
+      setLoadingClockIn(false);
+    }
+  }
+
+  function getElapsed(clockInAt: string) {
+    const ms = Date.now() - new Date(clockInAt).getTime();
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    return h > 0 ? `${h}h ${m}m on site` : `${m}m on site`;
+  }
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -100,10 +142,43 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch }: Pr
           </View>
           <View style={styles.stripDivider} />
           <View style={styles.stripItem}>
-            <Text style={[styles.stripValue, { color: theme.accent }]}>Active</Text>
-            <Text style={styles.stripLabel}>Site Status</Text>
+            <Text style={[styles.stripValue, onSite ? { color: theme.success } : { color: theme.textMuted }]}>
+              {loadingCore ? '—' : onSite ? 'On Site' : 'Off Site'}
+            </Text>
+            <Text style={styles.stripLabel}>Attendance</Text>
           </View>
         </View>
+
+        {/* Attendance sign-in / on-site status */}
+        {!loadingCore && !onSite ? (
+          <View style={styles.signInCard}>
+            <View style={{ alignItems: 'center', flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+              <Ionicons name="enter-outline" size={17} color={theme.text} />
+              <Text style={styles.signInTitle}>Sign In to Site</Text>
+              <View style={styles.offSiteDot} />
+            </View>
+            <View style={styles.zonePillRow}>
+              {ZONES.map((z) => (
+                <Pressable key={z} onPress={() => setSelectedZone(z)} style={[styles.zonePill, selectedZone === z && styles.zonePillActive]}>
+                  <Text style={[styles.zonePillText, selectedZone === z && styles.zonePillTextActive]}>{z}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable disabled={loadingClockIn} onPress={handleClockIn} style={styles.clockInBtn}>
+              <Ionicons name={loadingClockIn ? 'time-outline' : 'enter-outline'} size={15} color="#fff" />
+              <Text style={styles.clockInBtnText}>{loadingClockIn ? 'Signing in...' : 'Sign In'}</Text>
+            </Pressable>
+          </View>
+        ) : !loadingCore && onSite ? (
+          <Pressable onPress={onGoToAttendance} style={styles.onSiteCard}>
+            <View style={styles.onSiteDot} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.onSiteTitle}>On Site{activeRecord?.zone ? ` — ${activeRecord.zone}` : ''}</Text>
+              <Text style={styles.onSiteSub}>{activeRecord ? getElapsed(activeRecord.clockInAt) : 'Active session'}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.success} />
+          </Pressable>
+        ) : null}
 
         {onGoToSearch ? (
           <Pressable onPress={onGoToSearch} style={styles.searchPill}>
@@ -346,6 +421,20 @@ function makeStyles(theme: Theme, isDark: boolean) {
     noticeBody: { flex: 1, padding: spacing.md },
     noticeTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 3 },
     noticeMeta: { color: theme.textSub, fontSize: 12, fontWeight: '600', lineHeight: 17 },
+    signInCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 14, borderWidth: 1, margin: spacing.lg, marginBottom: 0, padding: spacing.lg, ...cardShadow },
+    signInTitle: { color: theme.text, flex: 1, fontSize: 15, fontWeight: '900' },
+    offSiteDot: { backgroundColor: theme.textMuted, borderRadius: 5, height: 8, width: 8 },
+    zonePillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: spacing.md },
+    zonePill: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 16, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 },
+    zonePillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    zonePillText: { color: theme.textMuted, fontSize: 12, fontWeight: '700' },
+    zonePillTextActive: { color: '#ffffff' },
+    clockInBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, flexDirection: 'row', gap: 6, justifyContent: 'center', paddingVertical: 11 },
+    clockInBtnText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+    onSiteCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 14, borderWidth: 1, flexDirection: 'row', gap: spacing.md, margin: spacing.lg, marginBottom: 0, padding: spacing.lg, ...cardShadow },
+    onSiteDot: { backgroundColor: theme.success, borderRadius: 6, height: 12, width: 12 },
+    onSiteTitle: { color: theme.text, fontSize: 14, fontWeight: '900', marginBottom: 2 },
+    onSiteSub: { color: theme.textSub, fontSize: 12, fontWeight: '600' },
     searchPill: { alignItems: 'center', backgroundColor: theme.bgCard, borderRadius: 10, flexDirection: 'row', gap: 10, margin: spacing.lg, marginBottom: 0, paddingHorizontal: 14, paddingVertical: spacing.md, ...cardShadow },
     searchPillText: { color: theme.textMuted, flex: 1, fontSize: 13, fontWeight: '600' },
     searchPillArrow: { color: theme.textMuted, fontSize: 18 },

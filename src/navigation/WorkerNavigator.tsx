@@ -77,7 +77,7 @@ function WorkerMoreStack({
     screen === 'shift' ? <WorkerShiftScreen session={session} /> :
     screen === 'handover' ? <WorkerHandoverScreen session={session} /> :
     screen === 'drill' ? <WorkerDrillScreen session={session} /> :
-    screen === 'attendance' ? <WorkerAttendanceScreen session={session} /> :
+    screen === 'attendance' ? <WorkerAttendanceScreen session={session} onGoToChecklist={() => setScreen('checklist')} /> :
     screen === 'incident' ? <WorkerIncidentScreen session={session} /> :
     screen === 'checklist' ? <WorkerSafetyChecklistScreen session={session} /> :
     screen === 'messages' ? <WorkerMessagesScreen session={session} /> :
@@ -185,6 +185,22 @@ export function WorkerNavigator({ session, onLogout }: Props) {
                   moreSetterRef.current('search');
                 } else {
                   pendingMoreScreenRef.current = 'search';
+                }
+                navigation.navigate('More');
+              }}
+              onGoToAttendance={() => {
+                if (moreSetterRef.current) {
+                  moreSetterRef.current('attendance');
+                } else {
+                  pendingMoreScreenRef.current = 'attendance';
+                }
+                navigation.navigate('More');
+              }}
+              onGoToChecklist={() => {
+                if (moreSetterRef.current) {
+                  moreSetterRef.current('checklist');
+                } else {
+                  pendingMoreScreenRef.current = 'checklist';
                 }
                 navigation.navigate('More');
               }}

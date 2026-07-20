@@ -19,11 +19,11 @@ type AttendanceRecord = {
   clockOutAt: string | null;
 };
 
-type Props = { session: AuthSession };
+type Props = { session: AuthSession; onGoToChecklist?: () => void };
 
 const ZONES = ['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Main Site', 'Processing Area'];
 
-export function WorkerAttendanceScreen({ session }: Props) {
+export function WorkerAttendanceScreen({ session, onGoToChecklist }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
   const styles = makeStyles(theme);
@@ -64,7 +64,14 @@ export function WorkerAttendanceScreen({ session }: Props) {
       setOnSite(true);
       setActiveRecord(record);
       setHistory((c) => [record, ...c]);
-      Alert.alert('Clocked in', `You are now on site in ${selectedZone}.`);
+      Alert.alert(
+        'Signed In',
+        `You are now on site in ${selectedZone}.\n\nWould you like to complete your safety checklist now?`,
+        [
+          { text: 'Later', style: 'cancel' },
+          { text: 'Open Checklist', onPress: () => onGoToChecklist?.() },
+        ]
+      );
     } catch (error: any) {
       const msg = error?.message ?? '';
       if (msg.includes('409')) {
