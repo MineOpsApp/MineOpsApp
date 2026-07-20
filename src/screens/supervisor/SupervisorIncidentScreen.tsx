@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getSiteIncidents, updateIncidentStatus, exportIncidentsCsv } from '../../services/api';
 import { exportAndShareCsv } from '../../utils/exportCsv';
-import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AuthSession } from '../../types/auth';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
@@ -134,6 +134,7 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
   const isFiltered = statusFilter !== 'all' || severityFilter !== 'all';
 
   return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
@@ -270,6 +271,7 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
         </Pressable>
       ))}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -317,7 +319,7 @@ function makeStyles(theme: Theme) {
     statusLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
     statusRow: { flexDirection: 'row', gap: 6 },
     statusBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderWidth: 1, flex: 1, paddingVertical: 8 },
-    statusBtnActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    statusBtnActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     statusBtnText: { color: theme.textMuted, fontSize: 11, fontWeight: '800' },
     statusBtnTextActive: { color: '#ffffff' },
     notesInput: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, marginBottom: 10, minHeight: 70, padding: 10 },

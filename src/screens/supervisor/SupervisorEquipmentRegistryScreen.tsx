@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
@@ -187,7 +187,7 @@ function makeStyles(theme: Theme) {
     textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: 12, minHeight: 70, padding: 12 },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
     pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
     emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },

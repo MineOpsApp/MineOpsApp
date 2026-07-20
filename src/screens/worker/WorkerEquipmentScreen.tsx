@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+﻿import { useEffect, useState } from 'react';
+import { Alert, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
@@ -114,7 +114,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
           <View style={styles.equipTop}>
             <View>
               <Text style={styles.equipName}>{equipment.name}</Text>
-              <Text style={styles.equipCode}>{equipment.code}</Text>
+              <View style={styles.codeChip}><Text style={styles.codeChipText}>{equipment.code}</Text></View>
             </View>
             <View style={[styles.statusPill, { backgroundColor: statusConfig.color }]}>
               <Ionicons name={statusConfig.icon} size={13} color="#ffffff" />
@@ -195,7 +195,8 @@ function makeStyles(theme: Theme) {
     equipCard: { borderRadius: 12, borderWidth: 2, marginBottom: spacing.lg, padding: spacing.lg },
     equipTop: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
     equipName: { ...typography.h3, color: theme.text, marginBottom: 2 },
-    equipCode: { ...typography.bodyBold, color: theme.textSub },
+    codeChip: { alignSelf: 'flex-start', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 4, borderWidth: 1, marginTop: 4, paddingHorizontal: 7, paddingVertical: 2 },
+    codeChipText: { color: theme.textSub, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', fontSize: 12, fontWeight: '700' },
     statusPill: { alignItems: 'center', borderRadius: 20, flexDirection: 'row', gap: 4, paddingHorizontal: spacing.md, paddingVertical: 5 },
     statusPillText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
     equipInstructions: { ...typography.caption, color: theme.textSub, lineHeight: 18 },
@@ -206,7 +207,7 @@ function makeStyles(theme: Theme) {
     fieldLabel: { ...typography.label, color: theme.textSub, marginBottom: spacing.sm },
     pillRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: 14 },
     pill: { alignItems: 'center', borderColor: theme.border, borderRadius: 20, borderWidth: 1, flex: 1, paddingVertical: spacing.sm },
-    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
     statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },

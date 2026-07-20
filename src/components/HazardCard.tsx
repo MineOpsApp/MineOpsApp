@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
@@ -69,7 +69,7 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
     <View style={styles.card}>
       <View style={styles.topRow}>
         <View style={styles.meta}>
-          <Text style={styles.id}>#{hazard.id}</Text>
+          <Text style={styles.id}>HZ-{String(hazard.id).padStart(4, '0')}</Text>
           <Text style={styles.type}>{hazard.hazardType}</Text>
         </View>
         <View style={styles.badges}>
@@ -95,9 +95,9 @@ export function HazardCard({ canClear, canReview, hazard, onClear, onReview }: H
       </Text>
 
       {hazard.latitude && hazard.longitude ? (
-        <Text style={styles.detail}>
-          📍 {hazard.latitude.toFixed(5)}, {hazard.longitude.toFixed(5)}
-        </Text>
+        <Pressable onPress={() => Linking.openURL(`https://maps.google.com/maps?q=${hazard.latitude},${hazard.longitude}`)}>
+          <Text style={[styles.detail, styles.mapLink]}>📍 View on Map</Text>
+        </Pressable>
       ) : null}
 
       {hazard.photoData ? (
@@ -198,6 +198,11 @@ function makeStyles(theme: Theme) {
       fontSize: 13,
       fontWeight: '700',
       marginTop: 6,
+    },
+    mapLink: {
+      color: theme.accent,
+      fontWeight: '700',
+      textDecorationLine: 'underline',
     },
     buttonRow: {
       flexDirection: 'row',

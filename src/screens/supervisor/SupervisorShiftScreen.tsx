@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -428,7 +428,7 @@ function makeStyles(theme: Theme) {
     dateArrow: { color: theme.textMuted, fontSize: 16, fontWeight: '700' },
     statusRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
     statusChip: { borderRadius: 20, borderWidth: 1.5, borderColor: theme.border, paddingHorizontal: 12, paddingVertical: 5 },
-    statusChipActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    statusChipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     statusChipText: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
     statusChipTextActive: { color: '#fff' },
     textFilterRow: { flexDirection: 'row', gap: 8 },

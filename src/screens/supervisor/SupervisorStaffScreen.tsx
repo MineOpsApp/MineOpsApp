@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ActionButton } from '../../components/ActionButton';
@@ -166,7 +166,7 @@ function makeStyles(theme: Theme) {
     typeRadioCheck: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { color: theme.textMuted, fontSize: 12, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
     successCard: { backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, padding: 20 },

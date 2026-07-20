@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   getSubscriptionTiers,
@@ -277,7 +277,7 @@ function makeStyles(theme: Theme) {
     },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
     pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
-    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { color: theme.textSub, fontSize: 13, fontWeight: '800' },
     pillActiveText: { color: '#fff' },
     submitBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, paddingVertical: 14, marginBottom: 12 },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { getSiteBulkPurchaseRequests, flagForBulkPurchase, withdrawBulkPurchaseRequest, type BulkPurchaseRequest, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
@@ -130,7 +130,7 @@ function makeStyles(theme: Theme) {
     meta: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
     pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
-    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
     pillActiveText: { color: '#fff' },
     input: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 16, fontWeight: '800', marginBottom: 12, minHeight: 48, paddingHorizontal: 14 },

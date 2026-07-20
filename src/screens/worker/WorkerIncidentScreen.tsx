@@ -2,7 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import NetInfo from '@react-native-community/netinfo';
 import { useState } from 'react';
-import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
@@ -93,7 +93,14 @@ export function WorkerIncidentScreen({ session }: Props) {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') { Alert.alert('Permission needed', 'Camera access is required.'); return; }
     const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.3, allowsEditing: true, exif: false });
-    if (!result.canceled && result.assets[0].base64) setPhoto(result.assets[0].base64);
+    if (!result.canceled && result.assets[0].base64) {
+      const b64 = result.assets[0].base64;
+      if (b64.length > 3 * 1024 * 1024) {
+        Alert.alert('Photo too large', 'Image exceeds 3 MB. Please retake a smaller photo.');
+        return;
+      }
+      setPhoto(b64);
+    }
   }
 
   async function submit() {
@@ -105,7 +112,7 @@ export function WorkerIncidentScreen({ session }: Props) {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
           latitude = loc.coords.latitude;
           longitude = loc.coords.longitude;
         }
@@ -161,6 +168,7 @@ export function WorkerIncidentScreen({ session }: Props) {
   }
 
   return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.pageTitle}>Report Incident</Text>
 
@@ -253,6 +261,7 @@ export function WorkerIncidentScreen({ session }: Props) {
                 <Text style={styles.incidentCategory}>{inc.category}</Text>
               </View>
               <Text style={styles.incidentZone}>{inc.zone}</Text>
+              <Text style={styles.incidentRef}>INC-{String(inc.id).padStart(4, '0')}</Text>
             </View>
             <View style={[styles.severityBadge, { backgroundColor: SEVERITY_COLORS[inc.severity] + '22', borderColor: SEVERITY_COLORS[inc.severity] }]}>
               <Text style={[styles.severityText, { color: SEVERITY_COLORS[inc.severity] }]}>{inc.severity}</Text>
@@ -281,6 +290,7 @@ export function WorkerIncidentScreen({ session }: Props) {
         </View>
       ))}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -293,7 +303,7 @@ function makeStyles(theme: Theme) {
     fieldLabel: { ...typography.label, color: theme.textSub, marginBottom: spacing.sm, marginTop: spacing.xs },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: spacing.md },
     pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 7 },
-    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { ...typography.caption, color: theme.textMuted, fontWeight: '800' },
     pillActiveText: { color: '#ffffff' },
     textArea: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, marginBottom: spacing.md, minHeight: 80, padding: spacing.md },
@@ -311,6 +321,7 @@ function makeStyles(theme: Theme) {
     incidentHeader: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
     incidentCategory: { ...typography.bodyBold, color: theme.text },
     incidentZone: { ...typography.label, color: theme.textMuted, textTransform: 'none' as const },
+    incidentRef: { ...typography.label, color: theme.textMuted, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', textTransform: 'none' as const },
     severityBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: spacing.sm, paddingVertical: 3 },
     severityText: { fontSize: 11, fontWeight: '900' },
     incidentMedical: { flexDirection: 'row', gap: spacing.sm, marginBottom: 6 },

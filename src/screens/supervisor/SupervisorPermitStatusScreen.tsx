@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { getMyPermitStatus, updatePermitStatus, type MiningPermitStatus, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
@@ -131,7 +131,7 @@ function makeStyles(theme: Theme) {
     fieldLabel: { color: theme.textSub, fontSize: 12, fontWeight: '800', marginBottom: 6 },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     pill: { borderColor: theme.border, borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
-    pillActive: { backgroundColor: theme.bgHero, borderColor: theme.bgHero },
+    pillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
     pillText: { color: theme.textSub, fontSize: 12, fontWeight: '800' },
     pillActiveText: { color: '#fff' },
     saveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 10, paddingVertical: 14, marginBottom: 14 },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -12,6 +12,8 @@ import type { Certification, CertificationHistory, CertificationPayload, WorkerD
 import type { AuthSession } from '../../types/auth';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import type { PanGestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 
 type StatusFilter = 'ALL' | 'EXPIRING_SOON' | 'EXPIRED';
 
@@ -85,6 +87,12 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [workerSearch, setWorkerSearch] = useState('');
+
+  const onModalSwipe = useCallback(({ nativeEvent }: PanGestureHandlerStateChangeEvent) => {
+    if (nativeEvent.state === State.END && nativeEvent.translationY > 80 && nativeEvent.velocityY > 300) {
+      setShowModal(false);
+    }
+  }, []);
 
   async function load() {
     try {
@@ -402,6 +410,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
       {/* Add / Edit Modal */}
       <Modal visible={showModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
+          <PanGestureHandler onHandlerStateChange={onModalSwipe} activeOffsetY={20} failOffsetY={-20}>
           <View style={styles.modalBox}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>{editingCert ? 'Edit Certification' : 'Add Certification'}</Text>
@@ -530,6 +539,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
               </View>
             </ScrollView>
           </View>
+          </PanGestureHandler>
         </View>
       </Modal>
     </View>
