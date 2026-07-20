@@ -60,7 +60,7 @@ export function WorkerHazardsScreen({ session }: Props) {
     }
     const result = await ImagePicker.launchCameraAsync({
       base64: true,
-      quality: 0.5,
+      quality: 0.3,
       allowsEditing: true,
       exif: false,
     });
@@ -90,9 +90,21 @@ export function WorkerHazardsScreen({ session }: Props) {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          latitude = loc.coords.latitude;
-          longitude = loc.coords.longitude;
+          // Use cached location first (instant); only do a fresh fetch if nothing is cached
+          const last = await Location.getLastKnownPositionAsync();
+          if (last) {
+            latitude = last.coords.latitude;
+            longitude = last.coords.longitude;
+          } else {
+            const fresh = await Promise.race([
+              Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+            ]);
+            if (fresh) {
+              latitude = fresh.coords.latitude;
+              longitude = fresh.coords.longitude;
+            }
+          }
         }
       } catch { /* location optional */ }
 
