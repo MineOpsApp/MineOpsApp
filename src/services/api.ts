@@ -476,7 +476,7 @@ export function getSosAlerts() {
 }
 
 export function getDangerZones() {
-  return request<{ content: DangerZone[] }>('/danger-zones').then((page) => page.content);
+  return request<{ content: DangerZone[] }>('/danger-zones?size=200').then((page) => page.content);
 }
 
 export function createHazardReport(report: {
@@ -1544,6 +1544,10 @@ export function updateZonePosition(id: number, points: MapPoint[]) {
 
 export function updateZoneGps(id: number, latitude: number, longitude: number, radiusMeters?: number) {
   return patch<import('../types/actions').DangerZone>(`/danger-zones/${id}/gps`, { latitude, longitude, radiusMeters });
+}
+
+export function updateZoneMeta(id: number, zoneName?: string, riskLevel?: string) {
+  return patch<import('../types/actions').DangerZone>(`/danger-zones/${id}/meta`, { zoneName, riskLevel });
 }
 
 export function getZoneDetail(id: number) {

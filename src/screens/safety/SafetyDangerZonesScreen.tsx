@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   LayoutChangeEvent,
@@ -12,10 +13,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg, { Circle, Polygon, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Polygon } from 'react-native-svg';
 import * as Location from 'expo-location';
 
-import { ActionButton } from '../../components/ActionButton';
 import { SiteMapView } from '../../components/SiteMapView';
 import {
   createDangerZone,
@@ -23,6 +23,7 @@ import {
   getSiteMap,
   updateZonePosition,
   updateZoneGps,
+  updateZoneMeta,
   parseApiError,
   type MapPoint,
   type SiteMapData,
@@ -37,24 +38,28 @@ type Props = { session: AuthSession };
 type ScreenMode = 'list' | 'map' | 'trace';
 type RiskLevel = 'Low' | 'Medium' | 'High';
 
-const RISK_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
-  High:   { color: '#b42318', bg: '#fff5f5', border: '#f5c6c6' },
-  Medium: { color: '#a15c00', bg: '#fffbeb', border: '#fde68a' },
-  Low:    { color: '#1f6f5b', bg: '#f0fdf4', border: '#86efac' },
-};
-
 const RISK_DOT_COLOR: Record<string, string> = {
   High: '#ef4444', Medium: '#f59e0b', Low: '#22c55e',
 };
+
+function getRiskConfig(isDark: boolean) {
+  return {
+    High:   { color: '#b42318', bg: isDark ? '#2d0908' : '#fff5f5', border: isDark ? '#5c1512' : '#f5c6c6' },
+    Medium: { color: '#a15c00', bg: isDark ? '#271700' : '#fffbeb', border: isDark ? '#4d2e00' : '#fde68a' },
+    Low:    { color: '#1f6f5b', bg: isDark ? '#081f17' : '#f0fdf4', border: isDark ? '#154a35' : '#86efac' },
+  } as Record<string, { color: string; bg: string; border: string }>;
+}
 
 export function SafetyDangerZonesScreen({ session }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
   const isDark = mode === 'dark';
   const styles = makeStyles(theme, isDark);
+  const RISK_CONFIG = getRiskConfig(isDark);
 
   const [screenMode, setScreenMode] = useState<ScreenMode>('list');
   const [zones, setZones]           = useState<DangerZone[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const [mapData, setMapData]       = useState<SiteMapData | null>(null);
@@ -73,15 +78,28 @@ export function SafetyDangerZonesScreen({ session }: Props) {
   const [creating, setCreating] = useState(false);
 
   // GPS panel state
-  const [gpsZoneId, setGpsZoneId]   = useState<number | null>(null);
-  const [gpsLat, setGpsLat]         = useState('');
-  const [gpsLng, setGpsLng]         = useState('');
-  const [gpsRadius, setGpsRadius]   = useState('50');
-  const [gpsSaving, setGpsSaving]   = useState(false);
-  const [gpsError, setGpsError]     = useState('');
+  const [gpsZoneId, setGpsZoneId]     = useState<number | null>(null);
+  const [gpsLat, setGpsLat]           = useState('');
+  const [gpsLng, setGpsLng]           = useState('');
+  const [gpsRadius, setGpsRadius]     = useState('50');
+  const [gpsSaving, setGpsSaving]     = useState(false);
+  const [gpsError, setGpsError]       = useState('');
   const [gpsLocating, setGpsLocating] = useState(false);
 
-  function load() { return getDangerZones().then(setZones).catch(() => {}); }
+  // Edit (rename / risk) panel state
+  const [editZoneId, setEditZoneId]   = useState<number | null>(null);
+  const [editName, setEditName]       = useState('');
+  const [editRisk, setEditRisk]       = useState<RiskLevel>('Medium');
+  const [editSaving, setEditSaving]   = useState(false);
+  const [editError, setEditError]     = useState('');
+
+  function load() {
+    return getDangerZones()
+      .then(setZones)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }
+
   useEffect(() => {
     load();
     getSiteMap().then(setMapData).catch((e: any) => {
@@ -114,6 +132,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
   }
 
   function openGpsPanel(zone: DangerZone) {
+    setEditZoneId(null);
     if (gpsZoneId === zone.id) { setGpsZoneId(null); return; }
     setGpsZoneId(zone.id);
     setGpsLat(zone.latitude != null ? String(zone.latitude) : '');
@@ -142,8 +161,14 @@ export function SafetyDangerZonesScreen({ session }: Props) {
     const lat = parseFloat(gpsLat);
     const lng = parseFloat(gpsLng);
     const radius = parseInt(gpsRadius, 10);
-    if (isNaN(lat) || lat < -90 || lat > 90) { setGpsError('Enter a valid latitude (−90 to 90).'); return; }
-    if (isNaN(lng) || lng < -180 || lng > 180) { setGpsError('Enter a valid longitude (−180 to 180).'); return; }
+    if (isNaN(lat) || lat < -90 || lat > 90) {
+      setGpsError('Enter a valid latitude (−90 to 90).');
+      return;
+    }
+    if (isNaN(lng) || lng < -180 || lng > 180) {
+      setGpsError('Enter a valid longitude (−180 to 180).');
+      return;
+    }
     const safeRadius = isNaN(radius) || radius < 1 ? 50 : radius;
     setGpsSaving(true);
     setGpsError('');
@@ -151,10 +176,36 @@ export function SafetyDangerZonesScreen({ session }: Props) {
       const updated = await updateZoneGps(zoneId, lat, lng, safeRadius);
       setZones(zs => zs.map(z => z.id === updated.id ? updated : z));
       setGpsZoneId(null);
+      Alert.alert('Saved', 'GPS location saved for this zone.');
     } catch (e: any) {
       setGpsError(parseApiError(e));
     } finally {
       setGpsSaving(false);
+    }
+  }
+
+  function openEditPanel(zone: DangerZone) {
+    setGpsZoneId(null);
+    if (editZoneId === zone.id) { setEditZoneId(null); return; }
+    setEditZoneId(zone.id);
+    setEditName(zone.zoneName);
+    setEditRisk((zone.riskLevel as RiskLevel) ?? 'Medium');
+    setEditError('');
+  }
+
+  async function saveEdit(zoneId: number) {
+    const name = editName.trim();
+    if (!name) { setEditError('Zone name cannot be empty.'); return; }
+    setEditSaving(true);
+    setEditError('');
+    try {
+      const updated = await updateZoneMeta(zoneId, name, editRisk);
+      setZones(zs => zs.map(z => z.id === updated.id ? updated : z));
+      setEditZoneId(null);
+    } catch (e: any) {
+      setEditError(parseApiError(e));
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -310,8 +361,13 @@ export function SafetyDangerZonesScreen({ session }: Props) {
         )}
       </View>
 
-      {mapData && (
-        <SiteMapView zones={zones} readOnly={false} pollIntervalMs={25000} />
+      {mapData && <SiteMapView zones={zones} readOnly={false} pollIntervalMs={25000} />}
+
+      {noMap && (
+        <View style={styles.noMapHint}>
+          <Ionicons name="image-outline" size={15} color={theme.textMuted} />
+          <Text style={styles.noMapHintText}>No site map uploaded — ask a supervisor to add one</Text>
+        </View>
       )}
 
       {/* ── Create Zone card ── */}
@@ -344,14 +400,14 @@ export function SafetyDangerZonesScreen({ session }: Props) {
             <View style={styles.riskPillRow}>
               {(['Low', 'Medium', 'High'] as RiskLevel[]).map(r => {
                 const cfg = RISK_CONFIG[r];
-                const active = createZoneRisk === r;
+                const isActive = createZoneRisk === r;
                 return (
                   <Pressable
                     key={r}
-                    style={[styles.riskPillChoice, { borderColor: cfg.color, backgroundColor: active ? cfg.color : 'transparent' }]}
+                    style={[styles.riskPillChoice, { borderColor: cfg.color, backgroundColor: isActive ? cfg.color : 'transparent' }]}
                     onPress={() => setCreateZoneRisk(r)}
                   >
-                    <Text style={[styles.riskPillChoiceText, { color: active ? '#fff' : cfg.color }]}>{r}</Text>
+                    <Text style={[styles.riskPillChoiceText, { color: isActive ? '#fff' : cfg.color }]}>{r}</Text>
                   </Pressable>
                 );
               })}
@@ -375,14 +431,23 @@ export function SafetyDangerZonesScreen({ session }: Props) {
         )}
       </View>
 
-      {active.length > 0 ? (
+      {/* ── Loading state ── */}
+      {loading && (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator size="small" color={theme.accent} />
+          <Text style={styles.loadingText}>Loading zones…</Text>
+        </View>
+      )}
+
+      {!loading && active.length > 0 && (
         <>
           <Text style={styles.sectionLabel}>ACTIVE ZONES</Text>
           {active.map(z => {
             const cfg = RISK_CONFIG[z.riskLevel] ?? RISK_CONFIG['Medium'];
-            const hasPolygon  = !!z.polygonPoints;
-            const hasGps      = z.latitude != null && z.longitude != null;
-            const gpsOpen     = gpsZoneId === z.id;
+            const hasPolygon = !!z.polygonPoints;
+            const hasGps     = z.latitude != null && z.longitude != null;
+            const gpsOpen    = gpsZoneId === z.id;
+            const editOpen   = editZoneId === z.id;
 
             return (
               <View key={z.id} style={[styles.zoneCard, { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
@@ -400,12 +465,12 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                 {/* Positioning badges */}
                 {(!hasGps || !hasPolygon) && (
                   <View style={styles.badgeRow}>
-                    {!hasGps    && <Text style={styles.missingBadge}>📍 No GPS location</Text>}
+                    {!hasGps     && <Text style={styles.missingBadge}>📍 No GPS location</Text>}
                     {!hasPolygon && <Text style={styles.missingBadge}>🗺 Not traced on map</Text>}
                   </View>
                 )}
 
-                {/* Action buttons row */}
+                {/* Action buttons */}
                 <View style={styles.zoneBtnRow}>
                   <TouchableOpacity style={styles.traceBtn} onPress={() => startTrace(z)}>
                     <Ionicons name={hasPolygon ? 'pencil-outline' : 'location-outline'} size={12} color={theme.text} />
@@ -417,11 +482,15 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                       {hasGps ? 'Edit GPS' : 'Set GPS'}
                     </Text>
                   </TouchableOpacity>
+                  <TouchableOpacity style={[styles.traceBtn, editOpen && styles.traceBtnActive]} onPress={() => openEditPanel(z)}>
+                    <Ionicons name="create-outline" size={12} color={editOpen ? '#fff' : theme.text} />
+                    <Text style={[styles.traceBtnText, editOpen && { color: '#fff' }]}>Edit</Text>
+                  </TouchableOpacity>
                 </View>
 
-                {/* Inline GPS panel */}
+                {/* GPS panel */}
                 {gpsOpen && (
-                  <View style={styles.gpsPanel}>
+                  <View style={styles.inlinePanel}>
                     <TouchableOpacity
                       style={[styles.locateBtn, gpsLocating && { opacity: 0.6 }]}
                       onPress={useCurrentLocation}
@@ -430,10 +499,9 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                       <Ionicons name="locate" size={14} color={theme.accent} />
                       <Text style={styles.locateBtnText}>{gpsLocating ? 'Getting location…' : 'Use My Current Location'}</Text>
                     </TouchableOpacity>
-
                     <View style={styles.gpsCoordRow}>
                       <TextInput
-                        style={[styles.gpsInput, { flex: 1 }]}
+                        style={[styles.panelInput, { flex: 1 }]}
                         placeholder="Latitude"
                         placeholderTextColor={theme.textMuted}
                         value={gpsLat}
@@ -441,7 +509,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                         keyboardType="decimal-pad"
                       />
                       <TextInput
-                        style={[styles.gpsInput, { flex: 1 }]}
+                        style={[styles.panelInput, { flex: 1 }]}
                         placeholder="Longitude"
                         placeholderTextColor={theme.textMuted}
                         value={gpsLng}
@@ -450,17 +518,15 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                       />
                     </View>
                     <TextInput
-                      style={styles.gpsInput}
+                      style={styles.panelInput}
                       placeholder="Radius (m), default 50"
                       placeholderTextColor={theme.textMuted}
                       value={gpsRadius}
                       onChangeText={setGpsRadius}
                       keyboardType="number-pad"
                     />
-
-                    {gpsError ? <Text style={styles.gpsError}>{gpsError}</Text> : null}
-
-                    <View style={styles.gpsBtnRow}>
+                    {gpsError ? <Text style={styles.panelError}>{gpsError}</Text> : null}
+                    <View style={styles.panelBtnRow}>
                       <TouchableOpacity style={styles.secondaryBtn} onPress={() => setGpsZoneId(null)}>
                         <Text style={styles.secondaryBtnText}>Cancel</Text>
                       </TouchableOpacity>
@@ -474,11 +540,56 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                     </View>
                   </View>
                 )}
+
+                {/* Edit (rename / risk) panel */}
+                {editOpen && (
+                  <View style={styles.inlinePanel}>
+                    <TextInput
+                      style={styles.panelInput}
+                      placeholder="Zone name"
+                      placeholderTextColor={theme.textMuted}
+                      value={editName}
+                      onChangeText={setEditName}
+                      autoCapitalize="words"
+                    />
+                    <Text style={styles.riskLabel}>Risk level</Text>
+                    <View style={styles.riskPillRow}>
+                      {(['Low', 'Medium', 'High'] as RiskLevel[]).map(r => {
+                        const rc = RISK_CONFIG[r];
+                        const isActive = editRisk === r;
+                        return (
+                          <Pressable
+                            key={r}
+                            style={[styles.riskPillChoice, { borderColor: rc.color, backgroundColor: isActive ? rc.color : 'transparent' }]}
+                            onPress={() => setEditRisk(r)}
+                          >
+                            <Text style={[styles.riskPillChoiceText, { color: isActive ? '#fff' : rc.color }]}>{r}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                    {editError ? <Text style={styles.panelError}>{editError}</Text> : null}
+                    <View style={styles.panelBtnRow}>
+                      <TouchableOpacity style={styles.secondaryBtn} onPress={() => setEditZoneId(null)}>
+                        <Text style={styles.secondaryBtnText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.primaryBtn, { flex: 2, opacity: editSaving ? 0.6 : 1 }]}
+                        onPress={() => saveEdit(z.id)}
+                        disabled={editSaving}
+                      >
+                        <Text style={styles.primaryBtnText}>{editSaving ? 'Saving…' : 'Save Changes'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
               </View>
             );
           })}
         </>
-      ) : (
+      )}
+
+      {!loading && active.length === 0 && (
         <View style={styles.clearCard}>
           <Ionicons name="checkmark-circle" size={22} color={theme.success} />
           <View>
@@ -488,7 +599,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
         </View>
       )}
 
-      {cleared.length > 0 ? (
+      {cleared.length > 0 && (
         <>
           <Text style={[styles.sectionLabel, { marginTop: 20 }]}>CLEARED</Text>
           {cleared.map(z => (
@@ -498,7 +609,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
             </View>
           ))}
         </>
-      ) : null}
+      )}
     </ScrollView>
   );
 }
@@ -522,6 +633,12 @@ function makeStyles(theme: Theme, isDark: boolean) {
     mapTabBtn:    { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 5 },
     mapTabBtnText:{ color: '#fff', fontSize: 12, fontWeight: '800' },
 
+    noMapHint:     { alignItems: 'center', flexDirection: 'row', gap: 8, backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.lg, padding: spacing.md },
+    noMapHintText: { color: theme.textMuted, fontSize: 12, fontWeight: '600', flex: 1 },
+
+    loadingRow:  { alignItems: 'center', flexDirection: 'row', gap: 10, justifyContent: 'center', paddingVertical: 32 },
+    loadingText: { color: theme.textMuted, fontSize: 13, fontWeight: '700' },
+
     // Create card
     createCard:       { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.xl, padding: spacing.lg, ...cardShadow },
     createCardHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
@@ -543,24 +660,22 @@ function makeStyles(theme: Theme, isDark: boolean) {
     riskPillText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
     zoneMeta: { fontSize: 12, fontWeight: '700' },
 
-    // Positioning badges
     badgeRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
     missingBadge: { backgroundColor: isDark ? '#2a2200' : '#fffbeb', borderColor: '#a15c00', borderRadius: 6, borderWidth: 1, color: '#a15c00', fontSize: 11, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3 },
 
-    // Action buttons
-    zoneBtnRow:   { flexDirection: 'row', gap: spacing.sm, marginBottom: 0 },
-    traceBtn:     { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: theme.bgInput, borderRadius: 6, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 5 },
-    traceBtnText: { color: theme.text, fontSize: 12, fontWeight: '800' },
+    zoneBtnRow:     { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+    traceBtn:       { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: theme.bgInput, borderRadius: 6, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 5 },
+    traceBtnText:   { color: theme.text, fontSize: 12, fontWeight: '800' },
     traceBtnActive: { backgroundColor: theme.accent },
 
-    // GPS panel
-    gpsPanel:   { backgroundColor: isDark ? '#111' : '#f8f8f8', borderColor: theme.border, borderRadius: 8, borderWidth: 1, gap: spacing.sm, marginTop: spacing.sm, padding: spacing.md },
-    locateBtn:  { alignItems: 'center', flexDirection: 'row', gap: 6 },
+    // Inline panels (GPS + Edit share the same visual)
+    inlinePanel: { backgroundColor: isDark ? '#111' : '#f8f8f8', borderColor: theme.border, borderRadius: 8, borderWidth: 1, gap: spacing.sm, marginTop: spacing.sm, padding: spacing.md },
+    locateBtn:   { alignItems: 'center', flexDirection: 'row', gap: 6 },
     locateBtnText: { color: theme.accent, fontSize: 13, fontWeight: '800' },
     gpsCoordRow: { flexDirection: 'row', gap: spacing.sm },
-    gpsInput:   { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, fontWeight: '600', paddingHorizontal: 10, paddingVertical: 8 },
-    gpsError:   { color: theme.danger, fontSize: 12, fontWeight: '700' },
-    gpsBtnRow:  { flexDirection: 'row', gap: spacing.sm },
+    panelInput:  { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, fontWeight: '600', paddingHorizontal: 10, paddingVertical: 8 },
+    panelError:  { color: theme.danger, fontSize: 12, fontWeight: '700' },
+    panelBtnRow: { flexDirection: 'row', gap: spacing.sm },
 
     clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: spacing.lg, ...cardShadow },
     clearTitle:{ color: theme.success, fontSize: 14, fontWeight: '900' },
