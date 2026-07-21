@@ -627,9 +627,8 @@ export function createVisitorVisit(body: Partial<VisitorVisit> & { guestUserId: 
   return post<VisitorVisit>('/visitor-visits', body);
 }
 
-export function getVisitorVisits(site?: string) {
-  const q = site ? `?site=${encodeURIComponent(site)}` : '';
-  return request<VisitorVisit[]>(`/visitor-visits${q}`);
+export function getVisitorVisits() {
+  return request<VisitorVisit[]>('/visitor-visits');
 }
 
 export function getMyVisit() {
@@ -684,9 +683,8 @@ export function createInspection(body: {
   return post<InspectionRecord>('/inspections', body);
 }
 
-export function getInspections(site?: string) {
-  const q = site ? `?site=${encodeURIComponent(site)}` : '';
-  return request<InspectionRecord[]>(`/inspections${q}`);
+export function getInspections() {
+  return request<InspectionRecord[]>('/inspections');
 }
 
 export function startInspection(id: number) {

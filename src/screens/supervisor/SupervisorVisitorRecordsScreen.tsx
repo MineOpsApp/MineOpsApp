@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { getVisitorVisits, checkInVisit, checkOutVisit, type VisitorVisit } from '../../services/api';
@@ -36,7 +36,7 @@ export function SupervisorVisitorRecordsScreen({ session }: Props) {
 
   async function load() {
     try {
-      const data = await getVisitorVisits(session.user.assignedSite);
+      const data = await getVisitorVisits();
       setVisits(data.map(v => computeStatus(v)));
     } catch { /* best-effort */ }
     finally { setLoading(false); }
@@ -66,7 +66,7 @@ export function SupervisorVisitorRecordsScreen({ session }: Props) {
   }
 
   async function handleCheckOut(visit: VisitorVisit) {
-    Alert.alert('Check out', `Check out ${visit.guestUserId}?`, [
+    Alert.alert('Check out', `Check out visitor ${visit.visitorPassNumber ?? '#' + visit.id}?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Check Out',

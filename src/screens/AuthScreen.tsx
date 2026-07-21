@@ -185,7 +185,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
     if (!guestCode.trim()) { setGuestError('Enter a 6-digit code or scan the QR.'); return; }
     if (!guestName.trim()) { setGuestError('Enter your full name.'); return; }
     if (!guestPhone.trim()) { setGuestError('Enter your phone number.'); return; }
-    if (!guestEmail.trim()) { setGuestError('Enter your email address.'); return; }
+    if (!guestEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) { setGuestError('Enter a valid email address.'); return; }
     setGuestSubmitting(true);
     try {
       const session = await redeemGuestCode(guestCode.trim(), guestName.trim(), guestPhone.trim(), guestEmail.trim());
@@ -193,6 +193,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
     } catch (error: any) {
       const msg = error?.message ?? '';
       if (msg.includes('404')) setGuestError('Code not found. Check the PIN and try again.');
+      else if (msg.includes('409') && msg.toLowerCase().includes('email')) setGuestError('An account with this email already exists. Try signing in instead.');
       else if (msg.includes('409')) setGuestError('This code has reached its guest limit.');
       else if (msg.includes('410')) setGuestError('This code has been revoked or expired.');
       else setGuestError('Could not join. Check your connection and try again.');
