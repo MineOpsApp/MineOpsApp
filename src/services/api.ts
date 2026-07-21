@@ -495,11 +495,8 @@ export function createHazardReport(report: {
   return post<HazardReport>('/hazards', report);
 }
 
-export function getHazardReports(reportedByEmail?: string, page = 0) {
-  const query = reportedByEmail 
-    ? `?reportedByEmail=${encodeURIComponent(reportedByEmail)}&page=${page}` 
-    : `?page=${page}`;
-  return request<any>(`/hazards${query}`);
+export function getHazardReports(page = 0) {
+  return request<any>(`/hazards?page=${page}`);
 }
 
 export function getSiteHazardAlerts() {

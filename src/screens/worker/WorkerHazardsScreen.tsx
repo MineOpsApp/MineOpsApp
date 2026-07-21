@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
@@ -43,14 +43,26 @@ export function WorkerHazardsScreen({ session }: Props) {
   const [hazardDescription, setHazardDescription] = useState('');
   const [severity, setSeverity] = useState<Severity>('Medium');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
 
   useEffect(() => {
-    getHazardReports(session.user.email, 0).then((data) => {
+    getHazardReports(0).then((data) => {
       setHazards(data.content ?? data);
       setHasMore(data.totalPages ? 0 < data.totalPages - 1 : false);
     }).catch(() => {});
   }, []);
+
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      const data = await getHazardReports(0);
+      setHazards(data.content ?? data);
+      setHasMore(data.totalPages ? 0 < data.totalPages - 1 : false);
+      setPage(0);
+    } catch {}
+    setRefreshing(false);
+  }
 
   async function takePhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -73,7 +85,7 @@ export function WorkerHazardsScreen({ session }: Props) {
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
-      const data = await getHazardReports(session.user.email, nextPage);
+      const data = await getHazardReports(nextPage);
       setHazards((c) => [...c, ...(data.content ?? [])]);
       setPage(nextPage);
       setHasMore(nextPage < data.totalPages - 1);
@@ -143,7 +155,7 @@ export function WorkerHazardsScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
 
       {/* Header */}
       <View style={styles.pageHeader}>

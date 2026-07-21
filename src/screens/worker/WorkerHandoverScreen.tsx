@@ -48,7 +48,7 @@ export function WorkerHandoverScreen({ session }: Props) {
     let anyFailed = false;
     return Promise.all([
       getMyShiftLogs().catch(() => { anyFailed = true; return []; }),
-      getHazardReports(session.user.email).then((p: any) => p?.content ?? []).catch(() => { anyFailed = true; return []; }),
+      getHazardReports().then((p: any) => p?.content ?? []).catch(() => { anyFailed = true; return []; }),
       getNotices().catch(() => { anyFailed = true; return []; }),
       getEquipmentShiftLogs().catch(() => { anyFailed = true; return []; }),
     ]).then(([s, h, n, e]) => {

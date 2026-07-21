@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
@@ -24,10 +24,19 @@ export function SupervisorNoticesScreen({ session }: Props) {
   const [briefing, setBriefing] = useState('');
   const [category, setCategory] = useState('Operational');
   const [expiryDays, setExpiryDays] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => { getNotices().then(setNotices).catch(() => {}); }, []);
 
+  async function refresh() {
+    setRefreshing(true);
+    try { setNotices(await getNotices()); } catch {}
+    setRefreshing(false);
+  }
+
   async function post() {
+    if (!title.trim()) { Alert.alert('Required', 'Enter a notice title.'); return; }
+    if (!message.trim()) { Alert.alert('Required', 'Enter a notice message.'); return; }
     try {
       const expiresAt = expiryDays
         ? new Date(Date.now() + expiryDays * 86400000).toISOString().slice(0, 19)
@@ -47,6 +56,7 @@ export function SupervisorNoticesScreen({ session }: Props) {
   }
 
   async function sendBriefing() {
+    if (!briefing.trim()) { Alert.alert('Required', 'Enter a briefing message.'); return; }
     try {
       await createSupervisorMessage({ senderRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email, audience:`Workers - ${session.user.assignedSite ?? 'Obuasi Mine'}`, message: briefing.trim() || 'Daily briefing sent' });
       Alert.alert('Sent', 'Briefing sent to all workers.');
@@ -66,7 +76,7 @@ export function SupervisorNoticesScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.pageTitle}>Notices</Text>
 
       <View style={styles.card}>
