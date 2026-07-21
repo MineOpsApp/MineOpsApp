@@ -65,6 +65,15 @@ export async function registerForPushNotifications(): Promise<string | null> {
       lightColor: '#e0a83a',
       sound: 'default',
     });
+
+    await Notifications.setNotificationChannelAsync('lone_worker', {
+      name: 'Lone Worker Alerts',
+      importance: Notifications.AndroidImportance.MAX,
+      bypassDnd: true,
+      vibrationPattern: [0, 500, 250, 500],
+      lightColor: '#b42318',
+      sound: 'default',
+    });
   }
 
   try {
