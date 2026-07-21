@@ -148,7 +148,7 @@ function SupervisorMoreStack({
             { icon: '🔐', label: 'Staff Accounts', description: 'Create supervisor and safety officer accounts', onPress: () => setScreen('staffAccounts') },
             { icon: '🔑', label: 'Reset Password', description: 'Generate temporary password for locked out worker', onPress: () => setScreen('reset') },
             { icon: '👤', label: 'Guest Access', description: 'Create and manage guest accounts', onPress: () => setScreen('guests') },
-            { icon: '🎟', label: 'Guest Codes', description: 'Generate QR / PIN codes for site visitors and inspectors', onPress: () => setScreen('guestCodes') },
+            { icon: '🎟', label: 'Guest Codes', description: 'Generate QR / PIN codes for site visitors', onPress: () => setScreen('guestCodes') },
             { icon: '🏭', label: 'Site Access', description: 'Grant or revoke multi-site access for supervisors', onPress: () => setScreen('siteAccess') },
             { icon: '🗺', label: 'All My Sites', description: 'Combined view of every site you have access to', onPress: () => setScreen('multiSite') },
           ],

@@ -16,9 +16,15 @@ export function SafetyLoneWorkerScreen({ session: _ }: Props) {
 
   const [workers, setWorkers] = useState<LoneWorkerStatus[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   async function load() {
-    getSiteLoneWorkers().then(setWorkers).catch(() => {});
+    setLoadError(false);
+    try {
+      setWorkers(await getSiteLoneWorkers());
+    } catch {
+      setLoadError(true);
+    }
   }
 
   useEffect(() => { load(); }, []);
@@ -46,6 +52,13 @@ export function SafetyLoneWorkerScreen({ session: _ }: Props) {
     >
       <Text style={styles.title}>Lone Worker Monitoring</Text>
       <Text style={styles.subtitle}>{activeWorkers.length} active · Pull to refresh</Text>
+
+      {loadError && (
+        <View style={styles.errorBanner}>
+          <Ionicons name="cloud-offline-outline" size={16} color={theme.danger} />
+          <Text style={styles.errorText}>Could not load lone worker data. Pull to retry.</Text>
+        </View>
+      )}
 
       {overdue.length > 0 && (
         <View style={styles.section}>
@@ -104,7 +117,9 @@ function makeStyles(theme: Theme, isDark: boolean) {
   return StyleSheet.create({
     container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
     title: { ...typography.h1, color: theme.text, marginBottom: 2 },
-    subtitle: { ...typography.caption, color: theme.textMuted, fontWeight: '600', marginBottom: spacing.xl },
+    subtitle: { ...typography.caption, color: theme.textMuted, fontWeight: '600', marginBottom: spacing.md },
+    errorBanner: { backgroundColor: theme.dangerLight, borderColor: '#fca5a5', borderRadius: 8, borderWidth: 1, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: spacing.lg, padding: spacing.md },
+    errorText: { color: theme.danger, fontSize: 13, fontWeight: '600' as const, flex: 1 },
     section: { marginBottom: spacing.lg },
     sectionTitle: { ...typography.h3, color: theme.text, marginBottom: spacing.md },
     workerCard: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm, padding: 12, ...cardShadow },

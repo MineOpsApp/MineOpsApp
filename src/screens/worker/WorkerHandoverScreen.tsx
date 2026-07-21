@@ -45,19 +45,19 @@ export function WorkerHandoverScreen({ session }: Props) {
   const [connectionError, setConnectionError] = useState(false);
 
   function load() {
+    let anyFailed = false;
     return Promise.all([
-      getMyShiftLogs().catch(() => []),
-      getHazardReports(session.user.email).then((p: any) => p?.content ?? []).catch(() => []),
-      getNotices().catch(() => []),
-      getEquipmentShiftLogs().catch(() => []),
+      getMyShiftLogs().catch(() => { anyFailed = true; return []; }),
+      getHazardReports(session.user.email).then((p: any) => p?.content ?? []).catch(() => { anyFailed = true; return []; }),
+      getNotices().catch(() => { anyFailed = true; return []; }),
+      getEquipmentShiftLogs().catch(() => { anyFailed = true; return []; }),
     ]).then(([s, h, n, e]) => {
       setShiftLogs(s as ShiftLog[]);
       setHazards(h as any[]);
       setNotices(n as any[]);
       setEquipmentLogs(e as EquipmentLog[]);
-      setConnectionError(false);
-    }).catch(() => setConnectionError(true))
-    .finally(() => setLoading(false));
+      setConnectionError(anyFailed);
+    }).finally(() => setLoading(false));
   }
 
   useEffect(() => { load(); }, []);

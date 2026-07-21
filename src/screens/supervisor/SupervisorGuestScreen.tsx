@@ -98,9 +98,13 @@ export function SupervisorGuestScreen({ session }: Props) {
 
   async function loadGuests() {
     setLoadingGuests(true);
-    try { setGuests(await getGuestList()); }
-    catch {}
-    finally { setLoadingGuests(false); }
+    try {
+      setGuests(await getGuestList());
+    } catch {
+      Alert.alert('Connection error', 'Could not load guest list. Pull to retry.');
+    } finally {
+      setLoadingGuests(false);
+    }
   }
 
   return (

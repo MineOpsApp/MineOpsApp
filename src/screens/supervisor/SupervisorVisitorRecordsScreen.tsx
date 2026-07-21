@@ -97,14 +97,20 @@ export function SupervisorVisitorRecordsScreen({ session }: Props) {
   async function handleCreate() {
     if (!selectedGuest) { Alert.alert('Select a guest', 'Choose a guest from the list.'); return; }
     if (!purposeOfVisit.trim()) { Alert.alert('Required', 'Purpose of visit is required.'); return; }
+    if (visitStart.trim() && isNaN(new Date(visitStart.trim()).getTime())) {
+      Alert.alert('Invalid date', 'Visit Start must be in YYYY-MM-DD format.'); return;
+    }
+    if (visitEnd.trim() && isNaN(new Date(visitEnd.trim()).getTime())) {
+      Alert.alert('Invalid date', 'Visit End must be in YYYY-MM-DD format.'); return;
+    }
     setCreating(true);
     try {
       const created = await createVisitorVisit({
         guestUserId: selectedGuest.id,
         hostName: hostName.trim() || undefined,
         purposeOfVisit: purposeOfVisit.trim(),
-        visitStart: visitStart.trim() ? new Date(visitStart.trim()).toISOString().slice(0, 19) : undefined,
-        visitEnd: visitEnd.trim() ? new Date(visitEnd.trim()).toISOString().slice(0, 19) : undefined,
+        visitStart: visitStart.trim() ? visitStart.trim() + 'T00:00:00' : undefined,
+        visitEnd: visitEnd.trim() ? visitEnd.trim() + 'T23:59:59' : undefined,
         approvedZones: approvedZones.trim() || undefined,
         visitingOrganisation: visitingOrganisation.trim() || undefined,
         emergencyContactName: emergencyContactName.trim() || undefined,

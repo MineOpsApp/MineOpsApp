@@ -62,12 +62,12 @@ export function SearchScreen({ session: _ }: Props) {
     results.hazards.length + results.incidents.length + results.workers.length +
     results.listings.length + results.forumPosts.length;
 
-  const sections: { key: string; label: string; icon: ComponentProps<typeof Ionicons>['name']; items: any[] }[] = [
-    { key: 'hazards', label: 'Hazards', icon: 'warning-outline', items: results.hazards },
-    { key: 'incidents', label: 'Incidents', icon: 'alert-circle-outline', items: results.incidents },
-    { key: 'workers', label: 'Workers', icon: 'people-outline', items: results.workers },
-    { key: 'listings', label: 'Mineral Listings', icon: 'diamond-outline', items: results.listings },
-    { key: 'forumPosts', label: 'Forum Posts', icon: 'chatbubble-outline', items: results.forumPosts },
+  const sections = [
+    { key: 'hazards', label: 'Hazards', icon: 'warning-outline' as const, items: results.hazards },
+    { key: 'incidents', label: 'Incidents', icon: 'alert-circle-outline' as const, items: results.incidents },
+    { key: 'workers', label: 'Workers', icon: 'people-outline' as const, items: results.workers },
+    { key: 'listings', label: 'Mineral Listings', icon: 'diamond-outline' as const, items: results.listings },
+    { key: 'forumPosts', label: 'Forum Posts', icon: 'chatbubble-outline' as const, items: results.forumPosts },
   ].filter((s) => s.items.length > 0);
 
   return (

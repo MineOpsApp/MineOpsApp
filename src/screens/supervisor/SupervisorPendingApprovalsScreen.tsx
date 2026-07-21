@@ -45,7 +45,7 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
 
   async function refresh() {
     setRefreshing(true);
-    load();
+    await load();
     setRefreshing(false);
   }
 
