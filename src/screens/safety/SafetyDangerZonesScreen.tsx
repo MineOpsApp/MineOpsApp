@@ -3,14 +3,17 @@ import {
   Alert,
   Image,
   LayoutChangeEvent,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Svg, { Circle, Polygon, Text as SvgText } from 'react-native-svg';
+import * as Location from 'expo-location';
 
 import { ActionButton } from '../../components/ActionButton';
 import { SiteMapView } from '../../components/SiteMapView';
@@ -19,6 +22,7 @@ import {
   getDangerZones,
   getSiteMap,
   updateZonePosition,
+  updateZoneGps,
   parseApiError,
   type MapPoint,
   type SiteMapData,
@@ -31,6 +35,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 type Props = { session: AuthSession };
 type ScreenMode = 'list' | 'map' | 'trace';
+type RiskLevel = 'Low' | 'Medium' | 'High';
 
 const RISK_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
   High:   { color: '#b42318', bg: '#fff5f5', border: '#f5c6c6' },
@@ -49,17 +54,32 @@ export function SafetyDangerZonesScreen({ session }: Props) {
   const styles = makeStyles(theme, isDark);
 
   const [screenMode, setScreenMode] = useState<ScreenMode>('list');
-  const [zones, setZones]         = useState<DangerZone[]>([]);
+  const [zones, setZones]           = useState<DangerZone[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [mapData, setMapData]     = useState<SiteMapData | null>(null);
-  const [noMap, setNoMap]         = useState(false);
+  const [mapData, setMapData]       = useState<SiteMapData | null>(null);
+  const [noMap, setNoMap]           = useState(false);
 
-  const [traceZone, setTraceZone] = useState<DangerZone | null>(null);
-  const [vertices, setVertices]   = useState<MapPoint[]>([]);
-  const [imgSize, setImgSize]     = useState({ w: 0, h: 0 });
-  const [saving, setSaving]       = useState(false);
+  const [traceZone, setTraceZone]   = useState<DangerZone | null>(null);
+  const [vertices, setVertices]     = useState<MapPoint[]>([]);
+  const [imgSize, setImgSize]       = useState({ w: 0, h: 0 });
+  const [saving, setSaving]         = useState(false);
   const [traceError, setTraceError] = useState('');
+
+  // Create form state
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createZoneName, setCreateZoneName] = useState('');
+  const [createZoneRisk, setCreateZoneRisk] = useState<RiskLevel>('Medium');
+  const [creating, setCreating] = useState(false);
+
+  // GPS panel state
+  const [gpsZoneId, setGpsZoneId]   = useState<number | null>(null);
+  const [gpsLat, setGpsLat]         = useState('');
+  const [gpsLng, setGpsLng]         = useState('');
+  const [gpsRadius, setGpsRadius]   = useState('50');
+  const [gpsSaving, setGpsSaving]   = useState(false);
+  const [gpsError, setGpsError]     = useState('');
+  const [gpsLocating, setGpsLocating] = useState(false);
 
   function load() { return getDangerZones().then(setZones).catch(() => {}); }
   useEffect(() => {
@@ -71,19 +91,71 @@ export function SafetyDangerZonesScreen({ session }: Props) {
 
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
-  async function create() {
+  async function handleCreate() {
+    const name = createZoneName.trim();
+    if (!name) { Alert.alert('Required', 'Enter a zone name.'); return; }
+    setCreating(true);
     try {
       const zone = await createDangerZone({
         actorEmail: session.user.email,
         actorName: session.user.fullName,
         actorRole: session.user.role,
-        riskLevel: 'High',
+        riskLevel: createZoneRisk,
         site: session.user.assignedSite ?? 'Obuasi Mine',
-        zoneName: 'Zone B - Blasting Area',
+        zoneName: name,
       });
       setZones(c => [zone, ...c]);
+      setShowCreateForm(false);
+      setCreateZoneName('');
+      setCreateZoneRisk('Medium');
       Alert.alert('Created', `${zone.zoneName} is now active.`);
     } catch { Alert.alert('Failed', 'Could not create danger zone.'); }
+    finally { setCreating(false); }
+  }
+
+  function openGpsPanel(zone: DangerZone) {
+    if (gpsZoneId === zone.id) { setGpsZoneId(null); return; }
+    setGpsZoneId(zone.id);
+    setGpsLat(zone.latitude != null ? String(zone.latitude) : '');
+    setGpsLng(zone.longitude != null ? String(zone.longitude) : '');
+    setGpsRadius(zone.radiusMeters != null ? String(zone.radiusMeters) : '50');
+    setGpsError('');
+  }
+
+  async function useCurrentLocation() {
+    setGpsLocating(true);
+    setGpsError('');
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') { setGpsError('Location permission denied.'); return; }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setGpsLat(String(pos.coords.latitude));
+      setGpsLng(String(pos.coords.longitude));
+    } catch (e: any) {
+      setGpsError('Could not get location: ' + (e?.message ?? 'unknown error'));
+    } finally {
+      setGpsLocating(false);
+    }
+  }
+
+  async function saveGps(zoneId: number) {
+    const lat = parseFloat(gpsLat);
+    const lng = parseFloat(gpsLng);
+    const radius = parseInt(gpsRadius, 10);
+    if (isNaN(lat) || lat < -90 || lat > 90) { setGpsError('Enter a valid latitude (−90 to 90).'); return; }
+    if (isNaN(lng) || lng < -180 || lng > 180) { setGpsError('Enter a valid longitude (−180 to 180).'); return; }
+    const safeRadius = isNaN(radius) || radius < 1 ? 50 : radius;
+    setGpsSaving(true);
+    setGpsError('');
+    try {
+      const updated = await updateZoneGps(zoneId, lat, lng, safeRadius);
+      setZones(zs => zs.map(z => z.id === updated.id ? updated : z));
+      setGpsZoneId(null);
+    } catch (e: any) {
+      setGpsError(parseApiError(e));
+    } finally {
+      setGpsSaving(false);
+    }
   }
 
   function startTrace(zone: DangerZone) {
@@ -242,13 +314,65 @@ export function SafetyDangerZonesScreen({ session }: Props) {
         <SiteMapView zones={zones} readOnly={false} pollIntervalMs={25000} />
       )}
 
+      {/* ── Create Zone card ── */}
       <View style={styles.createCard}>
-        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
-          <Ionicons name="warning" size={15} color={theme.danger} />
-          <Text style={styles.createTitle}>Create Danger Zone</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.createCardHeader}
+          onPress={() => { setShowCreateForm(v => !v); setCreateZoneName(''); setCreateZoneRisk('Medium'); }}
+          activeOpacity={0.7}
+        >
+          <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+            <Ionicons name="warning" size={15} color={theme.danger} />
+            <Text style={styles.createTitle}>Create Danger Zone</Text>
+          </View>
+          <Ionicons name={showCreateForm ? 'chevron-up' : 'chevron-down'} size={16} color={theme.textMuted} />
+        </TouchableOpacity>
         <Text style={styles.createSub}>Mark an area as restricted for all site users</Text>
-        <ActionButton label="Create Zone B — Blasting Area (High Risk)" onPress={create} tone="danger" />
+
+        {showCreateForm && (
+          <View style={styles.createForm}>
+            <TextInput
+              style={styles.createInput}
+              placeholder="Zone name, e.g. Blasting Area, Shaft 3"
+              placeholderTextColor={theme.textMuted}
+              value={createZoneName}
+              onChangeText={setCreateZoneName}
+              autoCapitalize="words"
+              returnKeyType="done"
+            />
+            <Text style={styles.riskLabel}>Risk level</Text>
+            <View style={styles.riskPillRow}>
+              {(['Low', 'Medium', 'High'] as RiskLevel[]).map(r => {
+                const cfg = RISK_CONFIG[r];
+                const active = createZoneRisk === r;
+                return (
+                  <Pressable
+                    key={r}
+                    style={[styles.riskPillChoice, { borderColor: cfg.color, backgroundColor: active ? cfg.color : 'transparent' }]}
+                    onPress={() => setCreateZoneRisk(r)}
+                  >
+                    <Text style={[styles.riskPillChoiceText, { color: active ? '#fff' : cfg.color }]}>{r}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={styles.createFormActions}>
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                onPress={() => { setShowCreateForm(false); setCreateZoneName(''); setCreateZoneRisk('Medium'); }}
+              >
+                <Text style={styles.secondaryBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.primaryBtn, { flex: 2, opacity: creating ? 0.6 : 1 }]}
+                onPress={handleCreate}
+                disabled={creating}
+              >
+                <Text style={styles.primaryBtnText}>{creating ? 'Creating…' : 'Create Zone'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
 
       {active.length > 0 ? (
@@ -256,7 +380,10 @@ export function SafetyDangerZonesScreen({ session }: Props) {
           <Text style={styles.sectionLabel}>ACTIVE ZONES</Text>
           {active.map(z => {
             const cfg = RISK_CONFIG[z.riskLevel] ?? RISK_CONFIG['Medium'];
-            const hasPolygon = !!z.polygonPoints;
+            const hasPolygon  = !!z.polygonPoints;
+            const hasGps      = z.latitude != null && z.longitude != null;
+            const gpsOpen     = gpsZoneId === z.id;
+
             return (
               <View key={z.id} style={[styles.zoneCard, { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
                 <View style={styles.zoneTop}>
@@ -265,14 +392,88 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                     <Text style={styles.riskPillText}>{z.riskLevel}</Text>
                   </View>
                 </View>
-                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4, marginBottom: 8 }}>
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4, marginBottom: 6 }}>
                   <Ionicons name="warning" size={12} color={cfg.color} />
                   <Text style={[styles.zoneMeta, { color: cfg.color }]}>Active · {z.site}</Text>
                 </View>
-                <TouchableOpacity style={styles.traceBtn} onPress={() => startTrace(z)}>
-                  <Ionicons name={hasPolygon ? 'pencil-outline' : 'location-outline'} size={12} color={theme.text} />
-                  <Text style={styles.traceBtnText}>{hasPolygon ? 'Edit on Map' : 'Trace on Map'}</Text>
-                </TouchableOpacity>
+
+                {/* Positioning badges */}
+                {(!hasGps || !hasPolygon) && (
+                  <View style={styles.badgeRow}>
+                    {!hasGps    && <Text style={styles.missingBadge}>📍 No GPS location</Text>}
+                    {!hasPolygon && <Text style={styles.missingBadge}>🗺 Not traced on map</Text>}
+                  </View>
+                )}
+
+                {/* Action buttons row */}
+                <View style={styles.zoneBtnRow}>
+                  <TouchableOpacity style={styles.traceBtn} onPress={() => startTrace(z)}>
+                    <Ionicons name={hasPolygon ? 'pencil-outline' : 'location-outline'} size={12} color={theme.text} />
+                    <Text style={styles.traceBtnText}>{hasPolygon ? 'Edit on Map' : 'Trace on Map'}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.traceBtn, gpsOpen && styles.traceBtnActive]} onPress={() => openGpsPanel(z)}>
+                    <Ionicons name={hasGps ? 'navigate' : 'navigate-outline'} size={12} color={gpsOpen ? '#fff' : theme.text} />
+                    <Text style={[styles.traceBtnText, gpsOpen && { color: '#fff' }]}>
+                      {hasGps ? 'Edit GPS' : 'Set GPS'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Inline GPS panel */}
+                {gpsOpen && (
+                  <View style={styles.gpsPanel}>
+                    <TouchableOpacity
+                      style={[styles.locateBtn, gpsLocating && { opacity: 0.6 }]}
+                      onPress={useCurrentLocation}
+                      disabled={gpsLocating}
+                    >
+                      <Ionicons name="locate" size={14} color={theme.accent} />
+                      <Text style={styles.locateBtnText}>{gpsLocating ? 'Getting location…' : 'Use My Current Location'}</Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.gpsCoordRow}>
+                      <TextInput
+                        style={[styles.gpsInput, { flex: 1 }]}
+                        placeholder="Latitude"
+                        placeholderTextColor={theme.textMuted}
+                        value={gpsLat}
+                        onChangeText={setGpsLat}
+                        keyboardType="decimal-pad"
+                      />
+                      <TextInput
+                        style={[styles.gpsInput, { flex: 1 }]}
+                        placeholder="Longitude"
+                        placeholderTextColor={theme.textMuted}
+                        value={gpsLng}
+                        onChangeText={setGpsLng}
+                        keyboardType="decimal-pad"
+                      />
+                    </View>
+                    <TextInput
+                      style={styles.gpsInput}
+                      placeholder="Radius (m), default 50"
+                      placeholderTextColor={theme.textMuted}
+                      value={gpsRadius}
+                      onChangeText={setGpsRadius}
+                      keyboardType="number-pad"
+                    />
+
+                    {gpsError ? <Text style={styles.gpsError}>{gpsError}</Text> : null}
+
+                    <View style={styles.gpsBtnRow}>
+                      <TouchableOpacity style={styles.secondaryBtn} onPress={() => setGpsZoneId(null)}>
+                        <Text style={styles.secondaryBtnText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.primaryBtn, { flex: 2, opacity: gpsSaving ? 0.6 : 1 }]}
+                        onPress={() => saveGps(z.id)}
+                        disabled={gpsSaving}
+                      >
+                        <Text style={styles.primaryBtnText}>{gpsSaving ? 'Saving…' : 'Save Location'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
               </View>
             );
           })}
@@ -320,9 +521,20 @@ function makeStyles(theme: Theme, isDark: boolean) {
     activeBadgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
     mapTabBtn:    { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 5 },
     mapTabBtnText:{ color: '#fff', fontSize: 12, fontWeight: '800' },
-    createCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.xl, padding: spacing.lg, ...cardShadow },
-    createTitle:{ ...typography.bodyBold, color: theme.text },
-    createSub:  { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginBottom: 14 },
+
+    // Create card
+    createCard:       { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.xl, padding: spacing.lg, ...cardShadow },
+    createCardHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+    createTitle:      { ...typography.bodyBold, color: theme.text },
+    createSub:        { color: theme.textMuted, fontSize: 12, fontWeight: '600', marginTop: 2, marginBottom: 10 },
+    createForm:       { borderTopColor: theme.border, borderTopWidth: 1, paddingTop: spacing.md, gap: spacing.sm },
+    createInput:      { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 14, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 10 },
+    riskLabel:        { color: theme.textMuted, fontSize: 12, fontWeight: '700', marginTop: 2 },
+    riskPillRow:      { flexDirection: 'row', gap: spacing.sm },
+    riskPillChoice:   { borderRadius: 8, borderWidth: 2, flex: 1, alignItems: 'center', paddingVertical: 8 },
+    riskPillChoiceText: { fontSize: 13, fontWeight: '900' },
+    createFormActions: { flexDirection: 'row', gap: spacing.sm, marginTop: 4 },
+
     sectionLabel: { ...typography.label, color: theme.textMuted, marginBottom: 10 },
     zoneCard: { borderRadius: 12, borderWidth: 1, marginBottom: 10, padding: 14, ...cardShadow },
     zoneTop:  { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
@@ -330,14 +542,34 @@ function makeStyles(theme: Theme, isDark: boolean) {
     riskPill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
     riskPillText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
     zoneMeta: { fontSize: 12, fontWeight: '700' },
+
+    // Positioning badges
+    badgeRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+    missingBadge: { backgroundColor: isDark ? '#2a2200' : '#fffbeb', borderColor: '#a15c00', borderRadius: 6, borderWidth: 1, color: '#a15c00', fontSize: 11, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3 },
+
+    // Action buttons
+    zoneBtnRow:   { flexDirection: 'row', gap: spacing.sm, marginBottom: 0 },
     traceBtn:     { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: theme.bgInput, borderRadius: 6, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 5 },
     traceBtnText: { color: theme.text, fontSize: 12, fontWeight: '800' },
+    traceBtnActive: { backgroundColor: theme.accent },
+
+    // GPS panel
+    gpsPanel:   { backgroundColor: isDark ? '#111' : '#f8f8f8', borderColor: theme.border, borderRadius: 8, borderWidth: 1, gap: spacing.sm, marginTop: spacing.sm, padding: spacing.md },
+    locateBtn:  { alignItems: 'center', flexDirection: 'row', gap: 6 },
+    locateBtnText: { color: theme.accent, fontSize: 13, fontWeight: '800' },
+    gpsCoordRow: { flexDirection: 'row', gap: spacing.sm },
+    gpsInput:   { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 8, borderWidth: 1, color: theme.text, fontSize: 13, fontWeight: '600', paddingHorizontal: 10, paddingVertical: 8 },
+    gpsError:   { color: theme.danger, fontSize: 12, fontWeight: '700' },
+    gpsBtnRow:  { flexDirection: 'row', gap: spacing.sm },
+
     clearCard: { alignItems: 'center', backgroundColor: theme.successLight, borderColor: theme.success, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 12, padding: spacing.lg, ...cardShadow },
     clearTitle:{ color: theme.success, fontSize: 14, fontWeight: '900' },
     clearSub:  { color: theme.success, fontSize: 12, fontWeight: '600', marginTop: 2 },
     clearedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.sm, opacity: 0.6, padding: 12 },
     clearedName: { color: theme.text, fontSize: 13, fontWeight: '800', marginBottom: 2 },
     clearedMeta: { color: theme.textMuted, fontSize: 12, fontWeight: '600' },
+
+    // Trace mode
     traceSub:      { color: theme.textSub, fontSize: 13, fontWeight: '600', lineHeight: 18, marginBottom: spacing.lg },
     imageWrapper:  { borderRadius: 12, overflow: 'hidden', backgroundColor: '#000', marginBottom: 12 },
     traceImage:    { width: '100%', aspectRatio: 16 / 9 },

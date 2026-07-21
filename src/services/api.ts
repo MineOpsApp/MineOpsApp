@@ -1542,6 +1542,10 @@ export function updateZonePosition(id: number, points: MapPoint[]) {
   return patch<import('../types/actions').DangerZone>(`/danger-zones/${id}/position`, { points });
 }
 
+export function updateZoneGps(id: number, latitude: number, longitude: number, radiusMeters?: number) {
+  return patch<import('../types/actions').DangerZone>(`/danger-zones/${id}/gps`, { latitude, longitude, radiusMeters });
+}
+
 export function getZoneDetail(id: number) {
   return request<ZoneDetail>(`/danger-zones/${id}/detail`);
 }
