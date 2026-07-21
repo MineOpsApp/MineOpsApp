@@ -23,6 +23,7 @@ import { SupervisorDrillScreen } from '../screens/supervisor/SupervisorDrillScre
 import { SupervisorSafetyChecklistScreen } from '../screens/supervisor/SupervisorSafetyChecklistScreen';
 import { SupervisorFirstAidKitScreen } from '../screens/supervisor/SupervisorFirstAidKitScreen';
 import { SafetyLoneWorkerScreen } from '../screens/safety/SafetyLoneWorkerScreen';
+import { SafetyBlastDrillOverviewScreen } from '../screens/safety/SafetyBlastDrillOverviewScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
@@ -43,7 +44,7 @@ export type SafetyOfficerTabParamList = {
 const Tab = createBottomTabNavigator<SafetyOfficerTabParamList>();
 
 
-type SafetyMoreSubScreen = 'menu' | 'audit' | 'incidents' | 'safetyIntelligence' | 'workerContacts' | 'workerProfile' | 'messages' | 'community' | 'search' | 'illegalReport' | 'reset' | 'roster' | 'blast' | 'equipment' | 'drills' | 'checklist' | 'firstAid' | 'loneWorker';
+type SafetyMoreSubScreen = 'menu' | 'audit' | 'incidents' | 'safetyIntelligence' | 'workerContacts' | 'workerProfile' | 'messages' | 'community' | 'search' | 'illegalReport' | 'reset' | 'roster' | 'blast' | 'equipment' | 'drills' | 'checklist' | 'firstAid' | 'loneWorker' | 'blastDrillOverview';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -108,6 +109,7 @@ function SafetyMoreStack({
     screen === 'checklist' ? <SupervisorSafetyChecklistScreen session={session} /> :
     screen === 'firstAid' ? <SupervisorFirstAidKitScreen session={session} /> :
     screen === 'loneWorker' ? <SafetyLoneWorkerScreen session={session} /> :
+    screen === 'blastDrillOverview' ? <SafetyBlastDrillOverviewScreen session={session} /> :
     null;
 
   return (
@@ -141,6 +143,7 @@ function SafetyMoreStack({
             { icon: '🔧', label: 'Equipment Registry', description: 'Manage site equipment list and status', onPress: () => setScreen('equipment') },
             { icon: '⛏', label: 'Drill Operations', description: 'Active and completed drill sign-offs', onPress: () => setScreen('drills') },
             { icon: '💥', label: 'Blast Management', description: 'Schedule and notify blast operations', onPress: () => setScreen('blast') },
+            { icon: '🎯', label: 'Blast & Drill Overview', description: 'Zone-by-zone view of workers at the blasting step vs scheduled blasts', onPress: () => setScreen('blastDrillOverview') },
           ],
         },
         {

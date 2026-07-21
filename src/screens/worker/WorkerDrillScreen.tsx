@@ -287,6 +287,28 @@ export function WorkerDrillScreen({ session }: Props) {
                     </View>
                     {status === 'active' ? (
                       <View style={styles.stepAction}>
+                        {step.key === 'blasting' && (() => {
+                          const zoneBlast = scheduledBlasts.find((b: any) => b.zone === drill.zone);
+                          if (zoneBlast) {
+                            const blastTime = new Date(zoneBlast.blastTime);
+                            const mins = Math.round((blastTime.getTime() - now) / 60000);
+                            const countdown = mins <= 0 ? 'Imminent' : mins < 60 ? `in ${mins}m` : `in ${Math.floor(mins / 60)}h ${mins % 60}m`;
+                            return (
+                              <View style={styles.blastClearanceBanner}>
+                                <Ionicons name="checkmark-circle" size={14} color={theme.accent} />
+                                <Text style={styles.blastClearanceText}>
+                                  Blast scheduled for {drill.zone} — {blastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({countdown})
+                                </Text>
+                              </View>
+                            );
+                          }
+                          return (
+                            <View style={styles.blastWarnBanner}>
+                              <Ionicons name="warning" size={14} color={theme.amber} />
+                              <Text style={styles.blastWarnText}>No blast scheduled for this zone — confirm with supervisor before blasting</Text>
+                            </View>
+                          );
+                        })()}
                         <InputField
                           label=""
                           placeholder="Notes (optional)..."
@@ -382,6 +404,10 @@ function makeStyles(theme: Theme) {
     stepAction: { marginTop: spacing.md },
     signOffBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, marginTop: 6, paddingVertical: 10 },
     signOffBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
+    blastClearanceBanner: { alignItems: 'center' as const, backgroundColor: theme.bgInput, borderRadius: 6, flexDirection: 'row' as const, gap: 6, marginBottom: spacing.sm, padding: spacing.sm },
+    blastClearanceText: { color: theme.accent, flex: 1, fontSize: 12, fontWeight: '700' as const },
+    blastWarnBanner: { alignItems: 'center' as const, backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 6, borderWidth: 1, flexDirection: 'row' as const, gap: 6, marginBottom: spacing.sm, padding: spacing.sm },
+    blastWarnText: { color: theme.amber, flex: 1, fontSize: 12, fontWeight: '700' as const },
     completedCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, marginBottom: spacing.sm, padding: spacing.md },
     completedLeft: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
     completedCheck: { alignItems: 'center', backgroundColor: theme.bgInput, borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
