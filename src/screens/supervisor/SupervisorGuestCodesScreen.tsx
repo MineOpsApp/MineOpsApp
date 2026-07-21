@@ -29,9 +29,7 @@ type Props = { session: AuthSession };
 type ScreenView = 'list' | 'generate' | 'detail';
 
 const SUB_ROLES = [
-  { id: 'visitor',   label: 'Visitor',   icon: '👤' },
-  { id: 'inspector', label: 'Inspector', icon: '🔍' },
-  { id: 'investor',  label: 'Investor',  icon: '📊' },
+  { id: 'visitor', label: 'Visitor', icon: '👤' },
 ];
 
 const SESSION_OPTIONS = [
@@ -248,7 +246,7 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
     <ScrollView contentContainerStyle={s.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <Text style={s.pageTitle}>Guest Codes</Text>
-      <Text style={s.pageSub}>QR / PIN codes for visitors, inspectors and investors</Text>
+      <Text style={s.pageSub}>QR / PIN codes for site visitors</Text>
 
       <TouchableOpacity style={s.primaryBtn} onPress={() => { setView('generate'); setGenError(''); }}>
         <Text style={s.primaryBtnText}>+ Generate Code</Text>

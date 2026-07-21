@@ -42,6 +42,7 @@ import { SupervisorBulkPurchaseScreen } from '../screens/supervisor/SupervisorBu
 import { IllegalMineReportScreen } from '../screens/shared/IllegalMineReportScreen';
 import { SupervisorSubscriptionScreen } from '../screens/supervisor/SupervisorSubscriptionScreen';
 import { SupervisorStaffScreen } from '../screens/supervisor/SupervisorStaffScreen';
+import { SupervisorVisitorRecordsScreen } from '../screens/supervisor/SupervisorVisitorRecordsScreen';
 import type { AuthSession } from '../types/auth';
 
 export type SupervisorTabParamList = {
@@ -55,7 +56,7 @@ export type SupervisorTabParamList = {
 const Tab = createBottomTabNavigator<SupervisorTabParamList>();
 
 
-type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'reset' | 'incidents' | 'approvals' | 'workerContacts' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'multiSite' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription' | 'staffAccounts';
+type SupervisorMoreSubScreen = 'menu' | 'shifts' | 'audit' | 'guests' | 'guestCodes' | 'siteMap' | 'insurance' | 'reset' | 'incidents' | 'approvals' | 'workerContacts' | 'mineralInventory' | 'certifications' | 'workerProfile' | 'messages' | 'announcements' | 'payRuns' | 'listings' | 'offers' | 'transactions' | 'safetyIntelligence' | 'community' | 'search' | 'siteAccess' | 'multiSite' | 'permitStatus' | 'bulkPurchase' | 'illegalReport' | 'subscription' | 'staffAccounts' | 'visitorRecords';
 
 type Props = { session: AuthSession; onLogout: () => void };
 
@@ -132,6 +133,7 @@ function SupervisorMoreStack({
     screen === 'illegalReport' ? <IllegalMineReportScreen /> :
     screen === 'subscription' ? <SupervisorSubscriptionScreen session={session} /> :
     screen === 'staffAccounts' ? <SupervisorStaffScreen session={session} /> :
+    screen === 'visitorRecords' ? <SupervisorVisitorRecordsScreen session={session} /> :
     null;
 
   return (
@@ -156,6 +158,7 @@ function SupervisorMoreStack({
           items: [
             { icon: '📞', label: 'Worker Contacts', description: 'Emergency contacts for all site personnel', onPress: () => setScreen('workerContacts') },
             { icon: '💬', label: 'Worker Messages', description: 'Read and reply to messages from your site workers', onPress: () => setScreen('messages') },
+            { icon: '🪪', label: 'Visitor Records', description: 'Track site visitors, inductions, check-in and check-out', onPress: () => setScreen('visitorRecords') },
           ],
         },
         {

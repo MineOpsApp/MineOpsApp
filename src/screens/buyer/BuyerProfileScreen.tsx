@@ -40,6 +40,21 @@ export function BuyerProfileScreen({ session }: Props) {
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Extended buyer profile state
+  const [editingExtended, setEditingExtended] = useState(false);
+  const [companyRegNum, setCompanyRegNum] = useState('');
+  const [countryOfIncorp, setCountryOfIncorp] = useState('');
+  const [businessType, setBusinessType] = useState('');
+  const [positionTitle, setPositionTitle] = useState('');
+  const [exportLicenceNumber, setExportLicenceNumber] = useState('');
+  const [operatingJurisdiction, setOperatingJurisdiction] = useState('');
+  const [mineralsOfInterest, setMineralsOfInterest] = useState('');
+  const [typicalOrderVolume, setTypicalOrderVolume] = useState('');
+  const [preferredTxMethod, setPreferredTxMethod] = useState('');
+  const [savingExtended, setSavingExtended] = useState(false);
+  const [saveExtendedError, setSaveExtendedError] = useState('');
+  const [saveExtendedSuccess, setSaveExtendedSuccess] = useState(false);
+
   async function load() {
     try {
       const p = await getMyProfile();
@@ -57,6 +72,46 @@ export function BuyerProfileScreen({ session }: Props) {
     setSaveError('');
     setSaveSuccess(false);
     setEditingBusiness(true);
+  }
+
+  function openExtendedEdit() {
+    setCompanyRegNum((profile as any)?.companyRegistrationNumber ?? '');
+    setCountryOfIncorp((profile as any)?.countryOfIncorporation ?? '');
+    setBusinessType((profile as any)?.businessType ?? '');
+    setPositionTitle((profile as any)?.positionTitle ?? '');
+    setExportLicenceNumber((profile as any)?.exportLicenceNumber ?? '');
+    setOperatingJurisdiction((profile as any)?.operatingJurisdiction ?? '');
+    setMineralsOfInterest((profile as any)?.mineralsOfInterest ?? '');
+    setTypicalOrderVolume((profile as any)?.typicalOrderVolume ?? '');
+    setPreferredTxMethod((profile as any)?.preferredTransactionMethod ?? '');
+    setSaveExtendedError('');
+    setSaveExtendedSuccess(false);
+    setEditingExtended(true);
+  }
+
+  async function saveExtended() {
+    setSaveExtendedError('');
+    setSavingExtended(true);
+    try {
+      const updated = await updateMyProfile({
+        companyRegistrationNumber: companyRegNum.trim() || null,
+        countryOfIncorporation: countryOfIncorp.trim() || null,
+        businessType: businessType || null,
+        positionTitle: positionTitle.trim() || null,
+        exportLicenceNumber: exportLicenceNumber.trim() || null,
+        operatingJurisdiction: operatingJurisdiction.trim() || null,
+        mineralsOfInterest: mineralsOfInterest.trim() || null,
+        typicalOrderVolume: typicalOrderVolume.trim() || null,
+        preferredTransactionMethod: preferredTxMethod || null,
+      } as any);
+      setProfile(updated);
+      setSaveExtendedSuccess(true);
+      setEditingExtended(false);
+    } catch (e) {
+      setSaveExtendedError(parseApiError(e));
+    } finally {
+      setSavingExtended(false);
+    }
   }
 
   async function saveBusiness() {
@@ -156,6 +211,74 @@ export function BuyerProfileScreen({ session }: Props) {
               </View>
             </>
           ) : null}
+
+          <Text style={styles.sectionTitle}>Extended Buyer Profile</Text>
+          <View style={styles.card}>
+            {!editingExtended ? (
+              <>
+                <Row label="Company Reg. Number" value={(profile as any)?.companyRegistrationNumber ?? 'Not provided'} theme={theme} />
+                <Row label="Country of Incorporation" value={(profile as any)?.countryOfIncorporation ?? 'Not provided'} border theme={theme} />
+                <Row label="Business Type" value={(profile as any)?.businessType ?? 'Not provided'} border theme={theme} />
+                <Row label="Position / Title" value={(profile as any)?.positionTitle ?? 'Not provided'} border theme={theme} />
+                <Row label="Export Licence Number" value={(profile as any)?.exportLicenceNumber ?? 'Not provided'} border theme={theme} />
+                <Row label="Operating Jurisdiction" value={(profile as any)?.operatingJurisdiction ?? 'Not provided'} border theme={theme} />
+                <Row label="Minerals of Interest" value={(profile as any)?.mineralsOfInterest ?? 'Not provided'} border theme={theme} />
+                <Row label="Typical Order Volume" value={(profile as any)?.typicalOrderVolume ?? 'Not provided'} border theme={theme} />
+                <Row label="Preferred Payment Method" value={(profile as any)?.preferredTransactionMethod ?? 'Not provided'} border theme={theme} />
+                {saveExtendedSuccess && <Text style={styles.successText}>Saved.</Text>}
+                <TouchableOpacity style={styles.editBtn} onPress={openExtendedEdit}>
+                  <Text style={styles.editBtnText}>Edit Buyer Details</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={{ padding: 16 }}>
+                {([
+                  { label: 'Company Reg. Number', value: companyRegNum, setter: setCompanyRegNum, placeholder: 'e.g. GH-12345' },
+                  { label: 'Country of Incorporation', value: countryOfIncorp, setter: setCountryOfIncorp, placeholder: 'e.g. Ghana' },
+                  { label: 'Position / Title', value: positionTitle, setter: setPositionTitle, placeholder: 'e.g. Director' },
+                  { label: 'Export Licence Number', value: exportLicenceNumber, setter: setExportLicenceNumber, placeholder: 'If applicable' },
+                  { label: 'Operating Jurisdiction', value: operatingJurisdiction, setter: setOperatingJurisdiction, placeholder: 'Countries / regions' },
+                  { label: 'Minerals of Interest', value: mineralsOfInterest, setter: setMineralsOfInterest, placeholder: 'e.g. Gold, Bauxite' },
+                  { label: 'Typical Order Volume', value: typicalOrderVolume, setter: setTypicalOrderVolume, placeholder: 'e.g. 50–200 kg per order' },
+                ] as { label: string; value: string; setter: (v: string) => void; placeholder: string }[]).map(f => (
+                  <View key={f.label}>
+                    <Text style={styles.inputLabel}>{f.label}</Text>
+                    <TextInput style={styles.input} value={f.value} onChangeText={f.setter} placeholder={f.placeholder} placeholderTextColor={theme.textMuted} />
+                  </View>
+                ))}
+
+                <Text style={styles.inputLabel}>Business Type</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {['MINING_COMPANY', 'TRADING_COMPANY', 'INDIVIDUAL_INVESTOR', 'EXPORT_COMPANY'].map(bt => (
+                    <TouchableOpacity key={bt} onPress={() => setBusinessType(bt)}
+                      style={{ borderColor: businessType === bt ? theme.accent : theme.border, borderRadius: 6, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: businessType === bt ? theme.accentLight : undefined }}>
+                      <Text style={{ color: businessType === bt ? theme.accent : theme.textSub, fontSize: 12, fontWeight: '800' }}>{bt.replace('_', ' ')}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={styles.inputLabel}>Preferred Payment Method</Text>
+                <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10 }}>
+                  {['ESCROW', 'BANK_TRANSFER', 'OTHER'].map(m => (
+                    <TouchableOpacity key={m} onPress={() => setPreferredTxMethod(m)}
+                      style={{ borderColor: preferredTxMethod === m ? theme.accent : theme.border, borderRadius: 6, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: preferredTxMethod === m ? theme.accentLight : undefined }}>
+                      <Text style={{ color: preferredTxMethod === m ? theme.accent : theme.textSub, fontSize: 12, fontWeight: '800' }}>{m.replace('_', ' ')}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {saveExtendedError ? <Text style={styles.errorText}>{saveExtendedError}</Text> : null}
+                <View style={styles.actionRow}>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditingExtended(false)}>
+                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.saveBtn, savingExtended && { opacity: 0.5 }]} onPress={saveExtended} disabled={savingExtended}>
+                    <Text style={styles.saveBtnText}>{savingExtended ? 'Saving…' : 'Save'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
         </>
       )}
     </ScrollView>

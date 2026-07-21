@@ -9,13 +9,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme, spacing, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
-type GuestType = 'visitor' | 'inspector' | 'investor';
+type GuestType = 'visitor';
 type ActiveTab = 'create' | 'renew' | 'list';
 
 const GUEST_TYPES: { id: GuestType; label: string; icon: string; description: string; color: string }[] = [
   { id: 'visitor', label: 'Visitor', icon: 'person-outline', description: 'General site visit or contractor', color: '#1f6f5b' },
-  { id: 'inspector', label: 'Regulatory Inspector', icon: 'search-outline', description: 'Government or regulatory inspection', color: '#1d5f99' },
-  { id: 'investor', label: 'Investor', icon: 'bar-chart-outline', description: 'Business review or due diligence', color: '#a15c00' },
 ];
 
 const SITES = ['Obuasi Mine', 'Tarkwa Mine', 'Bogoso Mine', 'Prestea Mine'];

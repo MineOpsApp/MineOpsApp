@@ -11,12 +11,14 @@ import { GovernmentInventoryScreen } from '../screens/government/GovernmentInven
 import { GovernmentBulkPurchaseScreen } from '../screens/government/GovernmentBulkPurchaseScreen';
 import { GovernmentIllegalReportsScreen } from '../screens/government/GovernmentIllegalReportsScreen';
 import { GovernmentPermitsScreen } from '../screens/government/GovernmentPermitsScreen';
+import { GovernmentInspectionsScreen } from '../screens/government/GovernmentInspectionsScreen';
 
 export type GovernmentTabParamList = {
   Inventory: undefined;
   'Bulk Buys': undefined;
   Reports: undefined;
   Permits: undefined;
+  Inspections: undefined;
 };
 
 const Tab = createBottomTabNavigator<GovernmentTabParamList>();
@@ -39,6 +41,7 @@ export function GovernmentNavigator({ session, onLogout }: Props) {
             'Bulk Buys': ['cash', 'cash-outline'],
             Reports: ['flag', 'flag-outline'],
             Permits: ['document-text', 'document-text-outline'],
+            Inspections: ['shield-checkmark', 'shield-checkmark-outline'],
           };
           const [active, inactive] = ICON_MAP[route.name] ?? ['ellipse', 'ellipse-outline'];
           return {
@@ -59,6 +62,7 @@ export function GovernmentNavigator({ session, onLogout }: Props) {
         <Tab.Screen name="Bulk Buys" component={GovernmentBulkPurchaseScreen} />
         <Tab.Screen name="Reports" component={GovernmentIllegalReportsScreen} />
         <Tab.Screen name="Permits" component={GovernmentPermitsScreen} />
+        <Tab.Screen name="Inspections" children={() => <GovernmentInspectionsScreen session={session} />} />
       </Tab.Navigator>
     </View>
   );

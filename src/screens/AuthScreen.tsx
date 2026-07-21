@@ -21,7 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { loginUser, parseApiError, registerUser, redeemGuestCode, setAuthToken, tryRestoreSession } from '../services/api';
+import { forgotPassword, loginUser, parseApiError, registerUser, redeemGuestCode, resetPasswordWithOtp, setAuthToken, tryRestoreSession } from '../services/api';
 import { useTheme, spacing, typography, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
 import type { AuthSession } from '../types/auth';
@@ -47,7 +47,16 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const theme = useTheme(mode);
   const styles = makeStyles(theme, mode);
 
-  const [authMode, setAuthMode] = useState<'login' | 'register' | 'guest'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'guest' | 'forgot'>('login');
+  const [forgotStep, setForgotStep] = useState<'email' | 'otp'>('email');
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccessMsg, setForgotSuccessMsg] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [selectedRole, setSelectedRole] = useState<UserRole>('worker');
   const [selectedSubRole, setSelectedSubRole] = useState<string>('visitor');
   const [selectedSite, setSelectedSite] = useState(SITES[0]);
@@ -69,12 +78,20 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const [guestCode, setGuestCode]         = useState('');
   const [guestName, setGuestName]         = useState('');
   const [guestPhone, setGuestPhone]       = useState('');
+  const [guestEmail, setGuestEmail]       = useState('');
   const [guestError, setGuestError]       = useState('');
   const [guestSubmitting, setGuestSubmitting] = useState(false);
   const [scanning, setScanning]           = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   const blurTint = mode === 'dark' ? 'dark' : 'light';
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setResendCooldown((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     async function checkBiometric() {
@@ -168,9 +185,10 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
     if (!guestCode.trim()) { setGuestError('Enter a 6-digit code or scan the QR.'); return; }
     if (!guestName.trim()) { setGuestError('Enter your full name.'); return; }
     if (!guestPhone.trim()) { setGuestError('Enter your phone number.'); return; }
+    if (!guestEmail.trim()) { setGuestError('Enter your email address.'); return; }
     setGuestSubmitting(true);
     try {
-      const session = await redeemGuestCode(guestCode.trim(), guestName.trim(), guestPhone.trim());
+      const session = await redeemGuestCode(guestCode.trim(), guestName.trim(), guestPhone.trim(), guestEmail.trim());
       onAuthenticated(session);
     } catch (error: any) {
       const msg = error?.message ?? '';
@@ -180,6 +198,62 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
       else setGuestError('Could not join. Check your connection and try again.');
     } finally {
       setGuestSubmitting(false);
+    }
+  }
+
+  function resetForgotState() {
+    setForgotStep('email');
+    setForgotEmail('');
+    setOtpCode('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setForgotError('');
+    setForgotSuccessMsg('');
+    setResendCooldown(0);
+  }
+
+  async function submitForgotEmail() {
+    setForgotError('');
+    if (!forgotEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail.trim())) {
+      setForgotError('Enter a valid email address.');
+      return;
+    }
+    setForgotSubmitting(true);
+    try {
+      const result = await forgotPassword(forgotEmail.trim().toLowerCase());
+      setForgotSuccessMsg(result?.message ?? 'If an account exists for that email, a reset code has been sent.');
+      setForgotStep('otp');
+      setResendCooldown(60);
+    } catch (error: any) {
+      const msg = error?.message ?? '';
+      if (msg.includes('429')) {
+        setForgotError('Too many requests — please wait a bit before trying again.');
+        setResendCooldown(60);
+      } else {
+        setForgotError('Could not send reset code. Check your connection and try again.');
+      }
+    } finally {
+      setForgotSubmitting(false);
+    }
+  }
+
+  async function submitResetPassword() {
+    setForgotError('');
+    if (!otpCode.trim() || otpCode.trim().length !== 6) { setForgotError('Enter the 6-digit code from your email.'); return; }
+    if (newPassword.length < 6) { setForgotError('Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmNewPassword) { setForgotError('Passwords do not match.'); return; }
+    setForgotSubmitting(true);
+    try {
+      await resetPasswordWithOtp(forgotEmail.trim().toLowerCase(), otpCode.trim(), newPassword);
+      Alert.alert('Password reset', 'Your password has been reset. Please sign in with your new password.');
+      resetForgotState();
+      setAuthMode('login');
+    } catch (error: any) {
+      const msg = error?.message ?? '';
+      if (msg.includes('400')) setForgotError('Invalid or expired code. Request a new one.');
+      else setForgotError('Could not reset password. Check your connection and try again.');
+    } finally {
+      setForgotSubmitting(false);
     }
   }
 
@@ -262,18 +336,132 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
             </View>
 
             {/* Mode toggle */}
-            <View style={styles.modeSwitch}>
-              <BlurView intensity={45} tint={blurTint} style={styles.glassBase} />
-              <Pressable onPress={() => setAuthMode('login')} style={[styles.modeBtn, authMode === 'login' && styles.modeBtnActive]}>
-                <Text style={[styles.modeBtnText, authMode === 'login' && styles.modeBtnTextActive]}>Sign In</Text>
-              </Pressable>
-              <Pressable onPress={() => setAuthMode('register')} style={[styles.modeBtn, authMode === 'register' && styles.modeBtnActive]}>
-                <Text style={[styles.modeBtnText, authMode === 'register' && styles.modeBtnTextActive]}>Register</Text>
-              </Pressable>
-              <Pressable onPress={() => setAuthMode('guest')} style={[styles.modeBtn, authMode === 'guest' && styles.modeBtnActive]}>
-                <Text style={[styles.modeBtnText, authMode === 'guest' && styles.modeBtnTextActive]}>Guest Code</Text>
-              </Pressable>
-            </View>
+            {authMode !== 'forgot' ? (
+              <View style={styles.modeSwitch}>
+                <BlurView intensity={45} tint={blurTint} style={styles.glassBase} />
+                <Pressable onPress={() => setAuthMode('login')} style={[styles.modeBtn, authMode === 'login' && styles.modeBtnActive]}>
+                  <Text style={[styles.modeBtnText, authMode === 'login' && styles.modeBtnTextActive]}>Sign In</Text>
+                </Pressable>
+                <Pressable onPress={() => setAuthMode('register')} style={[styles.modeBtn, authMode === 'register' && styles.modeBtnActive]}>
+                  <Text style={[styles.modeBtnText, authMode === 'register' && styles.modeBtnTextActive]}>Register</Text>
+                </Pressable>
+                <Pressable onPress={() => setAuthMode('guest')} style={[styles.modeBtn, authMode === 'guest' && styles.modeBtnActive]}>
+                  <Text style={[styles.modeBtnText, authMode === 'guest' && styles.modeBtnTextActive]}>Guest Code</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {/* Forgot password form */}
+            {authMode === 'forgot' ? (
+              <>
+                <View style={styles.adminNote}>
+                  <BlurView intensity={45} tint={blurTint} style={styles.glassBase} />
+                  <Ionicons name="key-outline" size={14} color={theme.amber} />
+                  <Text style={styles.adminNoteText}>
+                    {forgotStep === 'email'
+                      ? "Enter your account email and we'll send a 6-digit reset code."
+                      : `Enter the code sent to ${forgotEmail.trim()} and choose a new password.`}
+                  </Text>
+                </View>
+
+                {forgotStep === 'email' ? (
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.fieldLabel}>Email</Text>
+                    <BlurView intensity={45} tint={blurTint} style={styles.inputWrap}>
+                      <TextInput
+                        style={styles.inputInner}
+                        value={forgotEmail}
+                        onChangeText={setForgotEmail}
+                        placeholder="your@email.com"
+                        placeholderTextColor={theme.textMuted}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        returnKeyType="done"
+                        onSubmitEditing={submitForgotEmail}
+                      />
+                    </BlurView>
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.fieldLabel}>6-Digit Code</Text>
+                      <BlurView intensity={45} tint={blurTint} style={styles.inputWrap}>
+                        <TextInput
+                          style={styles.inputInner}
+                          value={otpCode}
+                          onChangeText={setOtpCode}
+                          placeholder="e.g. 042817"
+                          placeholderTextColor={theme.textMuted}
+                          keyboardType="number-pad"
+                          maxLength={6}
+                          returnKeyType="next"
+                        />
+                      </BlurView>
+                    </View>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.fieldLabel}>New Password</Text>
+                      <BlurView intensity={45} tint={blurTint} style={styles.inputWrap}>
+                        <TextInput
+                          style={styles.inputInner}
+                          value={newPassword}
+                          onChangeText={setNewPassword}
+                          placeholder="Min. 6 characters"
+                          placeholderTextColor={theme.textMuted}
+                          secureTextEntry
+                          returnKeyType="next"
+                        />
+                      </BlurView>
+                    </View>
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.fieldLabel}>Confirm New Password</Text>
+                      <BlurView intensity={45} tint={blurTint} style={styles.inputWrap}>
+                        <TextInput
+                          style={styles.inputInner}
+                          value={confirmNewPassword}
+                          onChangeText={setConfirmNewPassword}
+                          placeholder="Repeat new password"
+                          placeholderTextColor={theme.textMuted}
+                          secureTextEntry
+                          returnKeyType="done"
+                          onSubmitEditing={submitResetPassword}
+                        />
+                      </BlurView>
+                    </View>
+                  </>
+                )}
+
+                {forgotError ? <Text style={styles.guestError}>{forgotError}</Text> : null}
+                {!forgotError && forgotSuccessMsg && forgotStep === 'otp' ? (
+                  <Text style={[styles.hint, { marginTop: 0, marginBottom: spacing.md }]}>{forgotSuccessMsg}</Text>
+                ) : null}
+
+                <Pressable
+                  disabled={forgotSubmitting}
+                  onPress={forgotStep === 'email' ? submitForgotEmail : submitResetPassword}
+                  style={[styles.submitBtn, forgotSubmitting && styles.submitBtnDisabled]}
+                >
+                  <Text style={styles.submitBtnText}>
+                    {forgotSubmitting ? 'Please wait…' : forgotStep === 'email' ? 'Send Reset Code →' : 'Reset Password →'}
+                  </Text>
+                </Pressable>
+
+                {forgotStep === 'otp' ? (
+                  <Pressable
+                    disabled={forgotSubmitting || resendCooldown > 0}
+                    onPress={submitForgotEmail}
+                    style={{ marginTop: spacing.md }}
+                  >
+                    <Text style={[styles.hint, { marginTop: 0 }, resendCooldown > 0 && { opacity: 0.6 }]}>
+                      {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Didn't get it? Resend code"}
+                    </Text>
+                  </Pressable>
+                ) : null}
+
+                <Pressable onPress={() => { resetForgotState(); setAuthMode('login'); }}>
+                  <Text style={styles.hint}>Back to Sign In</Text>
+                </Pressable>
+              </>
+            ) : null}
 
             {/* Guest code form */}
             {authMode === 'guest' ? (
@@ -331,6 +519,22 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                       placeholder="+233 XX XXX XXXX"
                       placeholderTextColor={theme.textMuted}
                       keyboardType="phone-pad"
+                      returnKeyType="next"
+                    />
+                  </BlurView>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.fieldLabel}>Email Address</Text>
+                  <BlurView intensity={45} tint={blurTint} style={styles.inputWrap}>
+                    <TextInput
+                      style={styles.inputInner}
+                      value={guestEmail}
+                      onChangeText={setGuestEmail}
+                      placeholder="your@email.com"
+                      placeholderTextColor={theme.textMuted}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
                       returnKeyType="done"
                       onSubmitEditing={submitGuestCode}
                     />
@@ -376,28 +580,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                   <Text style={styles.adminNoteText}>Supervisor & Safety Officer accounts are set up by site administrators</Text>
                 </View>
 
-                {selectedRole === 'guest' ? (
-                  <>
-                    <Text style={styles.fieldLabel}>Guest Type</Text>
-                    <View style={styles.roleRow}>
-                      {[
-                        { id: 'visitor', label: 'Visitor' },
-                        { id: 'inspector', label: 'Inspector' },
-                        { id: 'investor', label: 'Investor' },
-                      ].map((sub) => (
-                        <Pressable key={sub.id} onPress={() => setSelectedSubRole(sub.id)} style={[styles.roleCard, selectedSubRole === sub.id && styles.roleCardActive]}>
-                          {selectedSubRole !== sub.id && <BlurView intensity={45} tint={blurTint} style={styles.glassBase} />}
-                          {sub.id === 'visitor'
-                            ? <Ionicons name="person" size={22} color={selectedSubRole === sub.id ? theme.accent : theme.textMuted} />
-                            : sub.id === 'inspector'
-                            ? <Ionicons name="search" size={22} color={selectedSubRole === sub.id ? theme.accent : theme.textMuted} />
-                            : <MaterialCommunityIcons name="chart-line" size={22} color={selectedSubRole === sub.id ? theme.accent : theme.textMuted} />}
-                          <Text style={[styles.roleLabel, selectedSubRole === sub.id && styles.roleLabelActive]}>{sub.label}</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </>
-                ) : null}
+                {selectedRole === 'guest' ? null : null}
 
                 {selectedRole === 'buyer' ? (
                   <>
@@ -475,8 +658,8 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
               </>
             ) : null}
 
-            {/* Email / Password — hidden in guest mode */}
-            {authMode !== 'guest' ? (
+            {/* Email / Password — hidden in guest mode and forgot-password mode */}
+            {authMode !== 'guest' && authMode !== 'forgot' ? (
               <>
                 <View style={styles.inputGroup}>
                   <Text style={styles.fieldLabel}>Email</Text>
@@ -496,6 +679,11 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                       <Text style={styles.showPasswordText}>{showPassword ? 'Hide' : 'Show'}</Text>
                     </Pressable>
                   </View>
+                  {authMode === 'login' ? (
+                    <Pressable onPress={() => { resetForgotState(); setForgotEmail(email); setAuthMode('forgot'); }} style={styles.forgotLink}>
+                      <Text style={styles.forgotLinkText}>Forgot password?</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
 
                 {authMode === 'register' ? (
@@ -627,6 +815,9 @@ function makeStyles(theme: Theme, mode: string) {
     glassBase: { ...StyleSheet.absoluteFillObject, backgroundColor: isDark ? 'rgba(36,27,18,0.70)' : 'rgba(255,255,255,0.70)' },
     inputWrap: { backgroundColor: isDark ? 'rgba(36,27,18,0.70)' : 'rgba(255,255,255,0.70)', borderColor: theme.border, borderRadius: 10, borderWidth: 1, minHeight: 48, overflow: 'hidden' },
     inputInner: { color: theme.text, fontSize: 15, minHeight: 48, paddingHorizontal: 14 },
+
+    forgotLink: { alignSelf: 'flex-end', marginTop: spacing.sm },
+    forgotLinkText: { color: theme.accent, fontSize: 12, fontWeight: '800' },
 
     passwordRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
     showPasswordBtn: { borderColor: theme.border, borderRadius: 10, borderWidth: 1, height: 48, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', width: 48 },

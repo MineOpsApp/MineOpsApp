@@ -85,13 +85,6 @@ export type DangerZone = {
   radiusMeters?: number | null;
 };
 
-export type VisitorInduction = {
-  id: number;
-  visitorType: string;
-  site: string;
-  status: string;
-  completedAt: string;
-};
 
 export type NoticeSeen = {
   id: number;

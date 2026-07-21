@@ -15,7 +15,6 @@ import type {
   Notice,
   ShiftAnnouncement,
   SupervisorMessage,
-  VisitorInduction,
   WorkerEquipment,
   WorkerMessage,
   WorkerProfile,
@@ -597,14 +596,116 @@ export function createDangerZone(zone: {
   return post<DangerZone>('/danger-zones', zone);
 }
 
-export function completeVisitorInduction(induction: {
-  actorRole: string;
-  actorName: string;
-  actorEmail: string;
-  visitorType: string;
+// Visitor visits
+export type VisitorVisit = {
+  id: number;
+  guestUserId: number;
+  hostName?: string;
+  purposeOfVisit?: string;
+  assignedSite?: string;
+  visitorPassNumber?: string;
+  visitStart?: string;
+  visitEnd?: string;
+  approvedZones?: string;
+  inductionCompleted: boolean;
+  inductionCompletedAt?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  ppeIssued: boolean;
+  ppeItems?: string;
+  checkInAt?: string;
+  checkOutAt?: string;
+  zonesVisited?: string;
+  status: string;
+  visitingOrganisation?: string;
+  relationshipToHost?: string;
+  visitReason?: string;
+  createdAt: string;
+};
+
+export function createVisitorVisit(body: Partial<VisitorVisit> & { guestUserId: number }) {
+  return post<VisitorVisit>('/visitor-visits', body);
+}
+
+export function getVisitorVisits(site?: string) {
+  const q = site ? `?site=${encodeURIComponent(site)}` : '';
+  return request<VisitorVisit[]>(`/visitor-visits${q}`);
+}
+
+export function getMyVisit() {
+  return request<VisitorVisit>('/visitor-visits/my');
+}
+
+export function checkInVisit(id: number) {
+  return post<VisitorVisit>(`/visitor-visits/${id}/check-in`, {});
+}
+
+export function checkOutVisit(id: number, zonesVisited?: string) {
+  return post<VisitorVisit>(`/visitor-visits/${id}/check-out`, { zonesVisited });
+}
+
+export function completeVisitInduction(id: number, signOff?: string) {
+  return post<VisitorVisit>(`/visitor-visits/${id}/induction`, { signOff });
+}
+
+export function updateVisitPpe(id: number, ppeIssued: boolean, ppeItems?: string) {
+  return patch<VisitorVisit>(`/visitor-visits/${id}/ppe`, { ppeIssued, ppeItems });
+}
+
+// Inspection records
+export type InspectionRecord = {
+  id: number;
+  inspectorUserId: number;
+  site?: string;
+  inspectionType?: string;
+  inspectionReferenceNumber?: string;
+  scope?: string;
+  legalAuthorityReference?: string;
+  expectedDuration?: string;
+  inspectionStartAt?: string;
+  inspectionEndAt?: string;
+  zonesInspected?: string;
+  findingsSummary?: string;
+  complianceStatus?: string;
+  followUpRequired: boolean;
+  reportSubmitted: boolean;
+  nextInspectionDate?: string;
+  createdAt: string;
+};
+
+export function createInspection(body: {
   site: string;
+  inspectionType: string;
+  inspectionReferenceNumber: string;
+  scope: string;
+  legalAuthorityReference?: string;
+  expectedDuration?: string;
 }) {
-  return post<VisitorInduction>('/inductions', induction);
+  return post<InspectionRecord>('/inspections', body);
+}
+
+export function getInspections(site?: string) {
+  const q = site ? `?site=${encodeURIComponent(site)}` : '';
+  return request<InspectionRecord[]>(`/inspections${q}`);
+}
+
+export function startInspection(id: number) {
+  return patch<InspectionRecord>(`/inspections/${id}/start`, {});
+}
+
+export function endInspection(id: number) {
+  return patch<InspectionRecord>(`/inspections/${id}/end`, {});
+}
+
+export function submitInspectionFindings(id: number, body: {
+  zonesInspected?: string;
+  findingsSummary?: string;
+  complianceStatus?: string;
+  followUpRequired?: boolean;
+  reportSubmitted?: boolean;
+  nextInspectionDate?: string;
+}) {
+  return patch<InspectionRecord>(`/inspections/${id}/findings`, body);
 }
 
 export function getNotices() {
@@ -1391,8 +1492,8 @@ export type GuestRosterEntry = {
   sessionExpired: boolean;
 };
 
-export function redeemGuestCode(code: string, fullName: string, phone: string) {
-  return post<{ token: string; refreshToken: string; user: any }>('/guest/redeem', { code, fullName, phone });
+export function redeemGuestCode(code: string, fullName: string, phone: string, email: string) {
+  return post<{ token: string; refreshToken: string; user: any }>('/guest/redeem', { code, fullName, phone, email });
 }
 
 export function createGuestCode(payload: {
