@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import MapboxGL, { Camera, UserLocation, ShapeSource, FillLayer, LineLayer, CircleLayer, PointAnnotation } from '@rnmapbox/maps';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { createDangerZone, getDangerZones, getSiteHazardAlerts, parseApiError } from '../services/api';
 import type { DangerZone, HazardReport } from '../types/actions';
@@ -24,6 +25,7 @@ const RISK_COLOR: Record<string, string> = {
 };
 
 type Props = { session: AuthSession };
+type PackStatus = 'none' | 'downloading' | 'ready' | 'error';
 
 function circleCoords(lat: number, lng: number, radiusM: number, steps = 32): [number, number][] {
   const latR = lat * (Math.PI / 180);
@@ -43,6 +45,8 @@ export function LiveSiteMapView({ session }: Props) {
   const theme = useTheme(mode);
   const s = makeStyles(theme);
 
+  const mapRef = useRef<MapboxGL.MapView>(null);
+
   const [initialCoord, setInitialCoord] = useState<[number, number] | null>(null);
   const [locationError, setLocationError] = useState('');
   const [zones, setZones] = useState<DangerZone[]>([]);
@@ -54,6 +58,13 @@ export function LiveSiteMapView({ session }: Props) {
   const [newZoneRisk, setNewZoneRisk] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [newZoneRadius, setNewZoneRadius] = useState('50');
   const [saving, setSaving] = useState(false);
+
+  // Offline pack state
+  const [packStatus, setPackStatus] = useState<PackStatus>('none');
+  const [packProgress, setPackProgress] = useState(0);
+  const [packDate, setPackDate] = useState<string | null>(null);
+
+  const packName = `site-${session.user.assignedSite}`;
 
   useEffect(() => {
     async function setup() {
@@ -74,6 +85,16 @@ export function LiveSiteMapView({ session }: Props) {
       setLocationError('Could not start the map. Check permissions and try again.');
       setLoading(false);
     });
+
+    // Check for an existing offline pack for this site
+    MapboxGL.offlineManager.getPack(packName).then(pack => {
+      if (pack) {
+        setPackStatus('ready');
+        AsyncStorage.getItem(`offline_pack_date_${packName}`)
+          .then(d => { if (d) setPackDate(d); })
+          .catch(() => {});
+      }
+    }).catch(() => {});
   }, []);
 
   const gpsZones = zones.filter((z) => z.latitude != null && z.longitude != null);
@@ -132,6 +153,56 @@ export function LiveSiteMapView({ session }: Props) {
     }
   }
 
+  async function downloadCurrentArea() {
+    if (!mapRef.current) return;
+    setPackStatus('downloading');
+    setPackProgress(0);
+    try {
+      const bounds = await mapRef.current.getVisibleBounds();
+      // Delete any existing pack for this site first to prevent duplicate/orphaned packs
+      try { await MapboxGL.offlineManager.deletePack(packName); } catch {}
+
+      await MapboxGL.offlineManager.createPack(
+        {
+          name: packName,
+          styleURL: MapboxGL.StyleURL.Outdoors,
+          bounds: bounds as [[number, number], [number, number]],
+          minZoom: 10,
+          maxZoom: 16,
+        },
+        (_pack: any, status: any) => {
+          const pct = Math.round(status.percentage ?? 0);
+          setPackProgress(pct);
+          if (pct >= 100) {
+            const ts = new Date().toLocaleString();
+            setPackDate(ts);
+            setPackStatus('ready');
+            AsyncStorage.setItem(`offline_pack_date_${packName}`, ts).catch(() => {});
+          }
+        },
+        (_pack: any, error: any) => {
+          console.warn('Offline pack download error:', error);
+          setPackStatus('error');
+        }
+      );
+    } catch (e) {
+      console.warn('Failed to start offline download:', e);
+      setPackStatus('error');
+    }
+  }
+
+  async function deleteOfflinePack() {
+    try {
+      await MapboxGL.offlineManager.deletePack(packName);
+      await AsyncStorage.removeItem(`offline_pack_date_${packName}`);
+      setPackStatus('none');
+      setPackProgress(0);
+      setPackDate(null);
+    } catch (e) {
+      console.warn('Failed to delete offline pack:', e);
+    }
+  }
+
   if (loading) {
     return (
       <View style={s.centered}>
@@ -152,6 +223,7 @@ export function LiveSiteMapView({ session }: Props) {
   return (
     <View style={s.root}>
       <MapboxGL.MapView
+        ref={mapRef}
         style={s.map}
         styleURL={MapboxGL.StyleURL.Outdoors}
         onLongPress={(feature: any) => {
@@ -207,7 +279,7 @@ export function LiveSiteMapView({ session }: Props) {
         )}
       </MapboxGL.MapView>
 
-      {/* Floating legend */}
+      {/* Floating legend — top-left */}
       <View style={s.legend}>
         {(['High', 'Medium', 'Low'] as const).map((r) => (
           <View key={r} style={s.legendRow}>
@@ -220,6 +292,51 @@ export function LiveSiteMapView({ session }: Props) {
           <Text style={s.legendLabel}>Hazard report</Text>
         </View>
       </View>
+
+      {/* Offline pack control — bottom-right, hidden while placing a zone */}
+      {!pendingCoord && (
+        <View style={s.offlineCard}>
+          {packStatus === 'none' && (
+            <TouchableOpacity style={s.offlineBtn} onPress={downloadCurrentArea}>
+              <Text style={s.offlineBtnText}>📥 Download for offline</Text>
+            </TouchableOpacity>
+          )}
+
+          {packStatus === 'downloading' && (
+            <View style={s.offlineProgress}>
+              <Text style={s.offlineProgressLabel}>Downloading… {packProgress}%</Text>
+              <View style={s.progressTrack}>
+                <View style={[s.progressFill, { width: `${packProgress}%` as any }]} />
+              </View>
+              <Text style={s.offlineNote}>Keep this screen open until complete.</Text>
+            </View>
+          )}
+
+          {packStatus === 'ready' && (
+            <View style={s.offlineReady}>
+              <Text style={s.offlineReadyTitle}>✓ Available offline</Text>
+              {packDate ? <Text style={s.offlineReadyDate}>Downloaded {packDate}</Text> : null}
+              <View style={s.offlineReadyActions}>
+                <TouchableOpacity style={s.offlineSecondaryBtn} onPress={downloadCurrentArea}>
+                  <Text style={s.offlineSecondaryBtnText}>Re-download</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.offlineDeleteBtn} onPress={deleteOfflinePack}>
+                  <Text style={s.offlineDeleteBtnText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {packStatus === 'error' && (
+            <View style={s.offlineError}>
+              <Text style={s.offlineErrorText}>Download failed — check connection</Text>
+              <TouchableOpacity style={s.offlineBtn} onPress={downloadCurrentArea}>
+                <Text style={s.offlineBtnText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Hint when no zones and not placing a pin */}
       {!pendingCoord && gpsZones.length === 0 && (
@@ -316,11 +433,48 @@ function makeStyles(theme: Theme) {
     legendDot: { width: 10, height: 10, borderRadius: 5 },
     legendLabel: { color: theme.text, fontSize: 10, fontWeight: '700' },
 
+    // Offline control card — bottom-right
+    offlineCard: {
+      position: 'absolute',
+      bottom: spacing.md,
+      right: spacing.sm,
+      maxWidth: 200,
+      backgroundColor: `${theme.bgCard}f0`,
+      borderRadius: 10,
+      padding: spacing.sm,
+    },
+    offlineBtn: {
+      backgroundColor: theme.accent,
+      borderRadius: 7,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+      alignItems: 'center',
+    },
+    offlineBtnText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+
+    offlineProgress: { gap: 4 },
+    offlineProgressLabel: { color: theme.text, fontSize: 12, fontWeight: '800' },
+    progressTrack: { height: 5, borderRadius: 3, backgroundColor: theme.border, overflow: 'hidden' },
+    progressFill: { height: 5, borderRadius: 3, backgroundColor: theme.accent },
+    offlineNote: { color: theme.textMuted, fontSize: 10, fontWeight: '600' },
+
+    offlineReady: { gap: 4 },
+    offlineReadyTitle: { color: theme.success, fontSize: 12, fontWeight: '900' },
+    offlineReadyDate: { color: theme.textMuted, fontSize: 10, fontWeight: '600' },
+    offlineReadyActions: { flexDirection: 'row', gap: 4, marginTop: 2 },
+    offlineSecondaryBtn: { backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 6, borderWidth: 1, flex: 1, alignItems: 'center', paddingVertical: 5 },
+    offlineSecondaryBtnText: { color: theme.text, fontSize: 11, fontWeight: '800' },
+    offlineDeleteBtn: { backgroundColor: '#fff0f0', borderColor: theme.danger, borderRadius: 6, borderWidth: 1, flex: 1, alignItems: 'center', paddingVertical: 5 },
+    offlineDeleteBtnText: { color: theme.danger, fontSize: 11, fontWeight: '800' },
+
+    offlineError: { gap: 4 },
+    offlineErrorText: { color: theme.danger, fontSize: 11, fontWeight: '700' },
+
     hintCard: {
       position: 'absolute',
       bottom: spacing.md,
       left: spacing.md,
-      right: spacing.md,
+      right: 220, // leave room for offline card
       backgroundColor: `${theme.bgCard}ee`,
       borderRadius: 10,
       padding: spacing.sm,
