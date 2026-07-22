@@ -3,6 +3,7 @@ import {
   ActivityIndicator, Alert, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { approveShiftLog, getSiteShiftLogs, rejectShiftLog, exportShiftLogsCsv } from '../../services/api';
 import { exportAndShareCsv } from '../../utils/exportCsv';
@@ -293,14 +294,14 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
         <View style={styles.textFilterRow}>
           <TextInput
             style={[styles.textFilter, { flex: 1 }]}
-            placeholder="⛏ Mineral type..."
+            placeholder="Mineral type..."
             placeholderTextColor={theme.textMuted}
             value={filters.mineralType}
             onChangeText={(v) => updateFilter('mineralType', v)}
           />
           <TextInput
             style={[styles.textFilter, { flex: 1 }]}
-            placeholder="👷 Worker name..."
+            placeholder="Worker name..."
             placeholderTextColor={theme.textMuted}
             value={filters.workerName}
             onChangeText={(v) => updateFilter('workerName', v)}
@@ -308,8 +309,9 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
         </View>
 
         {hasActiveFilters ? (
-          <TouchableOpacity onPress={clearFilters} style={styles.clearBtn}>
-            <Text style={styles.clearBtnText}>✕ Clear filters</Text>
+          <TouchableOpacity onPress={clearFilters} style={[styles.clearBtn, { flexDirection: 'row', alignItems: 'center', gap: 5 }]}>
+            <Ionicons name="close" size={13} color={styles.clearBtnText.color} />
+            <Text style={styles.clearBtnText}>Clear filters</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -340,9 +342,10 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
 
         {/* Pending banner */}
         {pendingCount > 0 && filters.status !== 'APPROVED' && filters.status !== 'REJECTED' ? (
-          <View style={styles.pendingBanner}>
+          <View style={[styles.pendingBanner, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+            <Ionicons name="time-outline" size={13} color={styles.pendingBannerText.color} />
             <Text style={styles.pendingBannerText}>
-              ⏳ {pendingCount} log{pendingCount !== 1 ? 's' : ''} awaiting approval
+              {pendingCount} log{pendingCount !== 1 ? 's' : ''} awaiting approval
             </Text>
           </View>
         ) : null}
@@ -386,10 +389,16 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
             <Text style={styles.logTime}>{formatDate(log.submittedAt)}</Text>
 
             {log.status === 'APPROVED' && log.approvedBy ? (
-              <Text style={styles.approvedBy}>✅ Approved by {log.approvedBy}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <Ionicons name="checkmark-circle" size={13} color={styles.approvedBy.color} />
+                <Text style={styles.approvedBy}>Approved by {log.approvedBy}</Text>
+              </View>
             ) : null}
             {log.status === 'REJECTED' && log.rejectedBy ? (
-              <Text style={styles.rejectedBy}>✗ Rejected by {log.rejectedBy}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <Ionicons name="close-circle" size={13} color={styles.rejectedBy.color} />
+                <Text style={styles.rejectedBy}>Rejected by {log.rejectedBy}</Text>
+              </View>
             ) : null}
 
             {log.status === 'SUBMITTED' ? (
@@ -398,11 +407,13 @@ export function SupervisorShiftScreen({ session: _ }: Props) {
                   <ActivityIndicator size="small" color={theme.accent} />
                 ) : (
                   <>
-                    <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(log)}>
-                      <Text style={styles.approveBtnText}>✓ Approve</Text>
+                    <TouchableOpacity style={[styles.approveBtn, { flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center' }]} onPress={() => handleApprove(log)}>
+                      <Ionicons name="checkmark" size={14} color={styles.approveBtnText.color} />
+                      <Text style={styles.approveBtnText}>Approve</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(log)}>
-                      <Text style={styles.rejectBtnText}>✗ Reject</Text>
+                    <TouchableOpacity style={[styles.rejectBtn, { flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center' }]} onPress={() => handleReject(log)}>
+                      <Ionicons name="close" size={14} color={styles.rejectBtnText.color} />
+                      <Text style={styles.rejectBtnText}>Reject</Text>
                     </TouchableOpacity>
                   </>
                 )}

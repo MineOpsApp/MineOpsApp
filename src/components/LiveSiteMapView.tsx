@@ -11,6 +11,7 @@ import {
 import MapboxGL, { Camera, UserLocation, ShapeSource, FillLayer, LineLayer, CircleLayer, PointAnnotation } from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 import { createDangerZone, getDangerZones, getSiteHazardAlerts, parseApiError } from '../services/api';
 import type { DangerZone, HazardReport } from '../types/actions';
@@ -297,8 +298,9 @@ export function LiveSiteMapView({ session, readOnly = false }: Props) {
       {!pendingCoord && (
         <View style={s.offlineCard}>
           {packStatus === 'none' && (
-            <TouchableOpacity style={s.offlineBtn} onPress={downloadCurrentArea}>
-              <Text style={s.offlineBtnText}>📥 Download for offline</Text>
+            <TouchableOpacity style={[s.offlineBtn, { flexDirection: 'row', alignItems: 'center', gap: 6 }]} onPress={downloadCurrentArea}>
+              <Ionicons name="download-outline" size={14} color={theme.accent} />
+              <Text style={s.offlineBtnText}>Download for offline</Text>
             </TouchableOpacity>
           )}
 
@@ -314,7 +316,10 @@ export function LiveSiteMapView({ session, readOnly = false }: Props) {
 
           {packStatus === 'ready' && (
             <View style={s.offlineReady}>
-              <Text style={s.offlineReadyTitle}>✓ Available offline</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="checkmark-circle" size={14} color={theme.success} />
+                <Text style={s.offlineReadyTitle}>Available offline</Text>
+              </View>
               {packDate ? <Text style={s.offlineReadyDate}>Downloaded {packDate}</Text> : null}
               <View style={s.offlineReadyActions}>
                 <TouchableOpacity style={s.offlineSecondaryBtn} onPress={downloadCurrentArea}>

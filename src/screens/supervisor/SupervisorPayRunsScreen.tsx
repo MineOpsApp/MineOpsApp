@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import {
   approvePayCycleManager,
@@ -373,7 +374,7 @@ export function SupervisorPayRunsScreen({ session }: Props) {
 
       {cycles.length === 0 ? (
         <View style={s.emptyCard}>
-          <Text style={s.emptyIcon}>💰</Text>
+          <Ionicons name="cash-outline" size={32} color={s.emptyIcon.color} style={s.emptyIcon} />
           <Text style={s.emptyText}>No pay runs yet.</Text>
           <Text style={s.emptySubText}>Tap "Generate Pay Run" to create the first one.</Text>
         </View>
@@ -467,7 +468,7 @@ function makeStyles(theme: Theme) {
     formulaBtnTextActive: { color: '#fff' },
     errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: 10 },
     emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32 },
-    emptyIcon: { fontSize: 36, marginBottom: 10 },
+    emptyIcon: { color: theme.textMuted, fontSize: 36, marginBottom: 10 },
     emptyText: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
     emptySubText: { color: theme.textSub, fontSize: 13, fontWeight: '600', textAlign: 'center' },
   });

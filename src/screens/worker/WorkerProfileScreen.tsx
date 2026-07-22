@@ -561,8 +561,9 @@ export function WorkerProfileScreen({ session: _ }: Props) {
           <>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Status</Text>
-              <View style={[styles.statusPill, { backgroundColor: theme.successLight }]}>
-                <Text style={[styles.statusPillText, { color: theme.success }]}>Insured ✓</Text>
+              <View style={[styles.statusPill, { backgroundColor: theme.successLight, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                <Text style={[styles.statusPillText, { color: theme.success }]}>Insured</Text>
+                <Ionicons name="checkmark-circle" size={13} color={theme.success} />
               </View>
             </View>
             {insurance.enrolledAt ? (

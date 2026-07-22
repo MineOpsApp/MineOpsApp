@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { getSiteRoster, getWorkerEmergencyContacts } from '../../services/api';
 import type { EmergencyContact } from '../../types/actions';
@@ -107,7 +108,7 @@ export function SupervisorRosterScreen({ session: _ }: Props) {
 
       {roster.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>👷</Text>
+          <Ionicons name="people-outline" size={32} color={styles.emptyIcon.color} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>No one on site</Text>
           <Text style={styles.emptySub}>Workers will appear here when they clock in</Text>
         </View>
@@ -116,7 +117,10 @@ export function SupervisorRosterScreen({ session: _ }: Props) {
       {Object.entries(byZone).map(([zone, records]) => (
         <View key={zone} style={styles.zoneSection}>
           <View style={styles.zoneHeader}>
-            <Text style={styles.zoneTitle}>📍 {zone}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1 }}>
+              <Ionicons name="location-outline" size={13} color={styles.zoneTitle.color} />
+              <Text style={styles.zoneTitle}>{zone}</Text>
+            </View>
             <View style={styles.zoneBadge}>
               <Text style={styles.zoneBadgeText}>{records.length}</Text>
             </View>
@@ -147,7 +151,10 @@ export function SupervisorRosterScreen({ session: _ }: Props) {
 
                 {isExpanded && (
                   <View style={styles.contactsPanel}>
-                    <Text style={styles.contactsPanelTitle}>📞 Emergency Contacts</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Ionicons name="call" size={13} color={styles.contactsPanelTitle.color} />
+                      <Text style={styles.contactsPanelTitle}>Emergency Contacts</Text>
+                    </View>
                     {isLoading ? (
                       <ActivityIndicator size="small" color={theme.accent} style={{ marginVertical: 8 }} />
                     ) : !contacts || contacts.length === 0 ? (
@@ -164,9 +171,10 @@ export function SupervisorRosterScreen({ session: _ }: Props) {
                           </View>
                           <Pressable
                             onPress={() => Linking.openURL(`tel:${c.phone.replace(/[\s\-().]/g, '')}`)}
-                            style={styles.callBtn}
+                            style={[styles.callBtn, { flexDirection: 'row', alignItems: 'center', gap: 5 }]}
                           >
-                            <Text style={styles.callBtnText}>📞 {c.phone}</Text>
+                            <Ionicons name="call" size={12} color={styles.callBtnText.color} />
+                            <Text style={styles.callBtnText}>{c.phone}</Text>
                           </Pressable>
                         </View>
                       ))
@@ -194,7 +202,7 @@ function makeStyles(theme: Theme) {
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
     emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
-    emptyIcon: { fontSize: 36, marginBottom: 10 },
+    emptyIcon: { color: theme.textMuted, fontSize: 36, marginBottom: 10 },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
     zoneSection: { marginBottom: 16 },

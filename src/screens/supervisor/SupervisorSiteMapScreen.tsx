@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { getSiteMap, uploadSiteMap, parseApiError, type SiteMapData } from '../../services/api';
@@ -105,7 +106,7 @@ export function SupervisorSiteMapScreen({ session }: Props) {
               </View>
             ) : (
               <View style={s.emptyCard}>
-                <Text style={s.emptyIcon}>🗺</Text>
+                <Ionicons name="map-outline" size={32} color={s.emptyIcon.color} style={s.emptyIcon} />
                 <Text style={s.emptyText}>No map uploaded yet</Text>
                 <Text style={s.emptySub}>Upload a site plan so danger zones can be traced visually.</Text>
               </View>
@@ -119,8 +120,9 @@ export function SupervisorSiteMapScreen({ session }: Props) {
               </Text>
             </TouchableOpacity>
 
-            <View style={s.hintCard}>
-              <Text style={s.hintText}>💡 After uploading, go to Danger Zones (Safety Officer screen) to trace zone boundaries on the map.</Text>
+            <View style={[s.hintCard, { flexDirection: 'row', alignItems: 'flex-start', gap: 8 }]}>
+              <Ionicons name="bulb" size={14} color={s.hintText.color} style={{ marginTop: 2 }} />
+              <Text style={[s.hintText, { flex: 1 }]}>After uploading, go to Danger Zones (Safety Officer screen) to trace zone boundaries on the map.</Text>
             </View>
           </ScrollView>
         )
@@ -146,7 +148,7 @@ function makeStyles(theme: Theme) {
     cardLabel: { color: theme.textSub, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', marginBottom: 6 },
     cardValue: { color: theme.text, fontSize: 13, fontWeight: '700', marginBottom: 2 },
     emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 28, marginBottom: 16 },
-    emptyIcon: { fontSize: 32, marginBottom: 8 },
+    emptyIcon: { color: theme.textMuted, fontSize: 32, marginBottom: 8 },
     emptyText: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
     emptySub:  { color: theme.textSub, fontSize: 13, fontWeight: '600', textAlign: 'center' },
     primaryBtn:     { backgroundColor: theme.accent, borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 16 },

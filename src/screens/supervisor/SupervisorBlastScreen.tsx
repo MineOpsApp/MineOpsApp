@@ -134,9 +134,10 @@ export function SupervisorBlastScreen({ session }: Props) {
           ))}
         </View>
 
-        <View style={styles.warningBox}>
-          <Text style={styles.warningText}>
-            ⚠ All workers on site will receive an immediate push notification to clear {zone}.
+        <View style={[styles.warningBox, { flexDirection: 'row', alignItems: 'flex-start', gap: 8 }]}>
+          <Ionicons name="warning" size={15} color={styles.warningText.color} style={{ marginTop: 2 }} />
+          <Text style={[styles.warningText, { flex: 1 }]}>
+            All workers on site will receive an immediate push notification to clear {zone}.
           </Text>
         </View>
 

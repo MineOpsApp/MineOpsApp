@@ -22,6 +22,7 @@ import {
   type GuestRosterEntry,
 } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme, type Theme } from '../../theme/theme';
 import { useThemeMode } from '../../theme/ThemeContext';
 
@@ -29,7 +30,7 @@ type Props = { session: AuthSession };
 type ScreenView = 'list' | 'generate' | 'detail';
 
 const SUB_ROLES = [
-  { id: 'visitor', label: 'Visitor', icon: '👤' },
+  { id: 'visitor', label: 'Visitor', icon: 'person-outline' as const },
 ];
 
 const SESSION_OPTIONS = [
@@ -177,7 +178,7 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
               <Text style={s.workerName}>{r.fullName}</Text>
               <Row label="Phone"     value={r.phone} styles={s} />
               <Row label="Joined"    value={fmtDate(r.joinedAt)} styles={s} />
-              <Row label="Induction" value={r.inductionCompleted ? '✓ Completed' : '✗ Not yet'} styles={s} />
+              <Row label="Induction" value={r.inductionCompleted ? 'Completed' : 'Not yet'} styles={s} />
               <Row label="Session"   value={r.sessionExpired ? 'Expired' : 'Active'} styles={s} />
             </View>
           ))
@@ -200,9 +201,10 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
           <Text style={s.inputLabel}>Guest Type</Text>
           <View style={s.chipRow}>
             {SUB_ROLES.map(r => (
-              <TouchableOpacity key={r.id} style={[s.chip, subRole === r.id && s.chipActive]}
+              <TouchableOpacity key={r.id} style={[s.chip, { flexDirection: 'row', alignItems: 'center', gap: 5 }, subRole === r.id && s.chipActive]}
                 onPress={() => setSubRole(r.id)}>
-                <Text style={[s.chipText, subRole === r.id && s.chipTextActive]}>{r.icon} {r.label}</Text>
+                <Ionicons name={r.icon} size={13} color={(subRole === r.id ? s.chipTextActive : s.chipText).color} />
+                <Text style={[s.chipText, subRole === r.id && s.chipTextActive]}>{r.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -254,7 +256,7 @@ export function SupervisorGuestCodesScreen({ session }: Props) {
 
       {codes.length === 0 ? (
         <View style={s.emptyCard}>
-          <Text style={s.emptyIcon}>🪪</Text>
+          <Ionicons name="id-card-outline" size={32} color={s.emptyIcon.color} style={s.emptyIcon} />
           <Text style={s.emptyText}>No codes yet.</Text>
           <Text style={s.emptySubText}>Tap "Generate Code" to create one for a visitor or group.</Text>
         </View>
@@ -341,7 +343,7 @@ function makeStyles(theme: Theme) {
     errorText: { color: theme.danger, fontSize: 13, fontWeight: '700', marginBottom: 8 },
 
     emptyCard:    { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, alignItems: 'center', padding: 32 },
-    emptyIcon:    { fontSize: 36, marginBottom: 10 },
+    emptyIcon:    { color: theme.textMuted, fontSize: 36, marginBottom: 10 },
     emptyText:    { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 4 },
     emptySubText: { color: theme.textSub, fontSize: 13, fontWeight: '600', textAlign: 'center' },
   });

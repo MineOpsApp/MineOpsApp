@@ -115,7 +115,7 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
 
         <View style={styles.idCard}>
           <View style={styles.idCardHeader}>
-            <Text style={styles.idCardHeaderIcon}>⛏</Text>
+            <Ionicons name="construct-outline" size={22} color={styles.idCardHeaderIcon.color} style={styles.idCardHeaderIcon} />
             <View>
               <Text style={styles.idCardOrgName}>MINEOPS OPERATIONS</Text>
               <Text style={styles.idCardSite}>{profile.assignedSite.toUpperCase()}</Text>
@@ -198,7 +198,7 @@ export function WorkerProfileViewScreen({ email, session: _ }: Props) {
       </View>
 
       <Pressable onPress={() => setShowIdCard(true)} style={styles.idCardBtn}>
-        <Text style={styles.idCardBtnIcon}>🪪</Text>
+        <Ionicons name="id-card-outline" size={20} color={styles.idCardBtnIcon.color} style={styles.idCardBtnIcon} />
         <View style={{ flex: 1 }}>
           <Text style={styles.idCardBtnLabel}>View Digital ID Card</Text>
           <Text style={styles.idCardBtnSub}>ID: {idNumber(profile.id)}</Text>
@@ -449,7 +449,7 @@ function makeStyles(theme: Theme) {
     statLabel: { color: theme.textSub, fontSize: 10, fontWeight: '800', marginTop: 2, textTransform: 'uppercase' },
     statDivider: { backgroundColor: theme.border, width: 1 },
     idCardBtn: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 14, padding: 14 },
-    idCardBtnIcon: { fontSize: 24 },
+    idCardBtnIcon: { color: theme.accent, fontSize: 24 },
     idCardBtnLabel: { color: theme.text, fontSize: 14, fontWeight: '800' },
     idCardBtnSub: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginTop: 1 },
     idCardBtnChevron: { color: theme.textSub, fontSize: 22 },
@@ -474,7 +474,7 @@ function makeStyles(theme: Theme) {
       shadowRadius: 8,
     },
     idCardHeader: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 14 },
-    idCardHeaderIcon: { fontSize: 28 },
+    idCardHeaderIcon: { color: '#ffffff', fontSize: 28 },
     idCardOrgName: { color: '#ffffff', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
     idCardSite: { color: '#6fcfae', fontSize: 11, fontWeight: '800', letterSpacing: 1, marginTop: 2 },
     idCardDivider: { backgroundColor: '#2e3f50', height: 1, marginBottom: 14 },

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
+  ActivityIndicator, Alert, Image, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 import {
-  addCertification, deleteCertification, getCertificationHistory,
+  addCertification, deleteCertification, getCertificationHistory, getCertificationPhoto,
   getSiteCertifications, getWorkerContactDirectory, updateCertification,
 } from '../../services/api';
 import type { Certification, CertificationHistory, CertificationPayload, WorkerDirectoryEntry } from '../../services/api';
@@ -59,11 +61,12 @@ type FormState = {
   issueDate: string;
   expiryDate: string;
   notes: string;
+  photo: string | null;
 };
 
 const EMPTY_FORM: FormState = {
   workerId: null, certificationName: '', customCertName: '',
-  issuingAuthority: '', issueDate: '', expiryDate: '', notes: '',
+  issuingAuthority: '', issueDate: '', expiryDate: '', notes: '', photo: null,
 };
 
 type Props = { session: AuthSession };
@@ -87,6 +90,9 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [workerSearch, setWorkerSearch] = useState('');
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+  const [loadingPhotoId, setLoadingPhotoId] = useState<number | null>(null);
+  const [loadingEditPhoto, setLoadingEditPhoto] = useState(false);
 
   const onModalSwipe = useCallback(({ nativeEvent }: PanGestureHandlerStateChangeEvent) => {
     if (nativeEvent.state === State.END && nativeEvent.translationY > 80 && nativeEvent.velocityY > 300) {
@@ -167,7 +173,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
     setShowModal(true);
   }
 
-  function openEdit(cert: Certification) {
+  async function openEdit(cert: Certification) {
     setEditingCert(cert);
     setForm({
       workerId: cert.workerId,
@@ -177,9 +183,62 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
       issueDate: cert.issueDate,
       expiryDate: cert.expiryDate,
       notes: cert.notes ?? '',
+      photo: null,
     });
     setWorkerSearch('');
     setShowModal(true);
+    if (cert.hasPhoto) {
+      setLoadingEditPhoto(true);
+      try {
+        const photo = await getCertificationPhoto(cert.id);
+        setForm((f) => (f.workerId === cert.workerId ? { ...f, photo } : f));
+      } catch {}
+      setLoadingEditPhoto(false);
+    }
+  }
+
+  async function pickPhotoFromCamera() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Camera access is required to take photos.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.4, allowsEditing: true, exif: false });
+    if (!result.canceled && result.assets[0].base64) {
+      setForm((f) => ({ ...f, photo: result.assets[0].base64! }));
+    }
+  }
+
+  async function pickPhotoFromLibrary() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Photo library access is required to choose a photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.4, allowsEditing: true, exif: false });
+    if (!result.canceled && result.assets[0].base64) {
+      setForm((f) => ({ ...f, photo: result.assets[0].base64! }));
+    }
+  }
+
+  function choosePhotoSource() {
+    Alert.alert('Add Certificate Photo', 'Take a new photo or choose one from your library.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Choose from Library', onPress: pickPhotoFromLibrary },
+      { text: 'Take Photo', onPress: pickPhotoFromCamera },
+    ]);
+  }
+
+  async function viewPhoto(cert: Certification) {
+    setLoadingPhotoId(cert.id);
+    try {
+      const photo = await getCertificationPhoto(cert.id);
+      if (photo) setViewingPhoto(photo);
+      else Alert.alert('No photo', 'This certification has no photo on file.');
+    } catch {
+      Alert.alert('Error', 'Could not load photo. Try again.');
+    }
+    setLoadingPhotoId(null);
   }
 
   async function handleSave() {
@@ -198,6 +257,7 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
       issueDate: form.issueDate,
       expiryDate: form.expiryDate,
       notes: form.notes.trim() || undefined,
+      photoData: form.photo ?? undefined,
     };
 
     setSaving(true);
@@ -368,6 +428,16 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
                           <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(cert)}>
                             <Text style={styles.editBtnText}>Edit / Renew</Text>
                           </TouchableOpacity>
+                          {cert.hasPhoto ? (
+                            <TouchableOpacity style={styles.photoBtn} onPress={() => viewPhoto(cert)} disabled={loadingPhotoId === cert.id}>
+                              {loadingPhotoId === cert.id
+                                ? <ActivityIndicator size="small" color={theme.accent} />
+                                : <>
+                                    <Ionicons name="image" size={12} color={theme.accent} />
+                                    <Text style={styles.photoBtnText}>Photo</Text>
+                                  </>}
+                            </TouchableOpacity>
+                          ) : null}
                           <TouchableOpacity style={styles.histBtn} onPress={() => toggleHistory(cert)}>
                             {loadingHistory === cert.id
                               ? <ActivityIndicator size="small" color={theme.textSub} />
@@ -422,12 +492,13 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
                   <Text style={styles.fieldLabel}>Worker *</Text>
                   {form.workerId ? (
                     <TouchableOpacity
-                      style={styles.selectedWorker}
+                      style={[styles.selectedWorker, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}
                       onPress={() => setForm((f) => ({ ...f, workerId: null }))}
                     >
                       <Text style={styles.selectedWorkerText}>
-                        {workers.find((w) => w.id === form.workerId)?.fullName ?? 'Selected worker'} ✕
+                        {workers.find((w) => w.id === form.workerId)?.fullName ?? 'Selected worker'}
                       </Text>
+                      <Ionicons name="close" size={14} color={styles.selectedWorkerText.color} />
                     </TouchableOpacity>
                   ) : (
                     <>
@@ -528,6 +599,26 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
                 multiline
               />
 
+              <Text style={styles.fieldLabel}>Certificate Photo (optional)</Text>
+              {loadingEditPhoto ? (
+                <View style={styles.addPhotoBtn}>
+                  <ActivityIndicator size="small" color={theme.textSub} />
+                  <Text style={styles.addPhotoBtnText}>Loading photo...</Text>
+                </View>
+              ) : form.photo ? (
+                <View style={styles.photoPreviewWrap}>
+                  <Image source={{ uri: `data:image/jpeg;base64,${form.photo}` }} style={styles.photoPreview} />
+                  <TouchableOpacity style={styles.removePhotoBtn} onPress={() => setForm((f) => ({ ...f, photo: null }))}>
+                    <Text style={styles.removePhotoBtnText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.addPhotoBtn} onPress={choosePhotoSource}>
+                  <Ionicons name="camera-outline" size={18} color={theme.textSub} />
+                  <Text style={styles.addPhotoBtnText}>Attach photo of certificate</Text>
+                </TouchableOpacity>
+              )}
+
               <View style={styles.modalActions}>
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowModal(false)} disabled={saving}>
                   <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -542,6 +633,22 @@ export function SupervisorCertificationsScreen({ session: _ }: Props) {
           </View>
           </PanGestureHandler>
         </View>
+      </Modal>
+
+      {/* Photo viewer */}
+      <Modal visible={!!viewingPhoto} animationType="fade" transparent onRequestClose={() => setViewingPhoto(null)}>
+        <TouchableOpacity
+          style={styles.photoViewerOverlay}
+          activeOpacity={1}
+          onPress={() => setViewingPhoto(null)}
+        >
+          {viewingPhoto ? (
+            <Image source={{ uri: `data:image/jpeg;base64,${viewingPhoto}` }} style={styles.photoViewerImage} resizeMode="contain" />
+          ) : null}
+          <TouchableOpacity style={styles.photoViewerClose} onPress={() => setViewingPhoto(null)}>
+            <Ionicons name="close" size={22} color="#fff" />
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -592,6 +699,8 @@ function makeStyles(theme: Theme) {
     editBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
     histBtn: { backgroundColor: theme.bgInput, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
     histBtnText: { color: theme.textSub, fontSize: 11, fontWeight: '800' },
+    photoBtn: { alignItems: 'center', backgroundColor: theme.accentLight, borderRadius: 6, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 6 },
+    photoBtnText: { color: theme.accent, fontSize: 11, fontWeight: '800' },
     delBtn: { backgroundColor: theme.dangerLight, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
     delBtnText: { color: theme.danger, fontSize: 11, fontWeight: '800' },
     noHistory: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginTop: 4 },
@@ -622,5 +731,14 @@ function makeStyles(theme: Theme) {
     cancelBtnText: { color: theme.textSub, fontSize: 14, fontWeight: '800' },
     saveBtn: { flex: 2, backgroundColor: theme.accent, borderRadius: 8, padding: 14, alignItems: 'center' },
     saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+    addPhotoBtn: { alignItems: 'center', borderColor: theme.border, borderRadius: 8, borderStyle: 'dashed', borderWidth: 1.5, flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 8, paddingVertical: 14 },
+    addPhotoBtnText: { color: theme.textSub, fontSize: 13, fontWeight: '700' },
+    photoPreviewWrap: { marginBottom: 8 },
+    photoPreview: { borderRadius: 8, height: 160, width: '100%' },
+    removePhotoBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderRadius: 6, marginTop: 6, paddingVertical: 8 },
+    removePhotoBtnText: { color: theme.danger, fontSize: 12, fontWeight: '800' },
+    photoViewerOverlay: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.9)', flex: 1, justifyContent: 'center', padding: 20 },
+    photoViewerImage: { borderRadius: 8, height: '80%', width: '100%' },
+    photoViewerClose: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, height: 40, justifyContent: 'center', position: 'absolute', right: 20, top: 50, width: 40 },
   });
 }

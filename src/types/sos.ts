@@ -9,6 +9,8 @@ export type SosAlert = {
   actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export type CreateSosAlertRequest = {
@@ -18,4 +20,6 @@ export type CreateSosAlertRequest = {
   actorName: string;
   actorEmail: string;
   clientRequestId?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };

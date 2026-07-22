@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import {
   getMarketplaceListings,
@@ -144,7 +145,7 @@ export function SupervisorOffersScreen({ session: _ }: Props) {
 
       {data.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🤝</Text>
+          <Ionicons name="pricetag-outline" size={32} color={styles.emptyIcon.color} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>No offers yet</Text>
           <Text style={styles.emptySub}>Buyer offers on your listings will appear here</Text>
         </View>
@@ -222,7 +223,7 @@ function makeStyles(theme: Theme) {
     infoBox: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 8, borderWidth: 1, marginBottom: 14, padding: 12 },
     infoText: { color: theme.amber, fontSize: 13, fontWeight: '700' },
     emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
-    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyIcon: { color: theme.textMuted, fontSize: 32, marginBottom: 10 },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
     section: { marginBottom: 16 },

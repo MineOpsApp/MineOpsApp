@@ -37,7 +37,7 @@ function StarRow({ label, value, onChange, theme }: { label: string; value: numb
       <View style={{ flexDirection: 'row', gap: 6 }}>
         {[1, 2, 3, 4, 5].map(n => (
           <TouchableOpacity key={n} onPress={() => onChange(n)}>
-            <Text style={{ fontSize: 24, color: n <= value ? theme.accent : theme.border }}>★</Text>
+            <Ionicons name={n <= value ? 'star' : 'star-outline'} size={24} color={n <= value ? theme.accent : theme.border} />
           </TouchableOpacity>
         ))}
       </View>
@@ -161,8 +161,9 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
               ) : null}
               {tx.batchStatus === 'DELIVERED' ? (
                 <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                  <Pressable style={styles.rateBtn} onPress={() => setRatingTx(tx)}>
-                    <Text style={styles.rateBtnText}>★ Rate</Text>
+                  <Pressable style={[styles.rateBtn, { flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center' }]} onPress={() => setRatingTx(tx)}>
+                    <Ionicons name="star" size={13} color={styles.rateBtnText.color} />
+                    <Text style={styles.rateBtnText}>Rate</Text>
                   </Pressable>
                   <Pressable style={styles.disputeBtn} onPress={() => setDisputeTx(tx)}>
                     <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>

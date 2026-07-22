@@ -62,7 +62,10 @@ export function DataPrivacyScreen({ onAccountDeleted }: Props) {
       <Text style={styles.pageSub}>Export your data or delete your account</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>📦 Export Your Data</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <Ionicons name="cube-outline" size={17} color={styles.cardTitle.color} />
+          <Text style={styles.cardTitle}>Export Your Data</Text>
+        </View>
         <Text style={styles.cardDesc}>
           Download a copy of your profile and the reports, checklists, and records tied to your account.
         </Text>

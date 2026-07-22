@@ -1159,6 +1159,10 @@ export type Certification = {
   status: string; // VALID | EXPIRING_SOON | EXPIRED
   daysUntilExpiry: number;
   notes: string | null;
+  // Not included in list responses (kept out to avoid pulling every photo into memory
+  // at once) — null there even when hasPhoto is true. Fetch via getCertificationPhoto.
+  photoData: string | null;
+  hasPhoto: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
@@ -1183,6 +1187,7 @@ export type CertificationPayload = {
   issueDate: string;
   expiryDate: string;
   notes?: string;
+  photoData?: string;
 };
 
 export function getSiteCertifications(status?: string, type?: string) {
@@ -1211,6 +1216,10 @@ export function updateCertification(id: number, payload: CertificationPayload) {
 
 export function deleteCertification(id: number) {
   return del<void>(`/certifications/${id}`);
+}
+
+export function getCertificationPhoto(id: number) {
+  return request<{ photoData: string }>(`/certifications/${id}/photo`).then((r) => r.photoData || null);
 }
 
 // User profiles with photo ID

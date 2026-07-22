@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { ActionButton } from '../../components/ActionButton';
 import { createStaffAccount } from '../../services/api';
@@ -63,7 +64,10 @@ export function SupervisorStaffScreen({ session }: Props) {
 
       {createdAccount ? (
         <View style={styles.successCard}>
-          <Text style={styles.successTitle}>✓ Account Created</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="checkmark-circle" size={16} color={styles.successTitle.color} />
+            <Text style={styles.successTitle}>Account Created</Text>
+          </View>
           <Text style={styles.successSub}>Share these credentials with the new staff member</Text>
           <View style={styles.credentialRow}>
             <Text style={styles.credentialLabel}>Name</Text>
@@ -125,7 +129,7 @@ export function SupervisorStaffScreen({ session }: Props) {
                   <Text style={styles.typeDesc}>{r.description}</Text>
                 </View>
                 <View style={[styles.typeRadio, role === r.id && { backgroundColor: r.color, borderColor: r.color }]}>
-                  {role === r.id ? <Text style={styles.typeRadioCheck}>✓</Text> : null}
+                  {role === r.id ? <Ionicons name="checkmark" size={13} color={styles.typeRadioCheck.color} /> : null}
                 </View>
               </Pressable>
             ))}

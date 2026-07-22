@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { getSafetyIntelligenceSummary, type SafetyIntelligenceSummary } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
@@ -67,7 +68,10 @@ export function SafetyIntelligenceScreen({ session: _ }: Props) {
         </View>
       ) : null}
 
-      <Text style={styles.sectionTitle}>🔥 Hotspots</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Ionicons name="flame" size={16} color={styles.sectionTitle.color} />
+        <Text style={styles.sectionTitle}>Hotspots</Text>
+      </View>
       {data && data.hotspots.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyText}>No locations with 3+ active reports in the last 30 days.</Text>
@@ -98,7 +102,10 @@ export function SafetyIntelligenceScreen({ session: _ }: Props) {
         );
       })}
 
-      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>📈 Trending Hazard Types</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20 }}>
+        <Ionicons name="trending-up" size={16} color={styles.sectionTitle.color} />
+        <Text style={styles.sectionTitle}>Trending Hazard Types</Text>
+      </View>
       {data && data.trends.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyText}>No hazard types showing a 2× increase in the last 30 days.</Text>
@@ -117,14 +124,17 @@ export function SafetyIntelligenceScreen({ session: _ }: Props) {
             </View>
             <View style={[styles.trendBadge, t.trend === 'NEW' ? styles.trendBadgeNew : styles.trendBadgeRising]}>
               <Text style={[styles.trendBadgeText, t.trend === 'NEW' ? styles.trendBadgeTextNew : styles.trendBadgeTextRising]}>
-                {t.trend === 'NEW' ? '🆕 NEW' : '↑ RISING'}
+                {t.trend === 'NEW' ? 'NEW' : 'RISING'}
               </Text>
             </View>
           </View>
         </View>
       ))}
 
-      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>💡 Recommendations</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20 }}>
+        <Ionicons name="bulb" size={16} color={styles.sectionTitle.color} />
+        <Text style={styles.sectionTitle}>Recommendations</Text>
+      </View>
       {data && visibleRecs.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyText}>

@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { AuditLog } from '../types/actions';
+import { useTheme, type Theme } from '../theme/theme';
+import { useThemeMode } from '../theme/ThemeContext';
 
 type AuditLogFeedProps = {
   logs: AuditLog[];
@@ -21,6 +23,9 @@ const ACTION_COLORS: Record<string, string> = {
   EQUIPMENT_FAULT_REPORTED: '#b42318',
   MAINTENANCE_REQUESTED: '#a15c00',
   VISITOR_INDUCTION_COMPLETED: '#1f7a4d',
+  GUEST_APPROVED: '#1f7a4d',
+  GUEST_REJECTED: '#b42318',
+  DRILL_BLAST_APPROVED: '#1f7a4d',
 };
 
 function actionColor(action: string): string {
@@ -49,6 +54,10 @@ function formatTime(dateStr: string): string {
 }
 
 export function AuditLogFeed({ logs, onRefresh, roleLabel }: AuditLogFeedProps) {
+  const { mode } = useThemeMode();
+  const theme = useTheme(mode);
+  const styles = makeStyles(theme);
+
   return (
     <>
       <View style={styles.headerRow}>
@@ -97,96 +106,98 @@ export function AuditLogFeed({ logs, onRefresh, roleLabel }: AuditLogFeedProps) 
   );
 }
 
-const styles = StyleSheet.create({
-  headerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  title: {
-    color: '#17212b',
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  refreshButton: {
-    backgroundColor: '#edf1f5',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  refreshText: {
-    color: '#1f6f5b',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  emptyCard: {
-    backgroundColor: '#ffffff',
-    borderColor: '#dde3ea',
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 18,
-  },
-  emptyText: {
-    color: '#17212b',
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  emptyHint: {
-    color: '#5d6875',
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 20,
-  },
-  logCard: {
-    backgroundColor: '#ffffff',
-    borderColor: '#dde3ea',
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 10,
-    padding: 14,
-  },
-  logTopRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  actionPill: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  actionText: {
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  timestamp: {
-    color: '#9aa5b1',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  actor: {
-    color: '#17212b',
-    fontSize: 14,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  actorRole: {
-    color: '#5d6875',
-    fontWeight: '600',
-  },
-  details: {
-    color: '#17212b',
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 19,
-    marginBottom: 4,
-  },
-  target: {
-    color: '#9aa5b1',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    headerRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 14,
+    },
+    title: {
+      color: theme.text,
+      fontSize: 20,
+      fontWeight: '900',
+    },
+    refreshButton: {
+      backgroundColor: theme.bgInput,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+    },
+    refreshText: {
+      color: theme.success,
+      fontSize: 13,
+      fontWeight: '900',
+    },
+    emptyCard: {
+      backgroundColor: theme.bgCard,
+      borderColor: theme.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      padding: 18,
+    },
+    emptyText: {
+      color: theme.text,
+      fontSize: 15,
+      fontWeight: '800',
+      marginBottom: 4,
+    },
+    emptyHint: {
+      color: theme.textSub,
+      fontSize: 14,
+      fontWeight: '600',
+      lineHeight: 20,
+    },
+    logCard: {
+      backgroundColor: theme.bgCard,
+      borderColor: theme.border,
+      borderRadius: 8,
+      borderWidth: 1,
+      marginBottom: 10,
+      padding: 14,
+    },
+    logTopRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 6,
+    },
+    actionPill: {
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    actionText: {
+      fontSize: 12,
+      fontWeight: '900',
+    },
+    timestamp: {
+      color: theme.textMuted,
+      fontSize: 12,
+      fontWeight: '700',
+    },
+    actor: {
+      color: theme.text,
+      fontSize: 14,
+      fontWeight: '800',
+      marginBottom: 4,
+    },
+    actorRole: {
+      color: theme.textSub,
+      fontWeight: '600',
+    },
+    details: {
+      color: theme.text,
+      fontSize: 14,
+      fontWeight: '600',
+      lineHeight: 19,
+      marginBottom: 4,
+    },
+    target: {
+      color: theme.textMuted,
+      fontSize: 12,
+      fontWeight: '700',
+    },
+  });
+}

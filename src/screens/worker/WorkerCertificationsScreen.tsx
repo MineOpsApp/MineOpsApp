@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { getCertificationHistory, getMyCertifications } from '../../services/api';
+import { getCertificationHistory, getCertificationPhoto, getMyCertifications } from '../../services/api';
 import type { Certification, CertificationHistory } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { useTheme, spacing, typography, type Theme } from '../../theme/theme';
@@ -48,6 +49,17 @@ export function WorkerCertificationsScreen({ session: _ }: Props) {
   const [historyCache, setHistoryCache] = useState<Record<number, CertificationHistory[]>>({});
   const [loadingHistory, setLoadingHistory] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+  const [loadingPhotoId, setLoadingPhotoId] = useState<number | null>(null);
+
+  async function viewPhoto(cert: Certification) {
+    setLoadingPhotoId(cert.id);
+    try {
+      const photo = await getCertificationPhoto(cert.id);
+      if (photo) setViewingPhoto(photo);
+    } catch {}
+    setLoadingPhotoId(null);
+  }
 
   async function load() {
     try { setCerts(await getMyCertifications()); } catch { setLoadError(true); }
@@ -157,6 +169,17 @@ export function WorkerCertificationsScreen({ session: _ }: Props) {
 
             {cert.notes ? <Text style={styles.notes}>{cert.notes}</Text> : null}
 
+            {cert.hasPhoto ? (
+              <TouchableOpacity style={styles.viewPhotoBtn} onPress={() => viewPhoto(cert)} disabled={loadingPhotoId === cert.id}>
+                {loadingPhotoId === cert.id
+                  ? <ActivityIndicator size="small" color={theme.info} />
+                  : <>
+                      <Ionicons name="image-outline" size={13} color={theme.info} />
+                      <Text style={styles.viewPhotoBtnText}>View certificate photo</Text>
+                    </>}
+              </TouchableOpacity>
+            ) : null}
+
             <TouchableOpacity style={styles.historyBtn} onPress={() => toggleHistory(cert)}>
               <Text style={styles.historyBtnText}>
                 {isExpanded ? '▲ Hide Renewal History' : '▼ View Renewal History'}
@@ -190,6 +213,17 @@ export function WorkerCertificationsScreen({ session: _ }: Props) {
           </View>
         );
       })}
+
+      <Modal visible={!!viewingPhoto} animationType="fade" transparent onRequestClose={() => setViewingPhoto(null)}>
+        <TouchableOpacity style={styles.photoViewerOverlay} activeOpacity={1} onPress={() => setViewingPhoto(null)}>
+          {viewingPhoto ? (
+            <Image source={{ uri: `data:image/jpeg;base64,${viewingPhoto}` }} style={styles.photoViewerImage} resizeMode="contain" />
+          ) : null}
+          <TouchableOpacity style={styles.photoViewerClose} onPress={() => setViewingPhoto(null)}>
+            <Ionicons name="close" size={22} color="#fff" />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 }
@@ -222,6 +256,11 @@ function makeStyles(theme: Theme) {
     daysRow: { marginBottom: 6 },
     daysText: { fontSize: 12, fontWeight: '800' },
     notes: { ...typography.caption, color: theme.textSub, fontStyle: 'italic', marginBottom: spacing.sm },
+    viewPhotoBtn: { alignItems: 'center', flexDirection: 'row', gap: 5, marginBottom: spacing.sm },
+    viewPhotoBtnText: { color: theme.info, fontSize: 12, fontWeight: '800' },
+    photoViewerOverlay: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.9)', flex: 1, justifyContent: 'center', padding: 20 },
+    photoViewerImage: { borderRadius: 8, height: '80%', width: '100%' },
+    photoViewerClose: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, height: 40, justifyContent: 'center', position: 'absolute', right: 20, top: 50, width: 40 },
     historyBtn: { paddingVertical: 6 },
     historyBtnText: { color: theme.textSub, fontSize: 12, fontWeight: '700' },
     noHistory: { ...typography.caption, color: theme.textMuted, marginTop: 4 },

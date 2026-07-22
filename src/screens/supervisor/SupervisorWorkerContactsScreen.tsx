@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { getWorkerContactDirectory, getWorkerEmergencyContacts, getWorkerProfileByEmail } from '../../services/api';
 import type { UserProfile, WorkerDirectoryEntry } from '../../services/api';
@@ -111,7 +112,7 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
       </View>
 
       <View style={styles.searchWrap}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Ionicons name="search" size={16} color={styles.searchIcon.color} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           value={search}
@@ -122,7 +123,7 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
         />
         {search.length > 0 && (
           <Pressable onPress={() => setSearch('')}>
-            <Text style={styles.clearSearch}>✕</Text>
+            <Ionicons name="close" size={16} color={styles.clearSearch.color} />
           </Pressable>
         )}
       </View>
@@ -173,8 +174,10 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
             {isExpanded && (
               <View style={styles.contactsPanel}>
                 {onViewProfile && (
-                  <Pressable onPress={() => onViewProfile(w.email)} style={styles.viewProfileBtn}>
-                    <Text style={styles.viewProfileBtnText}>🪪 View Full Profile & ID Card →</Text>
+                  <Pressable onPress={() => onViewProfile(w.email)} style={[styles.viewProfileBtn, { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center' }]}>
+                    <Ionicons name="id-card-outline" size={14} color={styles.viewProfileBtnText.color} />
+                    <Text style={styles.viewProfileBtnText}>View Full Profile & ID Card</Text>
+                    <Ionicons name="chevron-forward" size={14} color={styles.viewProfileBtnText.color} />
                   </Pressable>
                 )}
                 {profile?.bio ? (
@@ -191,7 +194,10 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
                     <Text style={styles.profileStat}>ID: WRK-{String(profile.id).padStart(6, '0')}</Text>
                   </View>
                 )}
-                <Text style={styles.contactsPanelTitle}>📞 Emergency Contacts</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="call" size={13} color={styles.contactsPanelTitle.color} />
+                  <Text style={styles.contactsPanelTitle}>Emergency Contacts</Text>
+                </View>
                 {isLoading ? (
                   <ActivityIndicator size="small" color={theme.accent} style={{ marginVertical: 8 }} />
                 ) : !contacts || contacts.length === 0 ? (
@@ -208,9 +214,10 @@ export function SupervisorWorkerContactsScreen({ session: _, onViewProfile }: Pr
                       </View>
                       <Pressable
                         onPress={() => Linking.openURL(`tel:${c.phone.replace(/[\s\-().]/g, '')}`)}
-                        style={styles.callBtn}
+                        style={[styles.callBtn, { flexDirection: 'row', alignItems: 'center', gap: 5 }]}
                       >
-                        <Text style={styles.callBtnText}>📞 {c.phone}</Text>
+                        <Ionicons name="call" size={12} color={styles.callBtnText.color} />
+                        <Text style={styles.callBtnText}>{c.phone}</Text>
                       </Pressable>
                     </View>
                   ))
@@ -237,7 +244,7 @@ function makeStyles(theme: Theme) {
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
     searchWrap: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, flexDirection: 'row', marginBottom: 14, paddingHorizontal: 12, paddingVertical: 10 },
-    searchIcon: { fontSize: 14, marginRight: 8 },
+    searchIcon: { color: theme.textMuted, fontSize: 14, marginRight: 8 },
     searchInput: { color: theme.text, flex: 1, fontSize: 14, fontWeight: '600' },
     clearSearch: { color: theme.textMuted, fontSize: 14, fontWeight: '800', paddingLeft: 8 },
     emptyCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 10, borderWidth: 1, padding: 20 },

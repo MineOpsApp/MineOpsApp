@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { ActionButton } from '../../components/ActionButton';
 import { resetUserPassword, suspendUser } from '../../services/api';
@@ -61,7 +62,10 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
 
         {result ? (
           <View style={styles.successCard}>
-            <Text style={styles.successTitle}>✓ Password Reset</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="checkmark-circle" size={16} color={styles.successTitle.color} />
+              <Text style={styles.successTitle}>Password Reset</Text>
+            </View>
             <Text style={styles.successSub}>Share this temporary password with the user</Text>
             <View style={styles.credentialRow}>
               <Text style={styles.credentialLabel}>Name</Text>
@@ -75,8 +79,9 @@ export function SupervisorResetPasswordScreen({ session: _ }: Props) {
               <Text style={styles.credentialLabel}>Temp Password</Text>
               <Text style={styles.credentialValueBold}>{result.temporaryPassword}</Text>
             </View>
-            <View style={styles.warningBox}>
-              <Text style={styles.warningText}>⚠ This password will not be shown again. Note it down now.</Text>
+            <View style={[styles.warningBox, { flexDirection: 'row', alignItems: 'flex-start', gap: 8 }]}>
+              <Ionicons name="warning" size={14} color={styles.warningText.color} style={{ marginTop: 2 }} />
+              <Text style={[styles.warningText, { flex: 1 }]}>This password will not be shown again. Note it down now.</Text>
             </View>
             <ActionButton label="Reset Another Password" onPress={() => setResult(null)} />
           </View>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getScheduledBlasts } from '../services/api';
 import { useTheme, type Theme } from '../theme/theme';
 import { useThemeMode } from '../theme/ThemeContext';
@@ -29,7 +30,7 @@ export function BlastAlert() {
 
         return (
           <View key={blast.id} style={[styles.banner, isImminent ? styles.bannerRed : styles.bannerAmber]}>
-            <Text style={styles.bannerIcon}>💥</Text>
+            <MaterialCommunityIcons name="bomb" size={24} color={theme.text} />
             <View style={styles.bannerBody}>
               <Text style={styles.bannerTitle}>
                 {isImminent ? 'BLAST IMMINENT' : 'BLAST SCHEDULED'} — {blast.zone}
@@ -50,7 +51,6 @@ function makeStyles(theme: Theme) {
     banner: { alignItems: 'center', flexDirection: 'row', gap: 10, marginHorizontal: 20, marginTop: 10, padding: 12, borderRadius: 10, borderWidth: 1 },
     bannerRed: { backgroundColor: theme.dangerLight, borderColor: theme.danger },
     bannerAmber: { backgroundColor: theme.amberLight, borderColor: theme.amber },
-    bannerIcon: { fontSize: 24 },
     bannerBody: { flex: 1 },
     bannerTitle: { color: theme.text, fontSize: 13, fontWeight: '900', marginBottom: 2 },
     bannerSub: { color: theme.textSub, fontSize: 12, fontWeight: '600' },

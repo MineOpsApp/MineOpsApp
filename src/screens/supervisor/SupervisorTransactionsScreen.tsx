@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { getSiteTransactions, updateTransactionStatus, submitRating, raiseDispute, parseApiError, exportTransactionsCsv, type MarketplaceTransaction } from '../../services/api';
 import { exportAndShareCsv } from '../../utils/exportCsv';
@@ -18,11 +19,11 @@ const BATCH_COLORS: Record<string, string> = {
   DELIVERED: '#1f6f5b',
 };
 
-const BATCH_ICONS: Record<string, string> = {
-  PREPARING: '📦',
-  DISPATCHED: '🚚',
-  IN_TRANSIT: '🛣',
-  DELIVERED: '✓',
+const BATCH_ICONS: Record<string, ComponentProps<typeof Ionicons>['name']> = {
+  PREPARING: 'cube-outline',
+  DISPATCHED: 'car-outline',
+  IN_TRANSIT: 'navigate-outline',
+  DELIVERED: 'checkmark-circle',
 };
 
 export function SupervisorTransactionsScreen({ session: _ }: Props) {
@@ -140,14 +141,14 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
 
       {transactions.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>📦</Text>
+          <Ionicons name="cube-outline" size={32} color={styles.emptyIcon.color} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>No transactions yet</Text>
           <Text style={styles.emptySub}>Accepted offers create transaction records here</Text>
         </View>
       ) : (
         transactions.map((tx) => {
           const color = BATCH_COLORS[tx.batchStatus] ?? theme.textMuted;
-          const icon = BATCH_ICONS[tx.batchStatus] ?? '📦';
+          const icon = BATCH_ICONS[tx.batchStatus] ?? 'cube-outline';
           const canAdvance = BATCH_FLOW.indexOf(tx.batchStatus) < BATCH_FLOW.length - 1;
           const idx = BATCH_FLOW.indexOf(tx.batchStatus);
           const nextStatus = idx >= 0 && idx < BATCH_FLOW.length - 1 ? BATCH_FLOW[idx + 1] : null;
@@ -158,8 +159,9 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
                   <Text style={styles.mineral}>{tx.mineralType}</Text>
                   <Text style={styles.buyer}>{tx.buyerName} · {tx.buyerEmail}</Text>
                 </View>
-                <View style={[styles.statusBadge, { borderColor: color, backgroundColor: color + '20' }]}>
-                  <Text style={[styles.statusText, { color }]}>{icon} {tx.batchStatus}</Text>
+                <View style={[styles.statusBadge, { borderColor: color, backgroundColor: color + '20', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                  <Ionicons name={icon} size={11} color={color} />
+                  <Text style={[styles.statusText, { color }]}>{tx.batchStatus}</Text>
                 </View>
               </View>
 
@@ -185,15 +187,18 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
                 </Pressable>
               ) : (
                 <View>
-                  <View style={styles.deliveredBadge}>
-                    <Text style={styles.deliveredText}>✓ Delivered</Text>
+                  <View style={[styles.deliveredBadge, { flexDirection: 'row', alignItems: 'center', gap: 5 }]}>
+                    <Ionicons name="checkmark-circle" size={12} color={styles.deliveredText.color} />
+                    <Text style={styles.deliveredText}>Delivered</Text>
                   </View>
                   <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                    <Pressable style={styles.rateBtn} onPress={() => setRatingTx(tx)}>
-                      <Text style={styles.rateBtnText}>★ Rate Buyer</Text>
+                    <Pressable style={[styles.rateBtn, { flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center' }]} onPress={() => setRatingTx(tx)}>
+                      <Ionicons name="star" size={13} color={styles.rateBtnText.color} />
+                      <Text style={styles.rateBtnText}>Rate Buyer</Text>
                     </Pressable>
-                    <Pressable style={styles.disputeBtn} onPress={() => setDisputeTx(tx)}>
-                      <Text style={styles.disputeBtnText}>⚑ Dispute</Text>
+                    <Pressable style={[styles.disputeBtn, { flexDirection: 'row', alignItems: 'center', gap: 5, justifyContent: 'center' }]} onPress={() => setDisputeTx(tx)}>
+                      <Ionicons name="flag" size={13} color={styles.disputeBtnText.color} />
+                      <Text style={styles.disputeBtnText}>Dispute</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -266,7 +271,7 @@ function StarRow({ label, value, onChange, theme }: {
       <View style={{ flexDirection: 'row', gap: 6 }}>
         {[1, 2, 3, 4, 5].map(n => (
           <TouchableOpacity key={n} onPress={() => onChange(n)}>
-            <Text style={{ fontSize: 24, color: n <= value ? theme.accent : theme.border }}>★</Text>
+            <Ionicons name={n <= value ? 'star' : 'star-outline'} size={24} color={n <= value ? theme.accent : theme.border} />
           </TouchableOpacity>
         ))}
       </View>
@@ -282,7 +287,7 @@ function makeStyles(theme: Theme) {
     exportBtnText: { color: '#fff', fontSize: 11, fontWeight: '800' },
     subtitle: { color: theme.textMuted, fontSize: 11, fontWeight: '600', marginBottom: 16 },
     emptyCard: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, padding: 40 },
-    emptyIcon: { fontSize: 32, marginBottom: 10 },
+    emptyIcon: { color: theme.textMuted, fontSize: 32, marginBottom: 10 },
     emptyTitle: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 4 },
     emptySub: { color: theme.textMuted, fontSize: 13, fontWeight: '600', textAlign: 'center' },
     card: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: 12, padding: 14 },

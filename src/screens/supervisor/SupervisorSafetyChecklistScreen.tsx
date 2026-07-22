@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { getSiteChecklistToday } from '../../services/api';
 import type { PendingWorker, SafetyChecklist, SiteTodayChecklist } from '../../services/api';
@@ -87,7 +88,10 @@ export function SupervisorSafetyChecklistScreen({ session: _ }: Props) {
       {pending.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>⚠ Not Yet Submitted</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+              <Ionicons name="warning" size={14} color={styles.sectionTitle.color} />
+              <Text style={styles.sectionTitle}>Not Yet Submitted</Text>
+            </View>
             <View style={styles.pendingBadge}>
               <Text style={styles.pendingBadgeText}>{pending.length}</Text>
             </View>
@@ -110,7 +114,10 @@ export function SupervisorSafetyChecklistScreen({ session: _ }: Props) {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>✓ Submitted</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Ionicons name="checkmark-circle" size={14} color={styles.sectionTitle.color} />
+          <Text style={styles.sectionTitle}>Submitted</Text>
+        </View>
         {submitted.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyText}>No submissions yet today</Text>
@@ -134,9 +141,10 @@ export function SupervisorSafetyChecklistScreen({ session: _ }: Props) {
                 {ITEM_LABELS.map((item) => {
                   const ok = c[item.key] as boolean;
                   return (
-                    <View key={item.key} style={[styles.itemPill, ok ? styles.itemPillOk : styles.itemPillFail]}>
+                    <View key={item.key} style={[styles.itemPill, { flexDirection: 'row', alignItems: 'center', gap: 4 }, ok ? styles.itemPillOk : styles.itemPillFail]}>
+                      <Ionicons name={ok ? 'checkmark' : 'close'} size={12} color={(ok ? styles.itemPillTextOk : styles.itemPillTextFail).color} />
                       <Text style={[styles.itemPillText, ok ? styles.itemPillTextOk : styles.itemPillTextFail]}>
-                        {ok ? '✓' : '✗'} {item.label}
+                        {item.label}
                       </Text>
                     </View>
                   );

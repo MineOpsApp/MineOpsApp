@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import Svg, { Polygon, Text as SvgText } from 'react-native-svg';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { getSiteMap, getZoneDetail, type MapPoint, type SiteMapData, type ZoneDetail } from '../services/api';
 import { useTheme, type Theme } from '../theme/theme';
@@ -126,7 +127,7 @@ export function SiteMapView({ zones, readOnly = true, onZoneDetail, pollInterval
   if (noMap || !mapData) {
     return (
       <View style={s.placeholder}>
-        <Text style={s.placeholderIcon}>🗺</Text>
+        <Ionicons name="map-outline" size={32} color={theme.textMuted} style={s.placeholderIcon} />
         <Text style={s.placeholderText}>No site map uploaded yet</Text>
         {!readOnly && <Text style={s.placeholderSub}>Upload one from the More menu → Site Map</Text>}
       </View>
@@ -190,7 +191,7 @@ export function SiteMapView({ zones, readOnly = true, onZoneDetail, pollInterval
             <View style={[s.riskDot, { backgroundColor: RISK_COLOR[selected.riskLevel] ?? '#f59e0b' }]} />
             <Text style={s.detailZoneName}>{selected.zoneName}</Text>
             <TouchableOpacity onPress={() => { setSelected(null); setDetail(null); }} style={s.closeBtn}>
-              <Text style={s.closeBtnText}>✕</Text>
+              <Ionicons name="close" size={16} color={theme.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -211,7 +212,10 @@ export function SiteMapView({ zones, readOnly = true, onZoneDetail, pollInterval
               ))}
               {detail.scheduledBlasts.slice(0, 2).map((b: any) => (
                 <View key={b.id} style={s.blastRow}>
-                  <Text style={s.blastLabel}>💥 Blast scheduled</Text>
+                  <View style={{ alignItems: 'center', flexDirection: 'row', gap: 5 }}>
+                    <MaterialCommunityIcons name="bomb" size={13} color={theme.text} />
+                    <Text style={s.blastLabel}>Blast scheduled</Text>
+                  </View>
                   <Text style={s.blastTime}>{new Date(b.blastTime).toLocaleString()}</Text>
                 </View>
               ))}

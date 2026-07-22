@@ -110,7 +110,10 @@ export function SupervisorDrillScreen({ session: _ }: Props) {
       {/* Pending blast approvals */}
       {awaitingApproval.length > 0 ? (
         <>
-          <Text style={styles.sectionTitle}>⚠ Awaiting Blast Approval</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="warning" size={14} color={styles.sectionTitle.color} />
+            <Text style={styles.sectionTitle}>Awaiting Blast Approval</Text>
+          </View>
           {awaitingApproval.map((drill) => (
             <View key={drill.id} style={styles.approvalCard}>
               <View style={{ flex: 1 }}>

@@ -92,8 +92,9 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
     <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: theme.bgHero }]}>
       {queueLength > 0 && (
         <View style={styles.syncBanner}>
+          <Ionicons name="time-outline" size={13} color="#fde68a" style={{ marginRight: 6 }} />
           <Text style={styles.syncBannerText}>
-            ⏳ {queueLength} action{queueLength !== 1 ? 's' : ''} waiting to sync
+            {queueLength} action{queueLength !== 1 ? 's' : ''} waiting to sync
           </Text>
         </View>
       )}
@@ -121,7 +122,7 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
           {isSupervisor && accessibleSites.length > 1 && (
             <>
               <Pressable onPress={() => setSitePickerVisible(true)} style={styles.actionBtn} hitSlop={10}>
-                <Text style={styles.actionIcon}>🏭</Text>
+                <Ionicons name="business-outline" size={16} color="#fff" />
                 <Text style={styles.actionLabel}>Sites</Text>
               </Pressable>
               <View style={styles.divider} />
@@ -129,7 +130,7 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
           )}
           <Pressable onPress={() => setNotifVisible(true)} style={styles.actionBtn} hitSlop={10}>
             <View>
-              <Text style={styles.actionIcon}>🔔</Text>
+              <Ionicons name="notifications-outline" size={16} color="#fff" />
               {unreadCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : String(unreadCount)}</Text>
@@ -152,7 +153,7 @@ export function AppHeader({ session, onLogout }: AppHeaderProps) {
           <View style={[styles.modalHeader, { borderBottomColor: 'rgba(255,255,255,0.1)' }]}>
             <Text style={styles.modalTitle}>Switch Site</Text>
             <Pressable onPress={() => setSitePickerVisible(false)} hitSlop={12} style={styles.closeBtn}>
-              <Text style={styles.closeIcon}>✕</Text>
+              <Ionicons name="close" size={18} color="rgba(255,255,255,0.6)" />
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 10 }}>
@@ -255,7 +256,7 @@ function makeStyles(theme: Theme) {
       top: -4,
     },
     badgeText: { color: '#fff', fontSize: 9, fontWeight: '900' },
-    syncBanner: { alignItems: 'center', backgroundColor: '#7c4f00', paddingHorizontal: 16, paddingVertical: 5 },
+    syncBanner: { alignItems: 'center', backgroundColor: '#7c4f00', flexDirection: 'row', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 5 },
     syncBannerText: { color: '#fde68a', fontSize: 12, fontWeight: '700' },
     modalSafe: { flex: 1 },
     modalHeader: {

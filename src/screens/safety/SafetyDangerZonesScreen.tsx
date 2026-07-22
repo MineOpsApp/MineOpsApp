@@ -465,8 +465,18 @@ export function SafetyDangerZonesScreen({ session }: Props) {
                 {/* Positioning badges */}
                 {(!hasGps || !hasPolygon) && (
                   <View style={styles.badgeRow}>
-                    {!hasGps     && <Text style={styles.missingBadge}>📍 No GPS location</Text>}
-                    {!hasPolygon && <Text style={styles.missingBadge}>🗺 Not traced on map</Text>}
+                    {!hasGps && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="location-outline" size={11} color={styles.missingBadge.color} />
+                        <Text style={styles.missingBadge}>No GPS location</Text>
+                      </View>
+                    )}
+                    {!hasPolygon && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="map-outline" size={11} color={styles.missingBadge.color} />
+                        <Text style={styles.missingBadge}>Not traced on map</Text>
+                      </View>
+                    )}
                   </View>
                 )}
 

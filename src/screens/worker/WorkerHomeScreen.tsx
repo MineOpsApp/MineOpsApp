@@ -117,7 +117,7 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch, onGo
             if (inside && !alreadyAlerted) {
               alertedZonesRef.current.add(zone.id);
               Alert.alert(
-                `⚠️ Entering ${zone.riskLevel} Risk Zone`,
+                `Entering ${zone.riskLevel} Risk Zone`,
                 `You've entered "${zone.zoneName}". Follow site safety protocols for this area.`
               );
               notifyZoneEntry(zone.id).catch(() => {});

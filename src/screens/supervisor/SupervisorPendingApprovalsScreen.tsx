@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import {
   getPendingWorkers,
@@ -197,7 +198,7 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
         </View>
       ) : totalPending === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>✓</Text>
+          <Ionicons name="checkmark-circle-outline" size={32} color={styles.emptyIcon.color} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>No pending registrations</Text>
           <Text style={styles.emptySub}>New worker sign-ups and buyer registrations will appear here</Text>
         </View>
@@ -250,8 +251,16 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
                     <View style={styles.cardInfo}>
                       <Text style={styles.name}>{buyer.fullName}</Text>
                       <Text style={styles.email}>{buyer.email}</Text>
-                      {buyer.businessName ? <Text style={styles.meta}>🏢 {buyer.businessName}</Text> : null}
-                      <Text style={styles.meta}>🪪 GoldBod: {buyer.goldbodLicenseNumber ?? 'Not provided'}</Text>
+                      {buyer.businessName ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Ionicons name="business-outline" size={11} color={styles.meta.color} />
+                          <Text style={styles.meta}>{buyer.businessName}</Text>
+                        </View>
+                      ) : null}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="id-card-outline" size={11} color={styles.meta.color} />
+                        <Text style={styles.meta}>GoldBod: {buyer.goldbodLicenseNumber ?? 'Not provided'}</Text>
+                      </View>
                       {buyer.createdAt ? <Text style={styles.time}>Registered {formatDate(buyer.createdAt)}</Text> : null}
                     </View>
                     <View style={styles.buyerBadge}><Text style={styles.buyerBadgeText}>BUYER</Text></View>

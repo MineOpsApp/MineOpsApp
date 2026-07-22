@@ -88,6 +88,18 @@ export function SupervisorSosScreen({ session: _ }: Props) {
                   <Text style={styles.alertName}>{a.actorName ?? 'Unknown worker'}</Text>
                   <Text style={styles.alertSite}>{a.site}</Text>
                   <Text style={styles.alertMessage}>{a.message}</Text>
+                  {a.latitude != null && a.longitude != null ? (
+                    <Pressable
+                      onPress={() =>
+                        Linking.openURL(`https://www.google.com/maps?q=${a.latitude},${a.longitude}`)
+                      }
+                      style={styles.mapLink}
+                      hitSlop={6}
+                    >
+                      <Ionicons name="location" size={12} color={theme.info} />
+                      <Text style={styles.mapLinkText}>View location on map</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
                 <View style={styles.alertRight}>
                   <View style={[styles.statusPill, isDone ? styles.statusPillDone : styles.statusPillActive]}>
@@ -175,6 +187,8 @@ function makeStyles(theme: Theme, isDark: boolean) {
     alertName: { color: theme.text, fontSize: 15, fontWeight: '900', marginBottom: 2 },
     alertSite: { color: theme.textSub, fontSize: 12, fontWeight: '700', marginBottom: 2 },
     alertMessage: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
+    mapLink: { alignItems: 'center', flexDirection: 'row', gap: 4, marginTop: 6 },
+    mapLinkText: { color: theme.info, fontSize: 12, fontWeight: '800' },
     alertRight: { alignItems: 'flex-end', gap: 4 },
     statusPill: { borderRadius: 8, paddingHorizontal: spacing.sm, paddingVertical: 4 },
     statusPillActive: { backgroundColor: theme.dangerLight },

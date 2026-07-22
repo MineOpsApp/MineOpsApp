@@ -146,7 +146,7 @@ export function WorkerHazardsScreen({ session }: Props) {
       const report = await createHazardReport(payload);
       setHazards((c) => [report, ...c]);
       setHazardDescription('');
-      Alert.alert('Hazard reported', `HZ-${String(report.id).padStart(4, '0')} sent to safety team.${latitude ? '\n📍 Location recorded.' : ''}`);
+      Alert.alert('Hazard reported', `HZ-${String(report.id).padStart(4, '0')} sent to safety team.${latitude ? '\nLocation recorded.' : ''}`);
     } catch (e) {
       Alert.alert('Failed', parseApiError(e));
     } finally {

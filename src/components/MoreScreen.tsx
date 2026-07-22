@@ -40,6 +40,7 @@ const EMOJI_ICONS: Record<string, IconSpec> = {
   '🛒': { lib: 'ionicons', name: 'storefront-outline' },
   '📊': { lib: 'ionicons', name: 'bar-chart-outline' },
   '🔐': { lib: 'ionicons', name: 'person-add-outline' },
+  '🪪': { lib: 'ionicons', name: 'id-card-outline' },
 };
 
 function RowIcon({ emoji, color }: { emoji: string | IconSpec; color: string }) {

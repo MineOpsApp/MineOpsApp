@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { getMyPermitStatus, updatePermitStatus, type MiningPermitStatus, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { useTheme, type Theme } from '../../theme/theme';
@@ -16,7 +17,7 @@ function Toggle({ label, value, onChange, theme }: { label: string; value: boole
         { alignItems: 'center', backgroundColor: theme.bgInput, borderColor: theme.border, borderRadius: 6, borderWidth: 1.5, height: 32, justifyContent: 'center', width: 32 },
         value && { backgroundColor: theme.accent, borderColor: theme.accent },
       ]}>
-        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900' }}>{value ? '✓' : '✗'}</Text>
+        <Ionicons name={value ? 'checkmark' : 'close'} size={16} color="#fff" />
       </View>
       <Text style={{ color: theme.text, fontSize: 13, fontWeight: '700', flex: 1 }}>{label}</Text>
     </Pressable>
