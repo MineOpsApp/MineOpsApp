@@ -34,8 +34,7 @@ yarn-error.*
 .env
 .env*.local
 
-# local assistant workspace
-.claude/
+.devtools/
 DEV_NOTES.md
 
 # planning/notes docs (local only, never pushed to GitHub)
