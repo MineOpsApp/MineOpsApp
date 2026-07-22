@@ -3,7 +3,7 @@ import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } 
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
-import { getNotices, createNotice, createSupervisorMessage } from '../../services/api';
+import { getNotices, createNotice } from '../../services/api';
 import { deleteNotice } from '../../services/api';
 import type { Notice } from '../../types/actions';
 import type { AuthSession } from '../../types/auth';
@@ -21,7 +21,6 @@ export function SupervisorNoticesScreen({ session }: Props) {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [briefing, setBriefing] = useState('');
   const [category, setCategory] = useState('Operational');
   const [expiryDays, setExpiryDays] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,14 +54,6 @@ export function SupervisorNoticesScreen({ session }: Props) {
     } catch { Alert.alert('Failed', 'Could not post notice.'); }
   }
 
-  async function sendBriefing() {
-    if (!briefing.trim()) { Alert.alert('Required', 'Enter a briefing message.'); return; }
-    try {
-      await createSupervisorMessage({ senderRole: session.user.role, actorName: session.user.fullName, actorEmail: session.user.email, audience:`Workers - ${session.user.assignedSite ?? 'Obuasi Mine'}`, message: briefing.trim() || 'Daily briefing sent' });
-      Alert.alert('Sent', 'Briefing sent to all workers.');
-    } catch { Alert.alert('Failed', 'Could not send briefing.'); }
-  }
-
   async function handleDelete(id: number) {
     Alert.alert('Delete notice?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
@@ -81,11 +72,12 @@ export function SupervisorNoticesScreen({ session }: Props) {
 
       <View style={styles.card}>
         <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
-          <Ionicons name="megaphone-outline" size={16} color={theme.text} />
-          <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Send Briefing</Text>
+          <Ionicons name="newspaper-outline" size={16} color={theme.text} />
+          <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Post Notice</Text>
         </View>
-        <Text style={styles.cardSub}>Broadcast a message to all workers on site</Text>
-        <InputField label="Message" multiline onChangeText={setBriefing} value={briefing} />
+        <Text style={styles.cardSub}>Broadcast to all workers on site — requires acknowledgment</Text>
+        <InputField label="Title" onChangeText={setTitle} value={title} />
+        <InputField label="Message" multiline onChangeText={setMessage} value={message} />
 
         <Text style={styles.fieldLabel}>Category</Text>
         <View style={styles.pillRow}>
@@ -111,17 +103,6 @@ export function SupervisorNoticesScreen({ session }: Props) {
           ))}
         </View>
 
-        <ActionButton label="Send Briefing to Workers" onPress={sendBriefing} />
-      </View>
-
-      <View style={styles.card}>
-        <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 4 }}>
-          <Ionicons name="newspaper-outline" size={16} color={theme.text} />
-          <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Post Notice</Text>
-        </View>
-        <Text style={styles.cardSub}>Notices require acknowledgment from workers</Text>
-        <InputField label="Title" onChangeText={setTitle} value={title} />
-        <InputField label="Message" multiline onChangeText={setMessage} value={message} />
         <ActionButton label="Post Notice" onPress={post} />
       </View>
 

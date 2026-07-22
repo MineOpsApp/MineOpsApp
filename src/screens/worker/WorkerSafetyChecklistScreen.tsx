@@ -106,7 +106,7 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
       }
       const saved = await submitSafetyChecklist(checks);
       setExisting(saved);
-      setSubmitted(true);
+      setSubmitted(false);
     } catch (e: any) {
       Alert.alert('Submit Failed', e?.message ?? 'Could not submit. Try again.');
     } finally {
@@ -120,7 +120,7 @@ export function WorkerSafetyChecklistScreen({ session: _ }: Props) {
       'You have already submitted today. Do you want to update your checklist?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Update', onPress: () => setSubmitted(false) },
+        { text: 'Update', onPress: () => setSubmitted(true) },
       ]
     );
   }

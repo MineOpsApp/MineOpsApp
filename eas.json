@@ -11,7 +11,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://mineopsbackend-production.up.railway.app/api"
+        "EXPO_PUBLIC_API_URL": "https://mineopsbackend-production.up.railway.app/api",
+        "EXPO_PUBLIC_AUDIT_API_URL": "https://mineopsauditservice-production.up.railway.app/api"
       }
     },
     "preview": {
@@ -20,7 +21,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://mineopsbackend-production.up.railway.app/api"
+        "EXPO_PUBLIC_API_URL": "https://mineopsbackend-production.up.railway.app/api",
+        "EXPO_PUBLIC_AUDIT_API_URL": "https://mineopsauditservice-production.up.railway.app/api"
       }
     },
     "production": {
@@ -28,7 +30,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://mineopsbackend-production.up.railway.app/api"
+        "EXPO_PUBLIC_API_URL": "https://mineopsbackend-production.up.railway.app/api",
+        "EXPO_PUBLIC_AUDIT_API_URL": "https://mineopsauditservice-production.up.railway.app/api"
       }
     }
   }

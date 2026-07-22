@@ -23,6 +23,9 @@ type DrillOp = {
   stepDrillingComplete: boolean;
   stepBlastingComplete: boolean;
   stepCleanupComplete: boolean;
+  blastApprovedBy: string | null;
+  blastApprovedByName: string | null;
+  blastApprovedAt: string | null;
   startedAt: string;
   completedAt: string | null;
 };
@@ -173,7 +176,10 @@ export function WorkerDrillScreen({ session }: Props) {
       }
     } catch (error: any) {
       const msg = error?.message ?? '';
-      if (msg.includes('400')) {
+      if (msg.includes('403')) {
+        Alert.alert('Not approved yet', 'A supervisor or safety officer must approve this blast before you can sign off.');
+        refresh();
+      } else if (msg.includes('400')) {
         Alert.alert('Out of order', 'Complete the previous step first.');
       } else {
         Alert.alert('Failed', 'Could not sign off this step.');
@@ -309,18 +315,35 @@ export function WorkerDrillScreen({ session }: Props) {
                             </View>
                           );
                         })()}
-                        <InputField
-                          label=""
-                          placeholder="Notes (optional)..."
-                          onChangeText={(t) => setStepNotes((c) => ({ ...c, [`${drill.id}-${step.key}`]: t }))}
-                          value={stepNotes[`${drill.id}-${step.key}`] ?? ''}
-                        />
-                        <Pressable onPress={() => signOff(drill.id, step.key)} style={styles.signOffBtn}>
-                          <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
-                            <Text style={styles.signOffBtnText}>Sign Off</Text>
-                            <Ionicons name="checkmark" size={14} color="#ffffff" />
+                        {step.key === 'blasting' && !drill.blastApprovedBy ? (
+                          <View style={styles.blastWarnBanner}>
+                            <Ionicons name="time-outline" size={14} color={theme.amber} />
+                            <Text style={styles.blastWarnText}>Waiting for a supervisor or safety officer to approve this blast before you can sign off</Text>
                           </View>
-                        </Pressable>
+                        ) : (
+                          <>
+                            {step.key === 'blasting' && drill.blastApprovedBy ? (
+                              <View style={styles.blastClearanceBanner}>
+                                <Ionicons name="shield-checkmark" size={14} color={theme.accent} />
+                                <Text style={styles.blastClearanceText}>
+                                  Approved by {drill.blastApprovedByName ?? drill.blastApprovedBy}
+                                </Text>
+                              </View>
+                            ) : null}
+                            <InputField
+                              label=""
+                              placeholder="Notes (optional)..."
+                              onChangeText={(t) => setStepNotes((c) => ({ ...c, [`${drill.id}-${step.key}`]: t }))}
+                              value={stepNotes[`${drill.id}-${step.key}`] ?? ''}
+                            />
+                            <Pressable onPress={() => signOff(drill.id, step.key)} style={styles.signOffBtn}>
+                              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                                <Text style={styles.signOffBtnText}>Sign Off</Text>
+                                <Ionicons name="checkmark" size={14} color="#ffffff" />
+                              </View>
+                            </Pressable>
+                          </>
+                        )}
                       </View>
                     ) : null}
                   </View>

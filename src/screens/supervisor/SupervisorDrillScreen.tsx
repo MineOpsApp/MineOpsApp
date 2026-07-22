@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { getSiteDrillOperations } from '../../services/api';
+import { getSiteDrillOperations, approveBlastOperation } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,6 +20,8 @@ type DrillOp = {
   stepDrillingComplete: boolean;
   stepBlastingComplete: boolean;
   stepCleanupComplete: boolean;
+  blastApprovedBy: string | null;
+  blastApprovedByName: string | null;
   startedAt: string;
   completedAt: string | null;
 };
@@ -47,13 +49,29 @@ export function SupervisorDrillScreen({ session: _ }: Props) {
 
   const [drills, setDrills] = useState<DrillOp[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [approving, setApproving] = useState<number | null>(null);
 
   function load() { return getSiteDrillOperations().then(setDrills).catch(() => {}); }
   useEffect(() => { load(); }, []);
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
+  async function approveBlast(id: number) {
+    setApproving(id);
+    try {
+      const updated = await approveBlastOperation(id);
+      setDrills((c) => c.map((d) => (d.id === updated.id ? updated : d)));
+    } catch {
+      Alert.alert('Failed', 'Could not approve this blast. Try again.');
+    } finally {
+      setApproving(null);
+    }
+  }
+
   const active = drills.filter((d) => d.status === 'IN_PROGRESS');
   const completed = drills.filter((d) => d.status === 'COMPLETED');
+  const awaitingApproval = active.filter(
+    (d) => d.stepDrillingComplete && !d.stepBlastingComplete && !d.blastApprovedBy
+  );
 
   function getProgress(drill: DrillOp): number {
     return [drill.stepSetupComplete, drill.stepDrillingComplete, drill.stepBlastingComplete, drill.stepCleanupComplete]
@@ -88,6 +106,31 @@ export function SupervisorDrillScreen({ session: _ }: Props) {
           <Text style={styles.stripLabel}>Total</Text>
         </View>
       </View>
+
+      {/* Pending blast approvals */}
+      {awaitingApproval.length > 0 ? (
+        <>
+          <Text style={styles.sectionTitle}>⚠ Awaiting Blast Approval</Text>
+          {awaitingApproval.map((drill) => (
+            <View key={drill.id} style={styles.approvalCard}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.approvalTitle}>{drill.drillType} — {drill.zone}</Text>
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4, marginTop: 2 }}>
+                  <Ionicons name="person-outline" size={12} color={theme.textMuted} />
+                  <Text style={styles.approvalMeta}>{drill.workerName} · ready since {formatTime(drill.startedAt)}</Text>
+                </View>
+              </View>
+              <Pressable
+                onPress={() => approveBlast(drill.id)}
+                disabled={approving === drill.id}
+                style={[styles.approveBtn, approving === drill.id && { opacity: 0.5 }]}
+              >
+                <Text style={styles.approveBtnText}>{approving === drill.id ? 'Approving…' : 'Approve'}</Text>
+              </Pressable>
+            </View>
+          ))}
+        </>
+      ) : null}
 
       {/* Active operations */}
       {active.length > 0 ? (
@@ -192,6 +235,11 @@ function makeStyles(theme: Theme, isDark: boolean) {
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
     sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: spacing.md },
+    approvalCard: { alignItems: 'center', backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md, padding: spacing.md },
+    approvalTitle: { color: theme.text, fontSize: 14, fontWeight: '900' },
+    approvalMeta: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
+    approveBtn: { backgroundColor: theme.amber, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9 },
+    approveBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
     drillCard: { backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 12, borderWidth: 1, marginBottom: spacing.md, overflow: 'hidden', ...cardShadow },
     drillHeader: { alignItems: 'center', backgroundColor: theme.bgHero, flexDirection: 'row', justifyContent: 'space-between', padding: 14 },
     drillType: { color: '#ffffff', fontSize: 15, fontWeight: '900' },

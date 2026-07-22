@@ -8,7 +8,11 @@ import {
   getPendingBuyers,
   approveBuyer,
   rejectBuyer,
+  getPendingGuests,
+  approveGuest,
+  rejectGuest,
   type PendingBuyer,
+  type PendingGuest,
 } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { useTheme, type Theme } from '../../theme/theme';
@@ -31,6 +35,7 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
 
   const [workers, setWorkers] = useState<PendingWorker[]>([]);
   const [buyers, setBuyers] = useState<PendingBuyer[]>([]);
+  const [guests, setGuests] = useState<PendingGuest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [acting, setActing] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -39,6 +44,7 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
     setLoadError(false);
     getPendingWorkers().then(setWorkers).catch(() => setLoadError(true));
     getPendingBuyers().then(setBuyers).catch(() => setLoadError(true));
+    getPendingGuests().then(setGuests).catch(() => setLoadError(true));
   }
 
   useEffect(() => { load(); }, []);
@@ -135,7 +141,47 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
     ]);
   }
 
-  const totalPending = workers.length + buyers.length;
+  async function handleApproveGuest(guest: PendingGuest) {
+    Alert.alert('Approve guest?', `${guest.fullName} will be able to log in immediately.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Approve',
+        onPress: async () => {
+          setActing(guest.email);
+          try {
+            await approveGuest(guest.email);
+            setGuests((prev) => prev.filter((g) => g.email !== guest.email));
+          } catch {
+            Alert.alert('Failed', 'Could not approve guest. Try again.');
+          } finally {
+            setActing(null);
+          }
+        },
+      },
+    ]);
+  }
+
+  async function handleRejectGuest(guest: PendingGuest) {
+    Alert.alert('Reject guest request?', `${guest.fullName}'s account will be permanently deleted.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reject', style: 'destructive',
+        onPress: async () => {
+          setActing(guest.email);
+          try {
+            await rejectGuest(guest.email);
+            setGuests((prev) => prev.filter((g) => g.email !== guest.email));
+          } catch {
+            Alert.alert('Failed', 'Could not reject guest. Try again.');
+          } finally {
+            setActing(null);
+          }
+        },
+      },
+    ]);
+  }
+
+  const totalPending = workers.length + buyers.length + guests.length;
 
   return (
     <ScrollView
@@ -222,6 +268,36 @@ export function SupervisorPendingApprovalsScreen({ session: _ }: Props) {
               ))}
             </>
           ) : null}
+
+          {guests.length > 0 ? (
+            <>
+              <Text style={styles.sectionHeader}>Guests</Text>
+              {guests.map((guest) => (
+                <View key={guest.id} style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <View style={[styles.avatar, styles.guestAvatar]}>
+                      <Text style={styles.avatarText}>{guest.fullName.charAt(0).toUpperCase()}</Text>
+                    </View>
+                    <View style={styles.cardInfo}>
+                      <Text style={styles.name}>{guest.fullName}</Text>
+                      <Text style={styles.email}>{guest.email}</Text>
+                      <Text style={styles.meta}>{guest.assignedSite}{guest.guestSubRole ? ` · ${guest.guestSubRole}` : ''}</Text>
+                      {guest.createdAt ? <Text style={styles.time}>Requested {formatDate(guest.createdAt)}</Text> : null}
+                    </View>
+                    <View style={styles.guestBadge}><Text style={styles.guestBadgeText}>GUEST</Text></View>
+                  </View>
+                  <View style={styles.actions}>
+                    <Pressable onPress={() => handleApproveGuest(guest)} disabled={acting === guest.email} style={[styles.approveBtn, acting === guest.email && styles.btnDisabled]}>
+                      <Text style={styles.approveBtnText}>{acting === guest.email ? 'Processing...' : 'Approve'}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => handleRejectGuest(guest)} disabled={acting === guest.email} style={[styles.rejectBtn, acting === guest.email && styles.btnDisabled]}>
+                      <Text style={styles.rejectBtnText}>{acting === guest.email ? '...' : 'Reject'}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </>
+          ) : null}
         </>
       )}
     </ScrollView>
@@ -252,6 +328,9 @@ function makeStyles(theme: Theme) {
     time: { color: theme.textMuted, fontSize: 11, fontWeight: '600' },
     buyerBadge: { backgroundColor: theme.infoLight, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
     buyerBadgeText: { color: theme.info, fontSize: 9, fontWeight: '900' },
+    guestAvatar: { backgroundColor: theme.amber },
+    guestBadge: { backgroundColor: theme.amberLight, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+    guestBadgeText: { color: theme.amber, fontSize: 9, fontWeight: '900' },
     actions: { flexDirection: 'row', gap: 10 },
     approveBtn: { alignItems: 'center', backgroundColor: theme.accent, borderRadius: 8, flex: 1, paddingVertical: 10 },
     approveBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '800' },

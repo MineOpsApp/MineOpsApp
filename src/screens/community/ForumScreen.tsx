@@ -120,7 +120,7 @@ export default function ForumScreen() {
   if (selectedPost) {
     return (
       <SwipeBackView onBack={() => setSelectedPost(null)}>
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
           <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedPost(null)}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
@@ -198,7 +198,7 @@ export default function ForumScreen() {
       />
 
       <Modal visible={newPostVisible} animationType="slide" transparent>
-        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.modalSheet}>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={styles.modalTitle}>New Post</Text>

@@ -24,7 +24,10 @@ import type { AuthPayload, AuthSession } from '../types/auth';
 import type { AuthUser } from '../types/auth';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080/api';
-const AUDIT_API_BASE_URL = API_BASE_URL.replace(':8080/api', ':8081/api');
+// The audit service is a separate deployment from the main backend (different Railway host in
+// production, not just a different port on the same host), so it needs its own explicit URL —
+// deriving it by swapping the main API URL's port only worked for local dev.
+const AUDIT_API_BASE_URL = process.env.EXPO_PUBLIC_AUDIT_API_URL ?? 'http://localhost:8082/api';
 const REQUEST_TIMEOUT_MS = 30000;
 const REFRESH_THRESHOLD_SECS = 5 * 60; // refresh access token when < 5 min left
 
@@ -787,6 +790,10 @@ export function startDrillOperation(payload: { zone: string; drillType: string; 
 
 export function signOffDrillStep(id: number, payload: { step: string; notes?: string }) {
   return post<any>(`/drill-operations/${id}/sign-off`, payload);
+}
+
+export function approveBlastOperation(id: number) {
+  return post<any>(`/drill-operations/${id}/approve-blast`, {});
 }
 
 export function getMyDrillOperations() {
@@ -1714,6 +1721,25 @@ export function approveBuyer(email: string) {
 }
 export function rejectBuyer(email: string) {
   return post<{ email: string; rejected: boolean }>('/admin/buyers/reject', { email });
+}
+
+export type PendingGuest = {
+  id: number;
+  fullName: string;
+  email: string;
+  assignedSite: string;
+  guestSubRole: string | null;
+  createdAt: string | null;
+};
+
+export function getPendingGuests() {
+  return request<PendingGuest[]>('/admin/guests/pending');
+}
+export function approveGuest(email: string) {
+  return post<{ email: string; approved: boolean }>('/admin/guests/approve', { email });
+}
+export function rejectGuest(email: string) {
+  return post<{ email: string; rejected: boolean }>('/admin/guests/reject', { email });
 }
 
 // Safety Intelligence
