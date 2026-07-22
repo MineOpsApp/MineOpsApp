@@ -36,9 +36,10 @@ yarn-error.*
 
 # local assistant workspace
 .claude/
+DEV_NOTES.md
 
-# planning/brief docs (local only, never pushed to GitHub)
-*_BRIEF.md
+# planning/notes docs (local only, never pushed to GitHub)
+*_NOTES.md
 *_REQUEST.md
 
 # typescript
