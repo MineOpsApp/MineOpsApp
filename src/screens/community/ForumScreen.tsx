@@ -200,22 +200,24 @@ export default function ForumScreen() {
       <Modal visible={newPostVisible} animationType="slide" transparent>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>New Post</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Title"
-              placeholderTextColor={theme.textMuted}
-              value={newTitle}
-              onChangeText={setNewTitle}
-            />
-            <TextInput
-              style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }]}
-              placeholder="Body"
-              placeholderTextColor={theme.textMuted}
-              value={newBody}
-              onChangeText={setNewBody}
-              multiline
-            />
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={styles.modalTitle}>New Post</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Title"
+                placeholderTextColor={theme.textMuted}
+                value={newTitle}
+                onChangeText={setNewTitle}
+              />
+              <TextInput
+                style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }]}
+                placeholder="Body"
+                placeholderTextColor={theme.textMuted}
+                value={newBody}
+                onChangeText={setNewBody}
+                multiline
+              />
+            </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setNewPostVisible(false)}>
                 <Text style={styles.cancelText}>Cancel</Text>
@@ -274,7 +276,7 @@ function makeStyles(theme: Theme, isDark: boolean) {
     sendBtnDisabled: { opacity: 0.5 },
     sendBtnText: { color: '#0f172a', fontWeight: '700' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl, maxHeight: '85%' },
     modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: spacing.md },
     modalInput: { backgroundColor: theme.bg, borderRadius: 8, color: theme.text, marginBottom: 10, padding: spacing.md },
     modalActions: { alignItems: 'center', flexDirection: 'row', gap: spacing.lg, justifyContent: 'flex-end', marginTop: spacing.sm },

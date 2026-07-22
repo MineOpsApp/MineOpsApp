@@ -7,7 +7,7 @@ export default {
     name: "MineOpsApp",
     slug: "MineOpsApp",
     version: "1.0.0",
-    orientation: "portrait",
+    orientation: "default",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
@@ -18,8 +18,13 @@ export default {
     },
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.sakumi.mineopsapp",
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     android: {
+      package: "com.sakumi.mineopsapp",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",

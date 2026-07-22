@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { getMarketplaceListings, type MineralListing } from '../../services/api';
@@ -65,60 +65,65 @@ export function BuyerListingsScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView
+    <FlatList
+      data={visible}
+      keyExtractor={(listing) => String(listing.id)}
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-    >
-      <Text style={styles.title}>Mineral Marketplace</Text>
-      <Text style={styles.subtitle}>Active listings across all sites</Text>
+      ListHeaderComponent={
+        <>
+          <Text style={styles.title}>Mineral Marketplace</Text>
+          <Text style={styles.subtitle}>Active listings across all sites</Text>
 
-      <TextInput
-        style={styles.search}
-        value={filter}
-        onChangeText={setFilter}
-        placeholder="Filter by mineral type…"
-        placeholderTextColor={theme.textMuted}
-      />
+          <TextInput
+            style={styles.search}
+            value={filter}
+            onChangeText={setFilter}
+            placeholder="Filter by mineral type…"
+            placeholderTextColor={theme.textMuted}
+          />
 
-      {loading ? (
-        <Text style={styles.loading}>Loading listings…</Text>
-      ) : visible.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Ionicons name="cart-outline" size={32} color={theme.textMuted} style={{ marginBottom: 10 }} />
-          <Text style={styles.emptyTitle}>No active listings</Text>
-          <Text style={styles.emptySub}>Check back later for new mineral listings</Text>
-        </View>
-      ) : (
-        visible.map((listing) => (
-          <Pressable key={listing.id} style={styles.card} onPress={() => setSelected(listing)}>
-            <View style={styles.cardTop}>
-              {listing.photoData ? (
-                <Image source={{ uri: listing.photoData }} style={styles.thumb} />
-              ) : (
-                <View style={styles.thumbPlaceholder}><Ionicons name="hammer-outline" size={24} color={theme.textMuted} /></View>
-              )}
-              <View style={styles.cardInfo}>
-                <Text style={styles.mineral}>{listing.mineralType}</Text>
-                <Text style={styles.site}>{listing.site}</Text>
-                <Text style={styles.qty}>{listing.quantity} {listing.unit}</Text>
-                {listing.grade ? <Text style={styles.grade}>Grade: {listing.grade}</Text> : null}
-              </View>
-              <View style={styles.priceBlock}>
-                <Text style={styles.price}>GHS {Number(listing.askingPrice).toLocaleString()}</Text>
-                <Text style={styles.priceLabel}>asking</Text>
-              </View>
+          {loading ? <Text style={styles.loading}>Loading listings…</Text> : null}
+        </>
+      }
+      ListEmptyComponent={
+        loading ? null : (
+          <View style={styles.emptyCard}>
+            <Ionicons name="cart-outline" size={32} color={theme.textMuted} style={{ marginBottom: 10 }} />
+            <Text style={styles.emptyTitle}>No active listings</Text>
+            <Text style={styles.emptySub}>Check back later for new mineral listings</Text>
+          </View>
+        )
+      }
+      renderItem={({ item: listing }) => (
+        <Pressable style={styles.card} onPress={() => setSelected(listing)}>
+          <View style={styles.cardTop}>
+            {listing.photoData ? (
+              <Image source={{ uri: listing.photoData }} style={styles.thumb} />
+            ) : (
+              <View style={styles.thumbPlaceholder}><Ionicons name="hammer-outline" size={24} color={theme.textMuted} /></View>
+            )}
+            <View style={styles.cardInfo}>
+              <Text style={styles.mineral}>{listing.mineralType}</Text>
+              <Text style={styles.site}>{listing.site}</Text>
+              <Text style={styles.qty}>{listing.quantity} {listing.unit}</Text>
+              {listing.grade ? <Text style={styles.grade}>Grade: {listing.grade}</Text> : null}
             </View>
-            {listing.location ? (
-              <View style={styles.locationRow}>
-                <Ionicons name="location-outline" size={12} color={theme.textMuted} />
-                <Text style={styles.location}>{listing.location}</Text>
-              </View>
-            ) : null}
-            <Text style={styles.viewLink}>View details →</Text>
-          </Pressable>
-        ))
+            <View style={styles.priceBlock}>
+              <Text style={styles.price}>GHS {Number(listing.askingPrice).toLocaleString()}</Text>
+              <Text style={styles.priceLabel}>asking</Text>
+            </View>
+          </View>
+          {listing.location ? (
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={12} color={theme.textMuted} />
+              <Text style={styles.location}>{listing.location}</Text>
+            </View>
+          ) : null}
+          <Text style={styles.viewLink}>View details →</Text>
+        </Pressable>
       )}
-    </ScrollView>
+    />
   );
 }
 

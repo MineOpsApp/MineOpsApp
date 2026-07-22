@@ -16,6 +16,7 @@ import {
   tryRestoreSession,
 } from './src/services/api';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { ThemeProvider } from './src/theme/ThemeContext';
 import { useThemeMode } from './src/theme/ThemeContext';
 import { registerForPushNotifications } from './src/utils/notifications';
@@ -102,16 +103,18 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <ThemedRoot
-          session={session}
-          storedEmail={storedEmail}
-          onAuthenticated={handleAuthenticated}
-          onLogout={handleLogout}
-        />
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider>
+          <ThemedRoot
+            session={session}
+            storedEmail={storedEmail}
+            onAuthenticated={handleAuthenticated}
+            onLogout={handleLogout}
+          />
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 

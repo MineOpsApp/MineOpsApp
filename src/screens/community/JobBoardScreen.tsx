@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -162,9 +163,11 @@ export default function JobBoardScreen({
       <Modal visible={modalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Post a Job</Text>
-            <TextInput style={styles.input} placeholder="Job title" placeholderTextColor={theme.textMuted} value={title} onChangeText={setTitle} />
-            <TextInput style={[styles.input, { height: 100, textAlignVertical: 'top' }]} placeholder="Description (optional)" placeholderTextColor={theme.textMuted} value={description} onChangeText={setDescription} multiline />
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={styles.modalTitle}>Post a Job</Text>
+              <TextInput style={styles.input} placeholder="Job title" placeholderTextColor={theme.textMuted} value={title} onChangeText={setTitle} />
+              <TextInput style={[styles.input, { height: 100, textAlignVertical: 'top' }]} placeholder="Description (optional)" placeholderTextColor={theme.textMuted} value={description} onChangeText={setDescription} multiline />
+            </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelText}>Cancel</Text>
@@ -180,8 +183,10 @@ export default function JobBoardScreen({
       <Modal visible={interestModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Express Interest</Text>
-            <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} placeholder="Optional message..." placeholderTextColor={theme.textMuted} value={interestMsg} onChangeText={setInterestMsg} multiline />
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={styles.modalTitle}>Express Interest</Text>
+              <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} placeholder="Optional message..." placeholderTextColor={theme.textMuted} value={interestMsg} onChangeText={setInterestMsg} multiline />
+            </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setInterestModalVisible(false)}>
                 <Text style={styles.cancelText}>Cancel</Text>
@@ -226,7 +231,7 @@ function makeStyles(theme: Theme, isDark: boolean) {
     closeBtn: { backgroundColor: theme.danger, borderRadius: 6, paddingHorizontal: spacing.md, paddingVertical: 6 },
     closeBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl, maxHeight: '85%' },
     modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: spacing.md },
     input: { backgroundColor: theme.bg, borderRadius: 8, color: theme.text, marginBottom: 10, padding: spacing.md },
     modalActions: { alignItems: 'center', flexDirection: 'row', gap: spacing.lg, justifyContent: 'flex-end' },

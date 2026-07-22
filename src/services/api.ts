@@ -472,7 +472,7 @@ export function createSosAlert(alert: CreateSosAlertRequest) {
 }
 
 export function getSosAlerts() {
-  return request<{ content: SosAlert[] }>('/sos').then((page) => page.content);
+  return request<{ content: SosAlert[] }>('/sos?size=200').then((page) => page.content);
 }
 
 export function getDangerZones() {
@@ -500,7 +500,7 @@ export function getHazardReports(page = 0) {
 }
 
 export function getSiteHazardAlerts() {
-  return request<{ content: HazardReport[] }>('/hazards').then((page) => page.content);
+  return request<HazardReport[]>('/hazards/site-alerts');
 }
 
 export function getSiteHazardReports(page = 0) {
@@ -577,6 +577,10 @@ export function createSupervisorMessage(message: {
   message: string;
 }) {
   return post<SupervisorMessage>('/messages', message);
+}
+
+export function notifyZoneEntry(zoneId: number) {
+  return post<{ acknowledged: boolean }>(`/danger-zones/${zoneId}/entry-alert`, {});
 }
 
 export function createDangerZone(zone: {

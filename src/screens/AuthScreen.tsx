@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useColorScheme,
   View,
 } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -45,7 +46,9 @@ type AuthScreenProps = {
 export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
-  const styles = makeStyles(theme, mode);
+  const systemScheme = useColorScheme();
+  const isDark = mode === 'dark' || (mode === 'system' && systemScheme === 'dark');
+  const styles = makeStyles(theme, isDark);
 
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'guest' | 'forgot'>('login');
   const [forgotStep, setForgotStep] = useState<'email' | 'otp'>('email');
@@ -409,6 +412,8 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                           placeholder="Min. 6 characters"
                           placeholderTextColor={theme.textMuted}
                           secureTextEntry
+                          autoCapitalize="none"
+                          autoCorrect={false}
                           returnKeyType="next"
                         />
                       </BlurView>
@@ -423,6 +428,8 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                           placeholder="Repeat new password"
                           placeholderTextColor={theme.textMuted}
                           secureTextEntry
+                          autoCapitalize="none"
+                          autoCorrect={false}
                           returnKeyType="done"
                           onSubmitEditing={submitResetPassword}
                         />
@@ -673,7 +680,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                   <Text style={styles.fieldLabel}>Password</Text>
                   <View style={styles.passwordRow}>
                     <BlurView intensity={45} tint={blurTint} style={[styles.inputWrap, { flex: 1 }]}>
-                      <TextInput onChangeText={setPassword} placeholder={authMode === 'register' ? 'Min. 6 characters' : 'Your password'} placeholderTextColor={theme.textMuted} returnKeyType={authMode === 'register' ? 'next' : 'done'} secureTextEntry={!showPassword} style={styles.inputInner} value={password} onSubmitEditing={authMode === 'login' ? submit : undefined} />
+                      <TextInput autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder={authMode === 'register' ? 'Min. 6 characters' : 'Your password'} placeholderTextColor={theme.textMuted} returnKeyType={authMode === 'register' ? 'next' : 'done'} secureTextEntry={!showPassword} style={styles.inputInner} value={password} onSubmitEditing={authMode === 'login' ? submit : undefined} />
                     </BlurView>
                     <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.showPasswordBtn}>
                       <BlurView intensity={45} tint={blurTint} style={styles.glassBase} />
@@ -691,7 +698,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
                   <View style={styles.inputGroup}>
                     <Text style={styles.fieldLabel}>Confirm Password</Text>
                     <BlurView intensity={45} tint={blurTint} style={styles.inputWrap}>
-                      <TextInput onChangeText={setConfirmPassword} onSubmitEditing={submit} placeholder="Repeat your password" placeholderTextColor={theme.textMuted} returnKeyType="done" secureTextEntry={!showPassword} style={styles.inputInner} value={confirmPassword} />
+                      <TextInput autoCapitalize="none" autoCorrect={false} onChangeText={setConfirmPassword} onSubmitEditing={submit} placeholder="Repeat your password" placeholderTextColor={theme.textMuted} returnKeyType="done" secureTextEntry={!showPassword} style={styles.inputInner} value={confirmPassword} />
                     </BlurView>
                   </View>
                 ) : null}
@@ -774,8 +781,7 @@ export function AuthScreen({ storedEmail, onAuthenticated }: AuthScreenProps) {
   );
 }
 
-function makeStyles(theme: Theme, mode: string) {
-  const isDark = mode === 'dark';
+function makeStyles(theme: Theme, isDark: boolean) {
   return StyleSheet.create({
     bgImage: { flex: 1 },
     safeArea: { flex: 1 },

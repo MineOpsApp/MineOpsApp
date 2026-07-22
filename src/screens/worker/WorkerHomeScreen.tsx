@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Location from 'expo-location';
 
 import { BlastAlert } from '../../components/BlastAlert';
+import { LiveSiteMapView } from '../../components/LiveSiteMapView';
 import { SiteMapView } from '../../components/SiteMapView';
 import { SosButton } from '../../components/SosButton';
-import { getAllBlasts, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, getDangerZones, getMyAttendanceStatus, clockIn, type LoneWorkerStatus } from '../../services/api';
+import { getAllBlasts, getMyCertifications, getMyEmergencyContacts, getMyInventoryContributions, getNotices, getSiteAnnouncements, getSiteHazardAlerts, getLoneWorkerStatus, getDangerZones, getMyAttendanceStatus, clockIn, notifyZoneEntry, type LoneWorkerStatus } from '../../services/api';
 import type { InventoryTransaction } from '../../services/api';
 import type { HazardReport, Notice, ShiftAnnouncement } from '../../types/actions';
 import { formatAgo, formatDateTime } from '../../utils/time';
@@ -24,6 +26,16 @@ const SEVERITY_COLOR: Record<string, string> = {
   Medium: '#a15c00',
   Low: '#1f6f5b',
 };
+
+// Distance in meters between two lat/lng points.
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch, onGoToAttendance, onGoToChecklist }: Props) {
   const { mode } = useThemeMode();
@@ -45,6 +57,9 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch, onGo
   const [loneWorker, setLoneWorker] = useState<LoneWorkerStatus | null>(null);
   const loneWorkerPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [mapZones, setMapZones] = useState<import('../../types/actions').DangerZone[]>([]);
+  const zonesRef = useRef<import('../../types/actions').DangerZone[]>([]);
+  const alertedZonesRef = useRef<Set<number>>(new Set());
+  const locationSubRef = useRef<Location.LocationSubscription | null>(null);
   const [onSite, setOnSite] = useState(false);
   const [activeRecord, setActiveRecord] = useState<AttendanceRecord | null>(null);
   const [selectedZone, setSelectedZone] = useState('Main Site');
@@ -73,6 +88,55 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch, onGo
     pollLW();
     loneWorkerPollRef.current = setInterval(pollLW, 30000);
     return () => { if (loneWorkerPollRef.current) clearInterval(loneWorkerPollRef.current); };
+  }, []);
+
+  // Keep a ref of the latest zones so the location watcher's callback (set up once)
+  // always checks against current data rather than a stale closure.
+  useEffect(() => { zonesRef.current = mapZones; }, [mapZones]);
+
+  // Foreground-only geofencing: while this screen is mounted and the app is open,
+  // warn the worker (and alert supervisors/safety officers) the moment they enter a
+  // GPS-mapped danger zone. Stops watching when the screen unmounts — this does not
+  // track location in the background.
+  useEffect(() => {
+    let cancelled = false;
+    async function startGeofenceWatch() {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted' || cancelled) return;
+      const sub = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, timeInterval: 15000, distanceInterval: 15 },
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          for (const zone of zonesRef.current) {
+            if (zone.latitude == null || zone.longitude == null) continue;
+            const distance = haversineMeters(latitude, longitude, zone.latitude, zone.longitude);
+            const radius = zone.radiusMeters ?? 50;
+            const inside = distance <= radius;
+            const alreadyAlerted = alertedZonesRef.current.has(zone.id);
+
+            if (inside && !alreadyAlerted) {
+              alertedZonesRef.current.add(zone.id);
+              Alert.alert(
+                `⚠️ Entering ${zone.riskLevel} Risk Zone`,
+                `You've entered "${zone.zoneName}". Follow site safety protocols for this area.`
+              );
+              notifyZoneEntry(zone.id).catch(() => {});
+            } else if (!inside && alreadyAlerted) {
+              // Leaving the zone clears the flag so re-entering later alerts again.
+              alertedZonesRef.current.delete(zone.id);
+            }
+          }
+        }
+      );
+      if (cancelled) { sub.remove(); return; }
+      locationSubRef.current = sub;
+    }
+    startGeofenceWatch().catch(() => {});
+    return () => {
+      cancelled = true;
+      locationSubRef.current?.remove();
+      locationSubRef.current = null;
+    };
   }, []);
   async function refresh() { setRefreshing(true); await loadCore(); setRefreshing(false); }
 
@@ -240,8 +304,19 @@ export function WorkerHomeScreen({ session, onGoToLoneWorker, onGoToSearch, onGo
 
         <BlastAlert />
 
-        {/* Site map */}
-        <SiteMapView zones={mapZones} readOnly pollIntervalMs={25000} />
+        {/* Live GPS map — your position, GPS-mapped danger zones, and hazard reports */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Live Site Map</Text>
+          <View style={styles.liveMapWrap}>
+            <LiveSiteMapView session={session} readOnly />
+          </View>
+        </View>
+
+        {/* Uploaded floor plan — secondary reference for indoor/underground areas without GPS */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Site Floor Plan</Text>
+          <SiteMapView zones={mapZones} readOnly pollIntervalMs={25000} />
+        </View>
 
         {/* Shift Announcements */}
         {announcements.length > 0 ? (
@@ -400,6 +475,7 @@ function makeStyles(theme: Theme, isDark: boolean) {
     stripLabel: { color: theme.textMuted, fontSize: 10, fontWeight: '700', marginTop: 1, textTransform: 'uppercase' },
     stripDivider: { backgroundColor: theme.border, width: 1 },
     section: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+    liveMapWrap: { height: 320, borderRadius: 14, overflow: 'hidden', ...cardShadow },
     sectionHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 10 },
     sectionTitle: { ...typography.h2, color: theme.text, flex: 1 },
     alertBadge: { backgroundColor: '#b42318', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },

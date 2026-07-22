@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
 import { getMarketplaceListings, createListing, withdrawListing, type MineralListing } from '../../services/api';
@@ -103,117 +103,120 @@ export function SupervisorListingsScreen({ session: _ }: Props) {
   }
 
   return (
-    <ScrollView
+    <FlatList
+      data={listings}
+      keyExtractor={(listing) => String(listing.id)}
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-    >
-      <View style={styles.titleRow}>
-        <Text style={styles.title}>Mineral Listings</Text>
-        <Pressable onPress={() => setCreating((v) => !v)} style={styles.addBtn}>
-          {creating ? (
-            <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
-              <Ionicons name="close" size={14} color="#fff" />
-              <Text style={styles.addBtnText}>Cancel</Text>
-            </View>
-          ) : (
-            <Text style={styles.addBtnText}>+ New Listing</Text>
-          )}
-        </Pressable>
-      </View>
-      <Text style={styles.subtitle}>Your site's listings</Text>
-
-      {creating ? (
-        <View style={styles.formCard}>
-          <Text style={styles.formTitle}>New Listing</Text>
-
-          <Text style={styles.label}>Mineral Type *</Text>
-          <TextInput style={styles.input} value={mineralType} onChangeText={setMineralType} placeholder="e.g. Gold, Bauxite" placeholderTextColor={theme.textMuted} />
-
-          <Text style={styles.label}>Quantity *</Text>
-          <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} placeholder="e.g. 500" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
-
-          <Text style={styles.label}>Unit</Text>
-          <View style={styles.unitRow}>
-            {UNITS.map((u) => (
-              <Pressable key={u} onPress={() => setUnit(u)} style={[styles.unitPill, unit === u && styles.unitPillActive]}>
-                <Text style={[styles.unitPillText, unit === u && styles.unitPillTextActive]}>{u}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={styles.label}>Asking Price (GHS) *</Text>
-          <TextInput style={styles.input} value={askingPrice} onChangeText={setAskingPrice} placeholder="e.g. 250000" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
-
-          <Text style={styles.label}>Grade</Text>
-          <TextInput style={styles.input} value={grade} onChangeText={setGrade} placeholder="e.g. 22 carat" placeholderTextColor={theme.textMuted} />
-
-          <Text style={styles.label}>Location</Text>
-          <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="e.g. Northern Zone, Block 3" placeholderTextColor={theme.textMuted} />
-
-          <Text style={styles.label}>Min. Order Quantity</Text>
-          <TextInput style={styles.input} value={minOrderQty} onChangeText={setMinOrderQty} placeholder="Optional" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
-
-          <Text style={styles.label}>Photo</Text>
-          <Pressable onPress={pickPhoto} style={[styles.photoBtn, photo ? styles.photoBtnDone : null]}>
-            {photo ? (
-              <>
-                <Image source={{ uri: photo }} style={styles.photoThumb} />
-                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
-                  <Ionicons name="checkmark-circle" size={13} color={theme.accent} />
-                  <Text style={styles.photoBtnText}>Photo attached — tap to change</Text>
+      ListHeaderComponent={
+        <>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Mineral Listings</Text>
+            <Pressable onPress={() => setCreating((v) => !v)} style={styles.addBtn}>
+              {creating ? (
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                  <Ionicons name="close" size={14} color="#fff" />
+                  <Text style={styles.addBtnText}>Cancel</Text>
                 </View>
-              </>
-            ) : (
-              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
-                <Ionicons name="camera-outline" size={13} color={theme.textMuted} />
-                <Text style={styles.photoBtnText}>Add photo</Text>
+              ) : (
+                <Text style={styles.addBtnText}>+ New Listing</Text>
+              )}
+            </Pressable>
+          </View>
+          <Text style={styles.subtitle}>Your site's listings</Text>
+
+          {creating ? (
+            <View style={styles.formCard}>
+              <Text style={styles.formTitle}>New Listing</Text>
+
+              <Text style={styles.label}>Mineral Type *</Text>
+              <TextInput style={styles.input} value={mineralType} onChangeText={setMineralType} placeholder="e.g. Gold, Bauxite" placeholderTextColor={theme.textMuted} />
+
+              <Text style={styles.label}>Quantity *</Text>
+              <TextInput style={styles.input} value={quantity} onChangeText={setQuantity} placeholder="e.g. 500" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
+
+              <Text style={styles.label}>Unit</Text>
+              <View style={styles.unitRow}>
+                {UNITS.map((u) => (
+                  <Pressable key={u} onPress={() => setUnit(u)} style={[styles.unitPill, unit === u && styles.unitPillActive]}>
+                    <Text style={[styles.unitPillText, unit === u && styles.unitPillTextActive]}>{u}</Text>
+                  </Pressable>
+                ))}
               </View>
-            )}
-          </Pressable>
 
-          <Pressable onPress={handleCreate} disabled={submitting} style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}>
-            <Text style={styles.submitBtnText}>{submitting ? 'Creating…' : 'Create Listing →'}</Text>
-          </Pressable>
-        </View>
-      ) : null}
+              <Text style={styles.label}>Asking Price (GHS) *</Text>
+              <TextInput style={styles.input} value={askingPrice} onChangeText={setAskingPrice} placeholder="e.g. 250000" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
 
-      {listings.length === 0 ? (
+              <Text style={styles.label}>Grade</Text>
+              <TextInput style={styles.input} value={grade} onChangeText={setGrade} placeholder="e.g. 22 carat" placeholderTextColor={theme.textMuted} />
+
+              <Text style={styles.label}>Location</Text>
+              <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="e.g. Northern Zone, Block 3" placeholderTextColor={theme.textMuted} />
+
+              <Text style={styles.label}>Min. Order Quantity</Text>
+              <TextInput style={styles.input} value={minOrderQty} onChangeText={setMinOrderQty} placeholder="Optional" placeholderTextColor={theme.textMuted} keyboardType="decimal-pad" />
+
+              <Text style={styles.label}>Photo</Text>
+              <Pressable onPress={pickPhoto} style={[styles.photoBtn, photo ? styles.photoBtnDone : null]}>
+                {photo ? (
+                  <>
+                    <Image source={{ uri: photo }} style={styles.photoThumb} />
+                    <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                      <Ionicons name="checkmark-circle" size={13} color={theme.accent} />
+                      <Text style={styles.photoBtnText}>Photo attached — tap to change</Text>
+                    </View>
+                  </>
+                ) : (
+                  <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6 }}>
+                    <Ionicons name="camera-outline" size={13} color={theme.textMuted} />
+                    <Text style={styles.photoBtnText}>Add photo</Text>
+                  </View>
+                )}
+              </Pressable>
+
+              <Pressable onPress={handleCreate} disabled={submitting} style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}>
+                <Text style={styles.submitBtnText}>{submitting ? 'Creating…' : 'Create Listing →'}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </>
+      }
+      ListEmptyComponent={
         <View style={styles.emptyCard}>
           <Ionicons name="clipboard-outline" size={32} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No listings yet</Text>
           <Text style={styles.emptySub}>Create a listing to offer minerals to verified buyers</Text>
         </View>
-      ) : (
-        listings.map((listing) => (
-          <View key={listing.id} style={styles.card}>
-            <View style={styles.cardTop}>
-              {listing.photoData ? (
-                <Image source={{ uri: listing.photoData }} style={styles.thumb} />
-              ) : (
-                <View style={styles.thumbPlaceholder}><Ionicons name="hammer-outline" size={20} color={theme.textMuted} /></View>
-              )}
-              <View style={styles.cardInfo}>
-                <Text style={styles.mineral}>{listing.mineralType}</Text>
-                <Text style={styles.qty}>{Number(listing.quantity).toLocaleString()} {listing.unit}</Text>
-                <Text style={styles.price}>GHS {Number(listing.askingPrice).toLocaleString()}</Text>
-              </View>
-              <View style={[styles.statusBadge, listing.status === 'ACTIVE' ? styles.statusActive : listing.status === 'SOLD' ? styles.statusSold : styles.statusWithdrawn]}>
-                <Text style={styles.statusText}>{listing.status}</Text>
-              </View>
+      }
+      renderItem={({ item: listing }) => (
+        <View style={styles.card}>
+          <View style={styles.cardTop}>
+            {listing.photoData ? (
+              <Image source={{ uri: listing.photoData }} style={styles.thumb} />
+            ) : (
+              <View style={styles.thumbPlaceholder}><Ionicons name="hammer-outline" size={20} color={theme.textMuted} /></View>
+            )}
+            <View style={styles.cardInfo}>
+              <Text style={styles.mineral}>{listing.mineralType}</Text>
+              <Text style={styles.qty}>{Number(listing.quantity).toLocaleString()} {listing.unit}</Text>
+              <Text style={styles.price}>GHS {Number(listing.askingPrice).toLocaleString()}</Text>
             </View>
-            {listing.status === 'ACTIVE' ? (
-              <Pressable
-                onPress={() => handleWithdraw(listing)}
-                disabled={acting === listing.id}
-                style={[styles.withdrawBtn, acting === listing.id && styles.btnDisabled]}
-              >
-                <Text style={styles.withdrawBtnText}>{acting === listing.id ? '…' : 'Withdraw'}</Text>
-              </Pressable>
-            ) : null}
+            <View style={[styles.statusBadge, listing.status === 'ACTIVE' ? styles.statusActive : listing.status === 'SOLD' ? styles.statusSold : styles.statusWithdrawn]}>
+              <Text style={styles.statusText}>{listing.status}</Text>
+            </View>
           </View>
-        ))
+          {listing.status === 'ACTIVE' ? (
+            <Pressable
+              onPress={() => handleWithdraw(listing)}
+              disabled={acting === listing.id}
+              style={[styles.withdrawBtn, acting === listing.id && styles.btnDisabled]}
+            >
+              <Text style={styles.withdrawBtnText}>{acting === listing.id ? '…' : 'Withdraw'}</Text>
+            </Pressable>
+          ) : null}
+        </View>
       )}
-    </ScrollView>
+    />
   );
 }
 

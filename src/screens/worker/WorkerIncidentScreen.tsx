@@ -2,7 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import NetInfo from '@react-native-community/netinfo';
 import { useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
@@ -177,91 +177,100 @@ export function WorkerIncidentScreen({ session }: Props) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
-      <Text style={styles.pageTitle}>Report Incident</Text>
+    <FlatList
+      data={incidents}
+      keyExtractor={(inc) => String(inc.id)}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+      ListHeaderComponent={
+        <>
+          <Text style={styles.pageTitle}>Report Incident</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Incident Details</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Incident Details</Text>
 
-        <Text style={styles.fieldLabel}>Category</Text>
-        <View style={styles.pillRow}>
-          {CATEGORIES.map((c) => (
-            <Pressable key={c} onPress={() => setCategory(c)} style={[styles.pill, category === c && styles.pillActive]}>
-              <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
-                <CategoryIcon category={c} size={13} color={category === c ? '#ffffff' : theme.textMuted} />
-                <Text style={[styles.pillText, category === c && styles.pillActiveText]}>{c}</Text>
+            <Text style={styles.fieldLabel}>Category</Text>
+            <View style={styles.pillRow}>
+              {CATEGORIES.map((c) => (
+                <Pressable key={c} onPress={() => setCategory(c)} style={[styles.pill, category === c && styles.pillActive]}>
+                  <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                    <CategoryIcon category={c} size={13} color={category === c ? '#ffffff' : theme.textMuted} />
+                    <Text style={[styles.pillText, category === c && styles.pillActiveText]}>{c}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>Severity</Text>
+            <View style={styles.pillRow}>
+              {SEVERITIES.map((s) => (
+                <Pressable key={s} onPress={() => setSeverity(s)} style={[styles.pill, severity === s && { backgroundColor: SEVERITY_COLORS[s], borderColor: SEVERITY_COLORS[s] }]}>
+                  <Text style={[styles.pillText, severity === s && styles.pillActiveText]}>{s}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>Zone</Text>
+            <View style={styles.pillRow}>
+              {ZONES.map((z) => (
+                <Pressable key={z} onPress={() => setZone(z)} style={[styles.pill, zone === z && styles.pillActive]}>
+                  <Text style={[styles.pillText, zone === z && styles.pillActiveText]}>{z}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.fieldLabel}>What Happened</Text>
+            <TextInput multiline onChangeText={setDescription} placeholder="Describe the incident in detail..." placeholderTextColor={theme.textMuted} style={styles.textArea} value={description} />
+
+            <Text style={styles.fieldLabel}>Persons Involved</Text>
+            <TextInput onChangeText={setInvolvedPersons} placeholder="Names of workers involved (optional)" placeholderTextColor={theme.textMuted} style={styles.input} value={involvedPersons} />
+
+            <Text style={styles.fieldLabel}>Immediate Action Taken</Text>
+            <TextInput multiline onChangeText={setImmediateAction} placeholder="What was done immediately after?" placeholderTextColor={theme.textMuted} style={styles.textArea} value={immediateAction} />
+
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleLeft}>
+                <Text style={styles.toggleLabel}>First Aid Given</Text>
+                <Text style={styles.toggleSub}>Was first aid administered?</Text>
               </View>
-            </Pressable>
-          ))}
-        </View>
+              <Switch value={firstAidGiven} onValueChange={setFirstAidGiven} trackColor={{ true: theme.accent }} />
+            </View>
 
-        <Text style={styles.fieldLabel}>Severity</Text>
-        <View style={styles.pillRow}>
-          {SEVERITIES.map((s) => (
-            <Pressable key={s} onPress={() => setSeverity(s)} style={[styles.pill, severity === s && { backgroundColor: SEVERITY_COLORS[s], borderColor: SEVERITY_COLORS[s] }]}>
-              <Text style={[styles.pillText, severity === s && styles.pillActiveText]}>{s}</Text>
-            </Pressable>
-          ))}
-        </View>
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleLeft}>
+                <Text style={styles.toggleLabel}>Hospital Required</Text>
+                <Text style={styles.toggleSub}>Did anyone need hospital treatment?</Text>
+              </View>
+              <Switch value={hospitalRequired} onValueChange={setHospitalRequired} trackColor={{ true: theme.danger }} />
+            </View>
 
-        <Text style={styles.fieldLabel}>Zone</Text>
-        <View style={styles.pillRow}>
-          {ZONES.map((z) => (
-            <Pressable key={z} onPress={() => setZone(z)} style={[styles.pill, zone === z && styles.pillActive]}>
-              <Text style={[styles.pillText, zone === z && styles.pillActiveText]}>{z}</Text>
-            </Pressable>
-          ))}
-        </View>
+            <Text style={styles.fieldLabel}>Photo Evidence</Text>
+            {photo ? (
+              <View style={{ marginBottom: 12 }}>
+                <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={{ borderRadius: 8, height: 160, width: '100%' }} resizeMode="cover" />
+                <Pressable onPress={() => setPhoto(null)} style={{ alignItems: 'center', marginTop: 6 }}>
+                  <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>Remove</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={takePhoto} style={styles.photoBtn}>
+                <Ionicons name="camera" size={18} color={theme.textSub} />
+                <Text style={styles.photoBtnText}>Take Photo</Text>
+              </Pressable>
+            )}
 
-        <Text style={styles.fieldLabel}>What Happened</Text>
-        <TextInput multiline onChangeText={setDescription} placeholder="Describe the incident in detail..." placeholderTextColor={theme.textMuted} style={styles.textArea} value={description} />
-
-        <Text style={styles.fieldLabel}>Persons Involved</Text>
-        <TextInput onChangeText={setInvolvedPersons} placeholder="Names of workers involved (optional)" placeholderTextColor={theme.textMuted} style={styles.input} value={involvedPersons} />
-
-        <Text style={styles.fieldLabel}>Immediate Action Taken</Text>
-        <TextInput multiline onChangeText={setImmediateAction} placeholder="What was done immediately after?" placeholderTextColor={theme.textMuted} style={styles.textArea} value={immediateAction} />
-
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleLeft}>
-            <Text style={styles.toggleLabel}>First Aid Given</Text>
-            <Text style={styles.toggleSub}>Was first aid administered?</Text>
+            <ActionButton label={loading ? 'Submitting...' : 'Submit Incident Report'} onPress={submit} tone="danger" />
           </View>
-          <Switch value={firstAidGiven} onValueChange={setFirstAidGiven} trackColor={{ true: theme.accent }} />
-        </View>
 
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleLeft}>
-            <Text style={styles.toggleLabel}>Hospital Required</Text>
-            <Text style={styles.toggleSub}>Did anyone need hospital treatment?</Text>
-          </View>
-          <Switch value={hospitalRequired} onValueChange={setHospitalRequired} trackColor={{ true: theme.danger }} />
-        </View>
-
-        <Text style={styles.fieldLabel}>Photo Evidence</Text>
-        {photo ? (
-          <View style={{ marginBottom: 12 }}>
-            <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={{ borderRadius: 8, height: 160, width: '100%' }} resizeMode="cover" />
-            <Pressable onPress={() => setPhoto(null)} style={{ alignItems: 'center', marginTop: 6 }}>
-              <Text style={{ color: theme.danger, fontSize: 13, fontWeight: '700' }}>Remove</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable onPress={takePhoto} style={styles.photoBtn}>
-            <Ionicons name="camera" size={18} color={theme.textSub} />
-            <Text style={styles.photoBtnText}>Take Photo</Text>
-          </Pressable>
-        )}
-
-        <ActionButton label={loading ? 'Submitting...' : 'Submit Incident Report'} onPress={submit} tone="danger" />
-      </View>
-
-      <Text style={styles.sectionTitle}>My Incident Reports</Text>
-      {incidents.length === 0 ? (
+          <Text style={styles.sectionTitle}>My Incident Reports</Text>
+        </>
+      }
+      ListEmptyComponent={
         <View style={styles.emptyCard}><Text style={styles.emptyText}>No incident reports yet</Text></View>
-      ) : null}
-      {incidents.map((inc) => (
-        <View key={inc.id} style={styles.incidentCard}>
+      }
+      renderItem={({ item: inc }) => (
+        <View style={styles.incidentCard}>
           <View style={styles.incidentHeader}>
             <View>
               <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 2 }}>
@@ -296,8 +305,8 @@ export function WorkerIncidentScreen({ session }: Props) {
             </View>
           </View>
         </View>
-      ))}
-    </ScrollView>
+      )}
+    />
     </KeyboardAvoidingView>
   );
 }

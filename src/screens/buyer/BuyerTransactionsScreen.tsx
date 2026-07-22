@@ -181,18 +181,20 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
     <Modal visible={ratingTx !== null} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
-          <Text style={styles.modalTitle}>Rate Transaction #{ratingTx?.id}</Text>
-          <StarRow label="RELIABILITY" value={reliability} onChange={setReliability} theme={theme} />
-          <StarRow label="COMMUNICATION" value={communication} onChange={setCommunication} theme={theme} />
-          <StarRow label="LISTING ACCURACY" value={listingAccuracy} onChange={setListingAccuracy} theme={theme} />
-          <TextInput
-            style={styles.modalInput}
-            placeholder="Comment (optional)"
-            placeholderTextColor={theme.textMuted}
-            value={ratingComment}
-            onChangeText={setRatingComment}
-            multiline
-          />
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <Text style={styles.modalTitle}>Rate Transaction #{ratingTx?.id}</Text>
+            <StarRow label="RELIABILITY" value={reliability} onChange={setReliability} theme={theme} />
+            <StarRow label="COMMUNICATION" value={communication} onChange={setCommunication} theme={theme} />
+            <StarRow label="LISTING ACCURACY" value={listingAccuracy} onChange={setListingAccuracy} theme={theme} />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Comment (optional)"
+              placeholderTextColor={theme.textMuted}
+              value={ratingComment}
+              onChangeText={setRatingComment}
+              multiline
+            />
+          </ScrollView>
           <View style={styles.modalActions}>
             <Pressable onPress={() => setRatingTx(null)}><Text style={styles.cancelText}>Cancel</Text></Pressable>
             <Pressable style={[styles.submitBtn, submittingRating && { opacity: 0.5 }]} onPress={handleSubmitRating} disabled={submittingRating}>
@@ -206,15 +208,17 @@ export function BuyerTransactionsScreen({ session: _ }: Props) {
     <Modal visible={disputeTx !== null} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
-          <Text style={styles.modalTitle}>Raise Dispute — Txn #{disputeTx?.id}</Text>
-          <TextInput
-            style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }]}
-            placeholder="Describe the issue..."
-            placeholderTextColor={theme.textMuted}
-            value={disputeReason}
-            onChangeText={setDisputeReason}
-            multiline
-          />
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <Text style={styles.modalTitle}>Raise Dispute — Txn #{disputeTx?.id}</Text>
+            <TextInput
+              style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }]}
+              placeholder="Describe the issue..."
+              placeholderTextColor={theme.textMuted}
+              value={disputeReason}
+              onChangeText={setDisputeReason}
+              multiline
+            />
+          </ScrollView>
           <View style={styles.modalActions}>
             <Pressable onPress={() => setDisputeTx(null)}><Text style={styles.cancelText}>Cancel</Text></Pressable>
             <Pressable style={[styles.submitBtn, submittingDispute && { opacity: 0.5 }]} onPress={handleSubmitDispute} disabled={submittingDispute}>
@@ -262,7 +266,7 @@ function makeStyles(theme: Theme, isDark: boolean) {
     disputeBtn: { alignItems: 'center', backgroundColor: theme.dangerLight, borderRadius: 8, flex: 1, paddingVertical: spacing.sm },
     disputeBtnText: { color: theme.danger, fontWeight: '800', fontSize: 13 },
     modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl, maxHeight: '85%' },
     modalTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 14 },
     modalInput: { backgroundColor: theme.bg, borderRadius: 8, color: theme.text, fontSize: 14, marginBottom: 10, padding: spacing.md },
     modalActions: { alignItems: 'center', flexDirection: 'row', gap: spacing.lg, justifyContent: 'flex-end', marginTop: spacing.sm },

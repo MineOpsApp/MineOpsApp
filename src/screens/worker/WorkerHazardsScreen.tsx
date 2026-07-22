@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { HazardCard } from '../../components/HazardCard';
 import { InputField } from '../../components/InputField';
@@ -155,76 +155,87 @@ export function WorkerHazardsScreen({ session }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
-
-      {/* Header */}
-      <View style={styles.pageHeader}>
-        <Text style={styles.pageTitle}>Report Hazard</Text>
-        <View style={styles.countBadge}>
-          <Text style={styles.countText}>{hazards.length}</Text>
-        </View>
-      </View>
-
-      {/* Form card */}
-      <View style={styles.formCard}>
-        <InputField label="Hazard Type" onChangeText={setHazardType} value={hazardType} />
-        <InputField label="Location" onChangeText={setHazardLocation} value={hazardLocation} />
-        <InputField label="Description" multiline onChangeText={setHazardDescription} value={hazardDescription} placeholder="Describe what you observed..." />
-
-        <Text style={styles.fieldLabel}>Severity Level</Text>
-        <View style={styles.severityRow}>
-          {(['Low', 'Medium', 'High', 'Critical'] as Severity[]).map((level) => (
-            <Pressable
-              key={level}
-              onPress={() => setSeverity(level)}
-              style={[
-                styles.severityBtn,
-                severity === level && { backgroundColor: severityColors[level].bg, borderColor: severityColors[level].text },
-              ]}
-            >
-              <Text style={[styles.severityBtnText, severity === level && { color: severityColors[level].text }]}>{level}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={styles.fieldLabel}>Photo Evidence</Text>
-        {photo ? (
-          <View style={styles.photoPreview}>
-            <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photoImage} />
-            <Pressable onPress={() => setPhoto(null)} style={styles.removePhoto}>
-              <Text style={styles.removePhotoText}>Remove</Text>
-            </Pressable>
+    <FlatList
+      data={hazards}
+      keyExtractor={(h) => String(h.id)}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+      onEndReached={() => { if (hasMore && !loadingMore) loadMore(); }}
+      onEndReachedThreshold={0.5}
+      ListHeaderComponent={
+        <>
+          {/* Header */}
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Report Hazard</Text>
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{hazards.length}</Text>
+            </View>
           </View>
-        ) : (
-          <Pressable onPress={takePhoto} style={styles.photoBtn}>
-            <Ionicons name="camera" size={18} color={theme.textSub} />
-            <Text style={styles.photoBtnText}>Take Photo</Text>
-          </Pressable>
-        )}
-        <ActionButton label={loading ? 'Submitting...' : 'Submit Hazard Report'} onPress={submit} tone="danger" />
-      </View>
 
-      {/* History */}
-      <View style={styles.historyHeader}>
-        <Text style={styles.sectionTitle}>My Reports</Text>
-        <Text style={styles.sectionCount}>{hazards.length} total</Text>
-      </View>
+          {/* Form card */}
+          <View style={styles.formCard}>
+            <InputField label="Hazard Type" onChangeText={setHazardType} value={hazardType} />
+            <InputField label="Location" onChangeText={setHazardLocation} value={hazardLocation} />
+            <InputField label="Description" multiline onChangeText={setHazardDescription} value={hazardDescription} placeholder="Describe what you observed..." />
 
-      {hazards.length === 0 ? (
+            <Text style={styles.fieldLabel}>Severity Level</Text>
+            <View style={styles.severityRow}>
+              {(['Low', 'Medium', 'High', 'Critical'] as Severity[]).map((level) => (
+                <Pressable
+                  key={level}
+                  onPress={() => setSeverity(level)}
+                  style={[
+                    styles.severityBtn,
+                    severity === level && { backgroundColor: severityColors[level].bg, borderColor: severityColors[level].text },
+                  ]}
+                >
+                  <Text style={[styles.severityBtnText, severity === level && { color: severityColors[level].text }]}>{level}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.fieldLabel}>Photo Evidence</Text>
+            {photo ? (
+              <View style={styles.photoPreview}>
+                <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photoImage} />
+                <Pressable onPress={() => setPhoto(null)} style={styles.removePhoto}>
+                  <Text style={styles.removePhotoText}>Remove</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={takePhoto} style={styles.photoBtn}>
+                <Ionicons name="camera" size={18} color={theme.textSub} />
+                <Text style={styles.photoBtnText}>Take Photo</Text>
+              </Pressable>
+            )}
+            <ActionButton label={loading ? 'Submitting...' : 'Submit Hazard Report'} onPress={submit} tone="danger" />
+          </View>
+
+          {/* History */}
+          <View style={styles.historyHeader}>
+            <Text style={styles.sectionTitle}>My Reports</Text>
+            <Text style={styles.sectionCount}>{hazards.length} total</Text>
+          </View>
+        </>
+      }
+      ListEmptyComponent={
         <View style={styles.emptyCard}>
           <Ionicons name="clipboard-outline" size={40} color={theme.textMuted} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No reports yet</Text>
           <Text style={styles.emptySub}>Use the form above to report a hazard</Text>
         </View>
-      ) : null}
-      {hazards.map((h) => (
-        <HazardCard key={h.id} hazard={h} canReview={false} canClear={false} onReview={() => {}} onClear={() => {}} />
-      ))}
-      {hasMore ? (
-        <Pressable onPress={loadMore} style={styles.loadMoreBtn}>
-          <Text style={styles.loadMoreText}>{loadingMore ? 'Loading...' : 'Load More'}</Text>
-        </Pressable>
-      ) : null}
-    </ScrollView>
+      }
+      renderItem={({ item: h }) => (
+        <HazardCard hazard={h} canReview={false} canClear={false} onReview={() => {}} onClear={() => {}} />
+      )}
+      ListFooterComponent={
+        loadingMore ? (
+          <View style={styles.loadMoreBtn}>
+            <Text style={styles.loadMoreText}>Loading...</Text>
+          </View>
+        ) : null
+      }
+    />
   );
 }
 

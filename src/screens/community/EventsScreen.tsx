@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -117,22 +118,24 @@ export default function EventsScreen({ canCreate = false }: { canCreate?: boolea
       <Modal visible={modalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Create Event</Text>
-            <TextInput style={styles.input} placeholder="Title" placeholderTextColor={theme.textMuted} value={title} onChangeText={setTitle} />
-            <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} placeholder="Description (optional)" placeholderTextColor={theme.textMuted} value={description} onChangeText={setDescription} multiline />
-            <TextInput style={styles.input} placeholder="Event date (e.g. 2026-08-15T10:00:00)" placeholderTextColor={theme.textMuted} value={eventDate} onChangeText={setEventDate} />
-            <Text style={styles.label}>Type</Text>
-            <View style={styles.typeRow}>
-              {EVENT_TYPES.map(t => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.typeChip, eventType === t && styles.typeChipActive]}
-                  onPress={() => setEventType(t)}
-                >
-                  <Text style={[styles.typeChipText, eventType === t && styles.typeChipTextActive]}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={styles.modalTitle}>Create Event</Text>
+              <TextInput style={styles.input} placeholder="Title" placeholderTextColor={theme.textMuted} value={title} onChangeText={setTitle} />
+              <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} placeholder="Description (optional)" placeholderTextColor={theme.textMuted} value={description} onChangeText={setDescription} multiline />
+              <TextInput style={styles.input} placeholder="Event date (e.g. 2026-08-15T10:00:00)" placeholderTextColor={theme.textMuted} value={eventDate} onChangeText={setEventDate} />
+              <Text style={styles.label}>Type</Text>
+              <View style={styles.typeRow}>
+                {EVENT_TYPES.map(t => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.typeChip, eventType === t && styles.typeChipActive]}
+                    onPress={() => setEventType(t)}
+                  >
+                    <Text style={[styles.typeChipText, eventType === t && styles.typeChipTextActive]}>{t}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelText}>Cancel</Text>
@@ -172,7 +175,7 @@ function makeStyles(theme: Theme, isDark: boolean) {
     desc: { color: theme.textSub, fontSize: 13 },
     byText: { color: theme.textMuted, fontSize: 12, marginTop: 4 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: spacing.xl, maxHeight: '85%' },
     modalTitle: { color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: spacing.md },
     input: { backgroundColor: theme.bg, borderRadius: 8, color: theme.text, marginBottom: 10, padding: spacing.md },
     label: { color: theme.textSub, fontSize: 13, marginBottom: 6 },

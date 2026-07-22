@@ -24,7 +24,7 @@ const RISK_COLOR: Record<string, string> = {
   Low: '#22c55e',
 };
 
-type Props = { session: AuthSession };
+type Props = { session: AuthSession; readOnly?: boolean };
 type PackStatus = 'none' | 'downloading' | 'ready' | 'error';
 
 function circleCoords(lat: number, lng: number, radiusM: number, steps = 32): [number, number][] {
@@ -40,7 +40,7 @@ function circleCoords(lat: number, lng: number, radiusM: number, steps = 32): [n
   return coords;
 }
 
-export function LiveSiteMapView({ session }: Props) {
+export function LiveSiteMapView({ session, readOnly = false }: Props) {
   const { mode } = useThemeMode();
   const theme = useTheme(mode);
   const s = makeStyles(theme);
@@ -226,7 +226,7 @@ export function LiveSiteMapView({ session }: Props) {
         ref={mapRef}
         style={s.map}
         styleURL={MapboxGL.StyleURL.Outdoors}
-        onLongPress={(feature: any) => {
+        onLongPress={readOnly ? undefined : (feature: any) => {
           if (feature?.geometry?.type === 'Point') {
             setPendingCoord(feature.geometry.coordinates as [number, number]);
             setNewZoneName('');
@@ -339,14 +339,14 @@ export function LiveSiteMapView({ session }: Props) {
       )}
 
       {/* Hint when no zones and not placing a pin */}
-      {!pendingCoord && gpsZones.length === 0 && (
+      {!readOnly && !pendingCoord && gpsZones.length === 0 && (
         <View style={s.hintCard}>
           <Text style={s.hintText}>Long-press anywhere on the map to place a new GPS danger zone.</Text>
         </View>
       )}
 
       {/* New zone creation form */}
-      {pendingCoord && (
+      {!readOnly && pendingCoord && (
         <View style={s.form}>
           <Text style={s.formTitle}>New Danger Zone</Text>
           <Text style={s.formSub}>Long-press again to move the pin before saving.</Text>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getSiteIncidents, updateIncidentStatus, exportIncidentsCsv } from '../../services/api';
 import { exportAndShareCsv } from '../../utils/exportCsv';
-import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { AuthSession } from '../../types/auth';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -139,96 +139,101 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-    <ScrollView
+    <FlatList
+      data={visible}
+      keyExtractor={(inc) => String(inc.id)}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-    >
-      <View style={{ alignItems: 'center', flexDirection: 'row', marginBottom: 2 }}>
-        <Text style={[styles.pageTitle, { flex: 1 }]}>Incident Reports</Text>
-        <Pressable style={styles.exportBtn} onPress={handleExport} disabled={exporting}>
-          {exporting ? (
-            <Text style={styles.exportBtnText}>…</Text>
-          ) : (
-            <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
-              <Ionicons name="download-outline" size={13} color="#fff" />
-              <Text style={styles.exportBtnText}>CSV</Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
-      <Text style={styles.pageSub}>Pull to refresh</Text>
-
-      {/* Summary strip — always uses unfiltered totals */}
-      <View style={styles.strip}>
-        <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, open.length > 0 && { color: theme.danger }]}>{open.length}</Text>
-          <Text style={styles.stripLabel}>Open</Text>
-        </View>
-        <View style={styles.stripDivider} />
-        <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: theme.amber }]}>{investigating.length}</Text>
-          <Text style={styles.stripLabel}>Investigating</Text>
-        </View>
-        <View style={styles.stripDivider} />
-        <View style={styles.stripItem}>
-          <Text style={[styles.stripValue, { color: theme.accent }]}>{closed.length}</Text>
-          <Text style={styles.stripLabel}>Closed</Text>
-        </View>
-      </View>
-
-      {/* Status filter */}
-      <Text style={styles.filterLabel}>Status</Text>
-      <View style={styles.chipRow}>
-        {STATUS_CHIPS.map((c) => (
-          <Pressable
-            key={c.key}
-            onPress={() => setStatusFilter(c.key)}
-            style={[styles.chip, statusFilter === c.key && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, statusFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {/* Severity filter */}
-      <Text style={styles.filterLabel}>Severity</Text>
-      <View style={[styles.chipRow, { marginBottom: 16 }]}>
-        {SEVERITY_CHIPS.map((c) => (
-          <Pressable
-            key={c.key}
-            onPress={() => setSeverityFilter(c.key)}
-            style={[styles.chip, severityFilter === c.key && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, severityFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {incidents.length === 0 ? (
-        loadError ? (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>Failed to load incidents. Pull to refresh.</Text>
+      ListHeaderComponent={
+        <>
+          <View style={{ alignItems: 'center', flexDirection: 'row', marginBottom: 2 }}>
+            <Text style={[styles.pageTitle, { flex: 1 }]}>Incident Reports</Text>
+            <Pressable style={styles.exportBtn} onPress={handleExport} disabled={exporting}>
+              {exporting ? (
+                <Text style={styles.exportBtnText}>…</Text>
+              ) : (
+                <View style={{ alignItems: 'center', flexDirection: 'row', gap: 4 }}>
+                  <Ionicons name="download-outline" size={13} color="#fff" />
+                  <Text style={styles.exportBtnText}>CSV</Text>
+                </View>
+              )}
+            </Pressable>
           </View>
+          <Text style={styles.pageSub}>Pull to refresh</Text>
+
+          {/* Summary strip — always uses unfiltered totals */}
+          <View style={styles.strip}>
+            <View style={styles.stripItem}>
+              <Text style={[styles.stripValue, open.length > 0 && { color: theme.danger }]}>{open.length}</Text>
+              <Text style={styles.stripLabel}>Open</Text>
+            </View>
+            <View style={styles.stripDivider} />
+            <View style={styles.stripItem}>
+              <Text style={[styles.stripValue, { color: theme.amber }]}>{investigating.length}</Text>
+              <Text style={styles.stripLabel}>Investigating</Text>
+            </View>
+            <View style={styles.stripDivider} />
+            <View style={styles.stripItem}>
+              <Text style={[styles.stripValue, { color: theme.accent }]}>{closed.length}</Text>
+              <Text style={styles.stripLabel}>Closed</Text>
+            </View>
+          </View>
+
+          {/* Status filter */}
+          <Text style={styles.filterLabel}>Status</Text>
+          <View style={styles.chipRow}>
+            {STATUS_CHIPS.map((c) => (
+              <Pressable
+                key={c.key}
+                onPress={() => setStatusFilter(c.key)}
+                style={[styles.chip, statusFilter === c.key && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, statusFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Severity filter */}
+          <Text style={styles.filterLabel}>Severity</Text>
+          <View style={[styles.chipRow, { marginBottom: 16 }]}>
+            {SEVERITY_CHIPS.map((c) => (
+              <Pressable
+                key={c.key}
+                onPress={() => setSeverityFilter(c.key)}
+                style={[styles.chip, severityFilter === c.key && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, severityFilter === c.key && styles.chipTextActive]}>{c.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {isFiltered && visible.length > 0 ? (
+            <Text style={styles.resultCount}>{visible.length} of {incidents.length} incident{incidents.length !== 1 ? 's' : ''}</Text>
+          ) : null}
+        </>
+      }
+      ListEmptyComponent={
+        incidents.length === 0 ? (
+          loadError ? (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>Failed to load incidents. Pull to refresh.</Text>
+            </View>
+          ) : (
+            <View style={styles.emptyCard}>
+              <Ionicons name="checkmark-circle" size={28} color={theme.accent} style={{ marginBottom: 8 }} />
+              <Text style={styles.emptyTitle}>No incidents reported</Text>
+              <Text style={styles.emptySub}>Site is clear</Text>
+            </View>
+          )
         ) : (
           <View style={styles.emptyCard}>
-            <Ionicons name="checkmark-circle" size={28} color={theme.accent} style={{ marginBottom: 8 }} />
-            <Text style={styles.emptyTitle}>No incidents reported</Text>
-            <Text style={styles.emptySub}>Site is clear</Text>
+            <Text style={styles.emptyText}>No incidents match the selected filters</Text>
           </View>
         )
-      ) : visible.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>No incidents match the selected filters</Text>
-        </View>
-      ) : null}
-
-      {isFiltered && visible.length > 0 ? (
-        <Text style={styles.resultCount}>{visible.length} of {incidents.length} incident{incidents.length !== 1 ? 's' : ''}</Text>
-      ) : null}
-
-      {visible.map((inc) => (
-        <Pressable key={inc.id} onPress={() => setExpanded(expanded === inc.id ? null : inc.id)} style={styles.incidentCard}>
+      }
+      renderItem={({ item: inc }) => (
+        <Pressable onPress={() => setExpanded(expanded === inc.id ? null : inc.id)} style={styles.incidentCard}>
           <View style={styles.incidentHeader}>
             <View style={styles.incidentLeft}>
               <View style={{ alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 2 }}>
@@ -303,8 +308,8 @@ export function SupervisorIncidentScreen({ session: _ }: Props) {
             </View>
           ) : null}
         </Pressable>
-      ))}
-    </ScrollView>
+      )}
+    />
     </KeyboardAvoidingView>
   );
 }

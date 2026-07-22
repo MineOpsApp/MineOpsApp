@@ -207,17 +207,19 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
     <Modal visible={ratingTx !== null} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
-          <Text style={styles.modalTitle}>Rate Buyer — Txn #{ratingTx?.id}</Text>
-          <StarRow label="RELIABILITY" value={reliability} onChange={setReliability} theme={theme} />
-          <StarRow label="COMMUNICATION" value={communication} onChange={setCommunication} theme={theme} />
-          <TextInput
-            style={styles.modalInput}
-            placeholder="Comment (optional)"
-            placeholderTextColor={theme.textMuted}
-            value={ratingComment}
-            onChangeText={setRatingComment}
-            multiline
-          />
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <Text style={styles.modalTitle}>Rate Buyer — Txn #{ratingTx?.id}</Text>
+            <StarRow label="RELIABILITY" value={reliability} onChange={setReliability} theme={theme} />
+            <StarRow label="COMMUNICATION" value={communication} onChange={setCommunication} theme={theme} />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Comment (optional)"
+              placeholderTextColor={theme.textMuted}
+              value={ratingComment}
+              onChangeText={setRatingComment}
+              multiline
+            />
+          </ScrollView>
           <View style={styles.modalActions}>
             <Pressable onPress={() => setRatingTx(null)}><Text style={styles.cancelText}>Cancel</Text></Pressable>
             <Pressable style={[styles.submitBtn, submittingRating && { opacity: 0.5 }]} onPress={handleSubmitRating} disabled={submittingRating}>
@@ -231,15 +233,17 @@ export function SupervisorTransactionsScreen({ session: _ }: Props) {
     <Modal visible={disputeTx !== null} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
-          <Text style={styles.modalTitle}>Raise Dispute — Txn #{disputeTx?.id}</Text>
-          <TextInput
-            style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }]}
-            placeholder="Describe the issue..."
-            placeholderTextColor={theme.textMuted}
-            value={disputeReason}
-            onChangeText={setDisputeReason}
-            multiline
-          />
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <Text style={styles.modalTitle}>Raise Dispute — Txn #{disputeTx?.id}</Text>
+            <TextInput
+              style={[styles.modalInput, { height: 100, textAlignVertical: 'top' }]}
+              placeholder="Describe the issue..."
+              placeholderTextColor={theme.textMuted}
+              value={disputeReason}
+              onChangeText={setDisputeReason}
+              multiline
+            />
+          </ScrollView>
           <View style={styles.modalActions}>
             <Pressable onPress={() => setDisputeTx(null)}><Text style={styles.cancelText}>Cancel</Text></Pressable>
             <Pressable style={[styles.submitBtn, submittingDispute && { opacity: 0.5 }]} onPress={handleSubmitDispute} disabled={submittingDispute}>
@@ -304,7 +308,7 @@ function makeStyles(theme: Theme) {
     disputeBtn: { flex: 1, backgroundColor: theme.dangerLight, borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
     disputeBtnText: { color: theme.danger, fontWeight: '800', fontSize: 12 },
     modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20 },
+    modalSheet: { backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, maxHeight: '85%' },
     modalTitle: { color: theme.text, fontSize: 16, fontWeight: '900', marginBottom: 14 },
     modalInput: { backgroundColor: theme.bgInput, borderRadius: 8, padding: 12, color: theme.text, marginBottom: 10, fontSize: 14 },
     modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
