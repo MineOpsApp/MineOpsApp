@@ -1,10 +1,9 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { InputField } from '../../components/InputField';
 import { ActionButton } from '../../components/ActionButton';
-import { getWorkerProfile, updateWorkerEquipmentStatus, reportEquipmentFault, requestEquipmentMaintenance, logEquipmentShift, getEquipmentShiftLogs, parseApiError } from '../../services/api';
-import type { WorkerProfile } from '../../types/actions';
+import { getSiteEquipment, reportEquipmentFault, requestEquipmentMaintenance, logEquipmentShift, getEquipmentShiftLogs, parseApiError } from '../../services/api';
 import type { AuthSession } from '../../types/auth';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
@@ -13,6 +12,16 @@ import { useThemeMode } from '../../theme/ThemeContext';
 
 type EquipmentStatus = 'Operational' | 'Idle' | 'Maintenance' | 'Flagged';
 type ShiftCheckType = 'ShiftStart' | 'ShiftEnd' | 'MidShiftCheck';
+
+type SiteEquipment = {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  site: string;
+  status: string;
+  notes: string | null;
+};
 
 type ShiftLog = {
   id: number;
@@ -43,7 +52,8 @@ export function WorkerEquipmentScreen({ session }: Props) {
   const theme = useTheme(mode);
   const styles = makeStyles(theme);
 
-  const [profile, setProfile] = useState<WorkerProfile | null>(null);
+  const [equipmentList, setEquipmentList] = useState<SiteEquipment[]>([]);
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [shiftLogs, setShiftLogs] = useState<ShiftLog[]>([]);
   const [shiftStatus, setShiftStatus] = useState<EquipmentStatus>('Operational');
   const [checkType, setCheckType] = useState<ShiftCheckType>('ShiftStart');
@@ -52,22 +62,24 @@ export function WorkerEquipmentScreen({ session }: Props) {
   const [maintenanceDetails, setMaintenanceDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   async function load() {
     await Promise.all([
-      getWorkerProfile(session.user.email).then(setProfile).catch(() => {}),
+      getSiteEquipment().then((list: SiteEquipment[]) => setEquipmentList(list)).catch(() => {}),
       getEquipmentShiftLogs().then((logs: ShiftLog[]) => setShiftLogs(logs)).catch(() => {}),
     ]);
+    setLoaded(true);
   }
   useEffect(() => { load(); }, []);
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
 
-  const equipment = profile?.assignedEquipment[0];
+  const equipment = equipmentList.find((e) => e.code === selectedCode) ?? equipmentList[0];
   const currentStatus = equipment?.status ?? 'Unknown';
   const statusConfig = STATUS_CONFIG[currentStatus as EquipmentStatus] ?? { color: theme.textSub, bg: theme.bgInput, icon: 'help-circle' as ComponentProps<typeof Ionicons>['name'] };
 
   async function logShift() {
-    if (!equipment) { Alert.alert('No equipment', 'No equipment assigned.'); return; }
+    if (!equipment) { Alert.alert('No equipment', 'No equipment registered for this site.'); return; }
     setSubmitting(true);
     try {
       const log = await logEquipmentShift({ equipmentCode: equipment.code, equipmentName: equipment.name, status: shiftStatus, checkType, notes: shiftNotes.trim() });
@@ -79,7 +91,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
   }
 
   async function reportFault() {
-    if (!equipment) { Alert.alert('No equipment', 'Load profile first.'); return; }
+    if (!equipment) { Alert.alert('No equipment', 'No equipment registered for this site.'); return; }
     setSubmitting(true);
     try {
       await reportEquipmentFault({ description: faultDescription.trim() || 'Fault reported', equipmentCode: equipment.code, workerEmail: session.user.email, workerName: session.user.fullName });
@@ -90,7 +102,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
   }
 
   async function requestMaintenance() {
-    if (!equipment) { Alert.alert('No equipment', 'Load profile first.'); return; }
+    if (!equipment) { Alert.alert('No equipment', 'No equipment registered for this site.'); return; }
     setSubmitting(true);
     try {
       await requestEquipmentMaintenance({ equipmentCode: equipment.code, requestDetails: maintenanceDetails.trim() || 'Maintenance requested', workerEmail: session.user.email, workerName: session.user.fullName });
@@ -109,6 +121,16 @@ export function WorkerEquipmentScreen({ session }: Props) {
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
       <Text style={styles.pageTitle}>Equipment</Text>
 
+      {equipmentList.length > 1 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow} contentContainerStyle={{ gap: spacing.sm }}>
+          {equipmentList.map((e) => (
+            <Pressable key={e.id} onPress={() => setSelectedCode(e.code)} style={[styles.codePill, (equipment?.code === e.code) && styles.codePillActive]}>
+              <Text style={[styles.codePillText, (equipment?.code === e.code) && styles.codePillActiveText]}>{e.code}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
+
       {equipment ? (
         <View style={[styles.equipCard, { backgroundColor: statusConfig.bg, borderColor: statusConfig.color }]}>
           <View style={styles.equipTop}>
@@ -121,10 +143,12 @@ export function WorkerEquipmentScreen({ session }: Props) {
               <Text style={styles.statusPillText}>{currentStatus}</Text>
             </View>
           </View>
-          <Text style={styles.equipInstructions}>{equipment.instructions}</Text>
+          {equipment.notes ? <Text style={styles.equipInstructions}>{equipment.notes}</Text> : null}
         </View>
       ) : (
-        <View style={styles.loadingCard}><Text style={styles.loadingText}>Loading equipment...</Text></View>
+        <View style={styles.loadingCard}>
+          <Text style={styles.loadingText}>{loaded ? 'No equipment registered for this site yet.' : 'Loading equipment...'}</Text>
+        </View>
       )}
 
       <View style={styles.card}>
@@ -151,7 +175,7 @@ export function WorkerEquipmentScreen({ session }: Props) {
           })}
         </View>
         <InputField label="Notes (optional)" multiline onChangeText={setShiftNotes} value={shiftNotes} placeholder="Any observations..." />
-        <ActionButton label={submitting ? 'Saving...' : 'Log Shift Check'} onPress={logShift} disabled={submitting} />
+        <ActionButton label={submitting ? 'Saving...' : 'Log Shift Check'} onPress={logShift} disabled={submitting || !equipment} />
       </View>
 
       {shiftLogs.length > 0 ? (
@@ -176,13 +200,13 @@ export function WorkerEquipmentScreen({ session }: Props) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Report Fault</Text>
         <InputField label="Fault details" multiline onChangeText={setFaultDescription} value={faultDescription} placeholder="Describe the fault..." />
-        <ActionButton label={submitting ? 'Submitting...' : 'Report Fault'} onPress={reportFault} tone="danger" disabled={submitting} />
+        <ActionButton label={submitting ? 'Submitting...' : 'Report Fault'} onPress={reportFault} tone="danger" disabled={submitting || !equipment} />
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Request Maintenance</Text>
         <InputField label="Details" multiline onChangeText={setMaintenanceDetails} value={maintenanceDetails} placeholder="What maintenance is needed?" />
-        <ActionButton label={submitting ? 'Submitting...' : 'Request Service'} onPress={requestMaintenance} disabled={submitting} />
+        <ActionButton label={submitting ? 'Submitting...' : 'Request Service'} onPress={requestMaintenance} disabled={submitting || !equipment} />
       </View>
     </ScrollView>
   );
@@ -192,6 +216,11 @@ function makeStyles(theme: Theme) {
   return StyleSheet.create({
     container: { backgroundColor: theme.bg, padding: spacing.xl, paddingBottom: 40 },
     pageTitle: { ...typography.h1, color: theme.text, marginBottom: spacing.lg },
+    pickerRow: { marginBottom: spacing.md },
+    codePill: { alignItems: 'center', backgroundColor: theme.bgCard, borderColor: theme.border, borderRadius: 20, borderWidth: 1, justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: 8 },
+    codePillActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+    codePillText: { color: theme.textMuted, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', fontSize: 12, fontWeight: '800' },
+    codePillActiveText: { color: '#ffffff' },
     equipCard: { borderRadius: 12, borderWidth: 2, marginBottom: spacing.lg, padding: spacing.lg },
     equipTop: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
     equipName: { ...typography.h3, color: theme.text, marginBottom: 2 },

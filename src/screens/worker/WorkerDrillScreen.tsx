@@ -4,8 +4,7 @@ import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } 
 
 import { ActionButton } from '../../components/ActionButton';
 import { InputField } from '../../components/InputField';
-import { startDrillOperation, signOffDrillStep, getMyDrillOperations, getAllBlasts, getWorkerProfile } from '../../services/api';
-import type { WorkerProfile } from '../../types/actions';
+import { startDrillOperation, signOffDrillStep, getMyDrillOperations, getAllBlasts, getSiteEquipment } from '../../services/api';
 import { enqueue } from '../../utils/offlineQueue';
 import type { AuthSession } from '../../types/auth';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -31,6 +30,8 @@ type DrillOp = {
 };
 
 type StepStatus = 'done' | 'active' | 'locked';
+
+type SiteEquipment = { id: number; code: string; name: string; type: string; site: string; status: string; notes: string | null };
 
 type Props = { session: AuthSession };
 
@@ -98,7 +99,7 @@ export function WorkerDrillScreen({ session }: Props) {
   const [stepNotes, setStepNotes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [profile, setProfile] = useState<WorkerProfile | null>(null);
+  const [siteEquipment, setSiteEquipment] = useState<SiteEquipment[]>([]);
   const [now, setNow] = useState(Date.now());
 
   async function refresh() {
@@ -106,7 +107,7 @@ export function WorkerDrillScreen({ session }: Props) {
     await Promise.all([
       getMyDrillOperations().then(setDrills).catch(() => {}),
       getAllBlasts().then((blasts) => setScheduledBlasts(blasts.filter((b: any) => b.status === 'SCHEDULED'))).catch(() => {}),
-      getWorkerProfile(session.user.email).then(setProfile).catch(() => {}),
+      getSiteEquipment().then((list: SiteEquipment[]) => setSiteEquipment(list)).catch(() => {}),
     ]);
     setRefreshing(false);
   }
@@ -116,8 +117,8 @@ export function WorkerDrillScreen({ session }: Props) {
     getAllBlasts().then((blasts) => {
       setScheduledBlasts(blasts.filter((b: any) => b.status === 'SCHEDULED'));
     }).catch(() => {});
-    getWorkerProfile(session.user.email)
-      .then((p) => { setProfile(p); if (p.assignedEquipment.length > 0) setEquipmentCode(p.assignedEquipment[0].code); })
+    getSiteEquipment()
+      .then((list: SiteEquipment[]) => { setSiteEquipment(list); if (list.length > 0) setEquipmentCode((c) => c || list[0].code); })
       .catch(() => {});
   }, []);
 
@@ -239,11 +240,11 @@ export function WorkerDrillScreen({ session }: Props) {
           ))}
         </View>
 
-        {(profile?.assignedEquipment?.length ?? 0) > 0 ? (
+        {siteEquipment.length > 0 ? (
           <>
             <Text style={styles.fieldLabel}>Equipment</Text>
             <View style={styles.pillRow}>
-              {profile!.assignedEquipment.map((e) => (
+              {siteEquipment.map((e) => (
                 <Pressable key={e.code} onPress={() => setEquipmentCode(e.code)} style={[styles.pill, equipmentCode === e.code && styles.pillActive]}>
                   <Text style={[styles.pillText, equipmentCode === e.code && styles.pillActiveText]}>{e.code}</Text>
                 </Pressable>

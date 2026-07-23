@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   LayoutChangeEvent,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -347,7 +349,9 @@ export function SafetyDangerZonesScreen({ session }: Props) {
 
   // ── LIST VIEW ─────────────────────────────────────────────────────────────────
   return (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
 
       <View style={styles.pageHeader}>
@@ -621,6 +625,7 @@ export function SafetyDangerZonesScreen({ session }: Props) {
         </>
       )}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -671,7 +676,7 @@ function makeStyles(theme: Theme, isDark: boolean) {
     zoneMeta: { fontSize: 12, fontWeight: '700' },
 
     badgeRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
-    missingBadge: { backgroundColor: isDark ? '#2a2200' : '#fffbeb', borderColor: '#a15c00', borderRadius: 6, borderWidth: 1, color: '#a15c00', fontSize: 11, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3 },
+    missingBadge: { backgroundColor: theme.amberLight, borderColor: theme.amber, borderRadius: 6, borderWidth: 1, color: theme.amber, fontSize: 12, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 3 },
 
     zoneBtnRow:     { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
     traceBtn:       { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: theme.bgInput, borderRadius: 6, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 5 },
